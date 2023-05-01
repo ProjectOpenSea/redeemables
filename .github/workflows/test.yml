@@ -32,3 +32,9 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Run Forge format
+        run: |
+          forge fmt
+          [ -z "`git status --porcelain`" ] && echo "No diff for format" || { echo "Diff exists for format"; exit 1; }
+        id: lint
