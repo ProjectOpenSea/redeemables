@@ -17,7 +17,7 @@ contract Example721 is ERC721, Ownable, IERCDynamicTraits {
     /// @dev Value for if a token is redeemed (1)
     bytes32 internal constant _REDEEMED = bytes32(abi.encode(1));
 
-    /// @dev Signer to redeem tokens (e.g. KYC approval), required when non-zero.
+    /// @dev Signer approval to redeem tokens (e.g. KYC), required when set.
     address internal _redeemSigner;
 
     /// @notice Internal constants for EIP-712: Typed structured
