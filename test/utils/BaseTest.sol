@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import {Solarray} from "solarray/solarray.sol";
+import {Solarray} from "solarray/Solarray.sol";
 import {IERCDynamicTraits} from "../../src/interfaces/IDynamicTraits.sol";
 import {IERCDynamicTraitsRegistry} from "../../src/interfaces/IDynamicTraitsRegistry.sol";
 

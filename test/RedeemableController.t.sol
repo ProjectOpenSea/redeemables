@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Solarray} from "solarray/solarray.sol";
+import {Solarray} from "solarray/Solarray.sol";
 import {BaseTest} from "./utils/BaseTest.sol";
 import {Test721} from "./utils/Test721.sol";
 import {DynamicTraitsRegistry} from "../src/DynamicTraitsRegistry.sol";
