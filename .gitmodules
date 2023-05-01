@@ -4,3 +4,6 @@
 [submodule "lib/solady"]
 	path = lib/solady
 	url = git@github.com:Vectorized/solady.git
+[submodule "lib/solarray"]
+	path = lib/solarray
+	url = https://github.com/evmcheb/solarray
