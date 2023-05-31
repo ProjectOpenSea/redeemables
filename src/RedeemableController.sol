@@ -2,9 +2,12 @@
 pragma solidity ^0.8.19;
 
 import { Ownable } from "solady/auth/Ownable.sol";
+
 import { ECDSA } from "solady/utils/ECDSA.sol";
+
 import { IERCDynamicTraitsRegistry } from
     "./interfaces/IDynamicTraitsRegistry.sol";
+
 import { SignedRedeem } from "./lib/SignedRedeem.sol";
 
 interface IERC721 {

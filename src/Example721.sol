@@ -2,8 +2,11 @@
 pragma solidity ^0.8.19;
 
 import { ERC721 } from "solady/tokens/ERC721.sol";
+
 import { ECDSA } from "solady/utils/ECDSA.sol";
+
 import { IERCDynamicTraits } from "./interfaces/IDynamicTraits.sol";
+
 import { SignedRedeem } from "./lib/SignedRedeem.sol";
 
 contract Example721 is ERC721, IERCDynamicTraits, SignedRedeem {
@@ -18,8 +21,6 @@ contract Example721 is ERC721, IERCDynamicTraits, SignedRedeem {
 
     /// @dev Value for if a token is redeemed (1)
     bytes32 internal constant _REDEEMED = bytes32(abi.encode(1));
-
-    constructor() { }
 
     function getTrait(uint256 tokenId, bytes32 traitKey)
         public

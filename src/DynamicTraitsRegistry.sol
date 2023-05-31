@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import { ECDSA } from "solady/utils/ECDSA.sol";
+
 import { IERCDynamicTraitsRegistry } from
     "./interfaces/IDynamicTraitsRegistry.sol";
 

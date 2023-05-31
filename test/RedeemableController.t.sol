@@ -2,9 +2,13 @@
 pragma solidity ^0.8.19;
 
 import { Solarray } from "solarray/Solarray.sol";
+
 import { BaseTest } from "./utils/BaseTest.sol";
+
 import { Test721 } from "./utils/Test721.sol";
+
 import { DynamicTraitsRegistry } from "../src/DynamicTraitsRegistry.sol";
+
 import { RedeemableController } from "../src/RedeemableController.sol";
 
 contract Example721Test is BaseTest {

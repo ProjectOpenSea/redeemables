@@ -2,7 +2,9 @@
 pragma solidity ^0.8.19;
 
 import { Solarray } from "solarray/Solarray.sol";
+
 import { BaseTest } from "./utils/BaseTest.sol";
+
 import { Example721 } from "../src/Example721.sol";
 
 contract Example721Test is BaseTest {

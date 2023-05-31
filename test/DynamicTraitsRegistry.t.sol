@@ -2,7 +2,9 @@
 pragma solidity ^0.8.19;
 
 import { BaseTest } from "./utils/BaseTest.sol";
+
 import { DynamicTraitsRegistry } from "../src/DynamicTraitsRegistry.sol";
+
 import { Test721 } from "./utils/Test721.sol";
 
 contract DynamicTraitsRegistryTest is BaseTest {
