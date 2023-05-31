@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Solarray} from "solarray/Solarray.sol";
-import {BaseTest} from "./utils/BaseTest.sol";
-import {Example721} from "../src/Example721.sol";
+import { Solarray } from "solarray/Solarray.sol";
+import { BaseTest } from "./utils/BaseTest.sol";
+import { Example721 } from "../src/Example721.sol";
 
 contract Example721Test is BaseTest {
     Example721 public token;
@@ -43,7 +43,9 @@ contract Example721Test is BaseTest {
 
         uint256[] memory tokenIds = Solarray.uint256s(1);
         uint256 salt = 123;
-        bytes memory signature = getSignedRedeem("alice", address(token), address(this), tokenIds, salt);
+        bytes memory signature = getSignedRedeem(
+            "alice", address(token), address(this), tokenIds, salt
+        );
 
         vm.expectRevert(bytes("invalid signer"));
         token.redeem(tokenIds, signature, 123456789);

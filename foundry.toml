@@ -6,4 +6,9 @@ remappings = [
   "solady/=lib/solady/src/"
 ]
 
+[fmt]
+line_length = 80
+tab_width = 4
+bracket_spacing = true
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
