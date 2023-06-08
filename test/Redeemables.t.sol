@@ -23,7 +23,11 @@ contract Example721Test is BaseTest {
 
         vm.expectEmit(true, true, true, true, address(registry));
         emit OperatorAdded(address(token), address(controller));
-        registry.updateAllowedOperator(address(token), address(controller), true);
+        registry.updateAllowedOperator(
+            address(token),
+            address(controller),
+            true
+        );
     }
 
     function testRedeem() public {
@@ -37,7 +41,10 @@ contract Example721Test is BaseTest {
         emit TraitUpdated(address(token), 0, _redeemedTraitKey, 0, _REDEEMED);
         controller.redeem(Solarray.uint256s(0), emptySignature, 0);
         assertEq(controller.isRedeemed(0), true);
-        assertEq(registry.getTrait(address(token), 0, _redeemedTraitKey), _REDEEMED);
+        assertEq(
+            registry.getTrait(address(token), 0, _redeemedTraitKey),
+            _REDEEMED
+        );
 
         vm.expectRevert(bytes("already redeemed"));
         controller.redeem(Solarray.uint256s(0), emptySignature, 0);
@@ -56,7 +63,13 @@ contract Example721Test is BaseTest {
 
         uint256[] memory tokenIds = Solarray.uint256s(1);
         uint256 salt = 123;
-        bytes memory signature = getSignedRedeem("alice", address(controller), address(this), tokenIds, salt);
+        bytes memory signature = getSignedRedeem(
+            "alice",
+            address(controller),
+            address(this),
+            tokenIds,
+            salt
+        );
 
         vm.expectRevert(bytes("invalid signer"));
         controller.redeem(tokenIds, signature, 123456789);
@@ -65,7 +78,10 @@ contract Example721Test is BaseTest {
         emit TraitUpdated(address(token), 1, _redeemedTraitKey, 0, _REDEEMED);
         controller.redeem(tokenIds, signature, salt);
         assertEq(controller.isRedeemed(1), true);
-        assertEq(registry.getTrait(address(token), 1, _redeemedTraitKey), _REDEEMED);
+        assertEq(
+            registry.getTrait(address(token), 1, _redeemedTraitKey),
+            _REDEEMED
+        );
 
         vm.expectRevert(bytes("already redeemed"));
         controller.redeem(tokenIds, signature, salt);

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/tokens/ERC721.sol";
@@ -21,7 +21,9 @@ contract Test721 is ERC721, Ownable {
         _mint(to, tokenId);
     }
 
-    function tokenURI(uint256 /* tokenId */ ) public view virtual override returns (string memory) {
+    function tokenURI(
+        uint256 /* tokenId */
+    ) public view virtual override returns (string memory) {
         return "";
     }
 }
