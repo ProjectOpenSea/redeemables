@@ -21,10 +21,7 @@ contract BaseSeaportTest is DifferentialTest {
     ConduitControllerInterface conduitController;
     ConsiderationInterface seaport;
 
-    function stringEq(
-        string memory a,
-        string memory b
-    ) internal pure returns (bool) {
+    function stringEq(string memory a, string memory b) internal pure returns (bool) {
         return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
@@ -56,22 +53,14 @@ contract BaseSeaportTest is DifferentialTest {
     /**
      * @dev Get the configured preferred Seaport
      */
-    function getSeaport()
-        internal
-        view
-        returns (ConsiderationInterface seaport_)
-    {
+    function getSeaport() internal view returns (ConsiderationInterface seaport_) {
         seaport_ = seaport;
     }
 
     /**
      * @dev Get the configured preferred ConduitController
      */
-    function getConduitController()
-        internal
-        view
-        returns (ConduitControllerInterface conduitController_)
-    {
+    function getConduitController() internal view returns (ConduitControllerInterface conduitController_) {
         conduitController_ = conduitController;
     }
 
@@ -82,41 +71,27 @@ contract BaseSeaportTest is DifferentialTest {
         seaport = new Consideration(address(conduitController));
 
         //create conduit, update channel
-        conduit = Conduit(
-            conduitController.createConduit(conduitKey, address(this))
-        );
-        conduitController.updateChannel(
-            address(conduit),
-            address(seaport),
-            true
-        );
+        conduit = Conduit(conduitController.createConduit(conduitKey, address(this)));
+        conduitController.updateChannel(address(conduit), address(seaport), true);
     }
 
-    function signOrder(
-        ConsiderationInterface _consideration,
-        uint256 _pkOfSigner,
-        bytes32 _orderHash
-    ) internal view returns (bytes memory) {
-        (bytes32 r, bytes32 s, uint8 v) = getSignatureComponents(
-            _consideration,
-            _pkOfSigner,
-            _orderHash
-        );
+    function signOrder(ConsiderationInterface _consideration, uint256 _pkOfSigner, bytes32 _orderHash)
+        internal
+        view
+        returns (bytes memory)
+    {
+        (bytes32 r, bytes32 s, uint8 v) = getSignatureComponents(_consideration, _pkOfSigner, _orderHash);
         return abi.encodePacked(r, s, v);
     }
 
-    function getSignatureComponents(
-        ConsiderationInterface _consideration,
-        uint256 _pkOfSigner,
-        bytes32 _orderHash
-    ) internal view returns (bytes32, bytes32, uint8) {
-        (, bytes32 domainSeparator, ) = _consideration.information();
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            _pkOfSigner,
-            keccak256(
-                abi.encodePacked(bytes2(0x1901), domainSeparator, _orderHash)
-            )
-        );
+    function getSignatureComponents(ConsiderationInterface _consideration, uint256 _pkOfSigner, bytes32 _orderHash)
+        internal
+        view
+        returns (bytes32, bytes32, uint8)
+    {
+        (, bytes32 domainSeparator,) = _consideration.information();
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(_pkOfSigner, keccak256(abi.encodePacked(bytes2(0x1901), domainSeparator, _orderHash)));
         return (r, s, v);
     }
 }

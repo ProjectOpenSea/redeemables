@@ -27,11 +27,7 @@ contract TestERC20 is ERC20 {
         return true;
     }
 
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool ok) {
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool ok) {
         if (blocked) {
             return false;
         }

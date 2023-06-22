@@ -41,8 +41,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateRedeemableParams(bytes32(0), params, "http://test.com");
 
-        RedeemableRegistryParamsV0 memory storedParams = offerer
-            .getRedeemableParams(paramsHash);
+        RedeemableRegistryParamsV0 memory storedParams = offerer.getRedeemableParams(paramsHash);
         assertEq(storedParams.registeredBy, address(this));
         assertEq(storedParams.sendTo, 0x000000000000000000000000000000000000dEaD);
 
@@ -50,9 +49,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
         assertEq(storedURI, "http://test.com");
     }
 
-    function _getRedeemableParamsHash(
-        RedeemableRegistryParamsV0 memory params
-    ) internal pure returns (bytes32) {
+    function _getRedeemableParamsHash(RedeemableRegistryParamsV0 memory params) internal pure returns (bytes32) {
         return keccak256(abi.encode(params));
     }
 }

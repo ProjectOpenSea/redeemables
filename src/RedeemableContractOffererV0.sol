@@ -3,7 +3,13 @@ pragma solidity ^0.8.19;
 
 import {ContractOffererInterface} from "seaport-types/src/interfaces/ContractOffererInterface.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
-import {OfferItem, ConsiderationItem, ReceivedItem, Schema, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {
+    OfferItem,
+    ConsiderationItem,
+    ReceivedItem,
+    Schema,
+    SpentItem
+} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {IERC721} from "forge-std/interfaces/IERC721.sol";
 import {IERC1155} from "forge-std/interfaces/IERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
@@ -16,20 +22,15 @@ import {RedeemableRegistryParamsV0} from "./lib/RedeemableStructs.sol";
  * @author ryanio
  * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
  */
-contract RedeemableContractOffererV0 is
-    ContractOffererInterface,
-    RedeemableErrorsAndEvents
-{
+contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErrorsAndEvents {
     /// @dev The Seaport address allowed to interact with this contract offerer.
     address internal immutable _SEAPORT;
 
     /// @dev The default burn address.
-    address constant _DEFAULT_BURN_ADDRESS =
-        0x000000000000000000000000000000000000dEaD;
+    address constant _DEFAULT_BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     /// @dev The redeemable parameters by their hash.
-    mapping(bytes32 paramsHash => RedeemableRegistryParamsV0 params)
-        private _redeemableParams;
+    mapping(bytes32 paramsHash => RedeemableRegistryParamsV0 params) private _redeemableParams;
 
     /// @dev The redeemable URIs by params hash.
     mapping(bytes32 paramsHash => string redeemableURI) private _redeemableURIs;
@@ -41,35 +42,32 @@ contract RedeemableContractOffererV0 is
         _SEAPORT = seaport;
     }
 
-    function updateRedeemableParams(
-        bytes32 paramsHash,
-        RedeemableRegistryParamsV0 calldata params,
-        string calldata uri
-    ) external {
-        if (paramsHash == bytes32(0))
+    function updateRedeemableParams(bytes32 paramsHash, RedeemableRegistryParamsV0 calldata params, string calldata uri)
+        external
+    {
+        if (paramsHash == bytes32(0)) {
             paramsHash = _getRedeemableParamsHash(params);
+        }
 
         if (params.offer.length != 0) revert OfferItemsNotAllowed();
         if (params.consideration.length == 0) revert NoConsiderationItems();
 
-        RedeemableRegistryParamsV0 storage existingParams = _redeemableParams[
-            paramsHash
-        ];
+        RedeemableRegistryParamsV0 storage existingParams = _redeemableParams[paramsHash];
 
         if (
-            params.registeredBy != msg.sender ||
-            (existingParams.registeredBy != address(0) &&
-                existingParams.registeredBy != msg.sender)
+            params.registeredBy != msg.sender
+                || (existingParams.registeredBy != address(0) && existingParams.registeredBy != msg.sender)
         ) revert NotOwnerOrAllowed();
 
-        if (existingParams.redemptionSettingsAreImmutable)
+        if (existingParams.redemptionSettingsAreImmutable) {
             revert RedemptionSettingsAreImmutable();
+        }
 
         _redeemableParams[paramsHash] = params;
 
         // Since params is calldata we cannot modify it, so we set sendTo after if needed.
         if (params.sendTo == address(0)) {
-             _redeemableParams[paramsHash].sendTo = _DEFAULT_BURN_ADDRESS;
+            _redeemableParams[paramsHash].sendTo = _DEFAULT_BURN_ADDRESS;
         }
 
         emit RedeemableParamsUpdated(paramsHash, params);
@@ -80,13 +78,8 @@ contract RedeemableContractOffererV0 is
         }
     }
 
-    function updateRedeemableURI(
-        bytes32 redeemableParamsHash,
-        string calldata uri
-    ) external {
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[
-            redeemableParamsHash
-        ];
+    function updateRedeemableURI(bytes32 redeemableParamsHash, string calldata uri) external {
+        RedeemableRegistryParamsV0 storage params = _redeemableParams[redeemableParamsHash];
 
         if (params.registeredBy != msg.sender) revert NotOwnerOrAllowed();
 
@@ -111,19 +104,9 @@ contract RedeemableContractOffererV0 is
         SpentItem[] calldata minimumReceived,
         SpentItem[] calldata maximumSpent,
         bytes calldata context // encoded based on the schemaID
-    )
-        external
-        override
-        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
-    {
+    ) external override returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
         // Derive the offer and consideration with effects.
-        (offer, consideration) = _createOrder(
-            fulfiller,
-            minimumReceived,
-            maximumSpent,
-            context,
-            true
-        );
+        (offer, consideration) = _createOrder(fulfiller, minimumReceived, maximumSpent, context, true);
     }
 
     /**
@@ -140,10 +123,10 @@ contract RedeemableContractOffererV0 is
      *                               offerer.
      */
     function ratifyOrder(
-        SpentItem[] calldata /* offer */,
-        ReceivedItem[] calldata /* consideration */,
-        bytes calldata /* context */, // encoded based on the schemaID
-        bytes32[] calldata /* orderHashes */,
+        SpentItem[] calldata, /* offer */
+        ReceivedItem[] calldata, /* consideration */
+        bytes calldata, /* context */ // encoded based on the schemaID
+        bytes32[] calldata, /* orderHashes */
         uint256 /* contractNonce */
     ) external pure override returns (bytes4) {
         assembly {
@@ -170,17 +153,12 @@ contract RedeemableContractOffererV0 is
      * @return consideration A tuple containing the consideration items.
      */
     function previewOrder(
-        address /* caller */,
+        address, /* caller */
         address fulfiller,
         SpentItem[] calldata minimumReceived,
         SpentItem[] calldata maximumSpent,
         bytes calldata context // encoded based on the schemaID
-    )
-        external
-        view
-        override
-        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
-    {
+    ) external view override returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
         // To avoid the solidity compiler complaining about calling a non-view
         // function here (_createOrder), we will cast it as a view and use it.
         // This is okay because we are not modifying any state when passing
@@ -209,13 +187,7 @@ contract RedeemableContractOffererV0 is
         }
 
         // Derive the offer and consideration without effects.
-        (offer, consideration) = fn(
-            fulfiller,
-            minimumReceived,
-            maximumSpent,
-            context,
-            false
-        );
+        (offer, consideration) = fn(fulfiller, minimumReceived, maximumSpent, context, false);
     }
 
     /**
@@ -237,13 +209,9 @@ contract RedeemableContractOffererV0 is
         return ("RedeemablesContractOfferer", schemas);
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external view virtual returns (bool) {
-        return
-            interfaceId == type(ContractOffererInterface).interfaceId ||
-            interfaceId == type(IERC721Receiver).interfaceId ||
-            interfaceId == type(IERC1155Receiver).interfaceId;
+    function supportsInterface(bytes4 interfaceId) external view virtual returns (bool) {
+        return interfaceId == type(ContractOffererInterface).interfaceId
+            || interfaceId == type(IERC721Receiver).interfaceId || interfaceId == type(IERC1155Receiver).interfaceId;
     }
 
     function _createOrder(
@@ -252,10 +220,7 @@ contract RedeemableContractOffererV0 is
         SpentItem[] memory maximumSpent,
         bytes calldata context,
         bool withEffects
-    )
-        internal
-        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
-    {
+    ) internal returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
         // Declare an error buffer; first check is that caller is Seaport.
         uint256 errorBuffer = _cast(msg.sender != _SEAPORT);
 
@@ -264,26 +229,17 @@ contract RedeemableContractOffererV0 is
 
         // Get the redemption params hash and load the params from storage.
         bytes32 paramsHash = bytes32(context[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[
-            paramsHash
-        ];
+        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
 
         // Check the redemption is active.
-        errorBuffer |=
-            _cast(_checkActive(params.startTime, params.endTime)) <<
-            2;
+        errorBuffer |= _cast(_checkActive(params.startTime, params.endTime)) << 2;
 
         // Check max total redemptions would not be exceeded.
-        errorBuffer |=
-            _cast(
-                _totalRedemptions[paramsHash] + maximumSpent.length >
-                    params.maxTotalRedemptions
-            ) <<
-            3;
+        errorBuffer |= _cast(_totalRedemptions[paramsHash] + maximumSpent.length > params.maxTotalRedemptions) << 3;
 
         // Check the contract addressses are allowable.
         address unsupportedTokenAddress;
-        for (uint256 i = 0; i < maximumSpent.length; ) {
+        for (uint256 i = 0; i < maximumSpent.length;) {
             if (!_isValidTokenAddress(params, maximumSpent[i].token)) {
                 unsupportedTokenAddress = maximumSpent[i].token;
                 errorBuffer |= 1 << 4;
@@ -298,15 +254,10 @@ contract RedeemableContractOffererV0 is
             if (errorBuffer << 255 != 0) {
                 revert InvalidCaller(msg.sender);
             } else if (errorBuffer << 254 != 0) {
-                revert NotActive(
-                    block.timestamp,
-                    params.startTime,
-                    params.endTime
-                );
+                revert NotActive(block.timestamp, params.startTime, params.endTime);
             } else if (errorBuffer << 253 != 0) {
                 revert MaxTotalRedemptionsReached(
-                    _totalRedemptions[paramsHash] + maximumSpent.length,
-                    params.maxTotalRedemptions
+                    _totalRedemptions[paramsHash] + maximumSpent.length, params.maxTotalRedemptions
                 );
             } else if (errorBuffer << 252 != 0) {
                 revert UnsupportedTokenAddress(unsupportedTokenAddress);
@@ -322,7 +273,7 @@ contract RedeemableContractOffererV0 is
 
             // Emit Redeemed event.
             uint256[] memory tokenIds = new uint256[](maximumSpent.length);
-            for (uint256 i = 0; i < maximumSpent.length; ) {
+            for (uint256 i = 0; i < maximumSpent.length;) {
                 tokenIds[i] = maximumSpent[i].identifier;
                 unchecked {
                     ++i;
@@ -336,7 +287,7 @@ contract RedeemableContractOffererV0 is
 
         // Set the consideration recipients to params.sendTo
         consideration = new ReceivedItem[](maximumSpent.length);
-        for (uint256 i = 0; i < maximumSpent.length; ) {
+        for (uint256 i = 0; i < maximumSpent.length;) {
             consideration[i] = ReceivedItem({
                 itemType: maximumSpent[i].itemType,
                 token: maximumSpent[i].token,
@@ -350,81 +301,52 @@ contract RedeemableContractOffererV0 is
         }
     }
 
-    function onERC721Received(
-        address /* operator */,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external returns (bytes4) {
+    function onERC721Received(address, /* operator */ address from, uint256 tokenId, bytes calldata data)
+        external
+        returns (bytes4)
+    {
         SpentItem[] memory minimumReceived;
 
         SpentItem[] memory maximumSpent = new SpentItem[](1);
-        maximumSpent[0] = SpentItem({
-            itemType: ItemType.ERC721,
-            token: msg.sender,
-            identifier: tokenId,
-            amount: 1
-        });
+        maximumSpent[0] = SpentItem({itemType: ItemType.ERC721, token: msg.sender, identifier: tokenId, amount: 1});
 
         // _createOrder will revert if any validations fail.
         _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Get the params.
         bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[
-            paramsHash
-        ];
+        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
 
         // Transfer the token to params.sendTo
-        IERC721(msg.sender).transferFrom(
-            address(this),
-            payable(params.sendTo),
-            tokenId
-        );
+        IERC721(msg.sender).transferFrom(address(this), payable(params.sendTo), tokenId);
 
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function onERC1155Received(
-        address /* operator */,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external returns (bytes4) {
+    function onERC1155Received(address, /* operator */ address from, uint256 id, uint256 value, bytes calldata data)
+        external
+        returns (bytes4)
+    {
         SpentItem[] memory minimumReceived;
 
         SpentItem[] memory maximumSpent = new SpentItem[](1);
-        maximumSpent[0] = SpentItem({
-            itemType: ItemType.ERC1155,
-            token: msg.sender,
-            identifier: id,
-            amount: value
-        });
+        maximumSpent[0] = SpentItem({itemType: ItemType.ERC1155, token: msg.sender, identifier: id, amount: value});
 
         // _createOrder will revert if any validations fail.
         _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Get the params.
         bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[
-            paramsHash
-        ];
+        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
 
         // Transfer the token to params.sendTo
-        IERC1155(msg.sender).safeTransferFrom(
-            address(this),
-            payable(params.sendTo),
-            id,
-            value,
-            ""
-        );
+        IERC1155(msg.sender).safeTransferFrom(address(this), payable(params.sendTo), id, value, "");
 
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(
-        address /* operator */,
+        address, /* operator */
         address from,
         uint256[] calldata ids,
         uint256[] calldata values,
@@ -435,13 +357,9 @@ contract RedeemableContractOffererV0 is
         SpentItem[] memory minimumReceived;
 
         SpentItem[] memory maximumSpent = new SpentItem[](ids.length);
-        for (uint256 i = 0; i < ids.length; ) {
-            maximumSpent[i] = SpentItem({
-                itemType: ItemType.ERC1155,
-                token: msg.sender,
-                identifier: ids[i],
-                amount: values[i]
-            });
+        for (uint256 i = 0; i < ids.length;) {
+            maximumSpent[i] =
+                SpentItem({itemType: ItemType.ERC1155, token: msg.sender, identifier: ids[i], amount: values[i]});
             unchecked {
                 ++i;
             }
@@ -452,59 +370,44 @@ contract RedeemableContractOffererV0 is
 
         // Get the params.
         bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[
-            paramsHash
-        ];
+        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
 
         // Transfer the tokens to params.sendTo
-        IERC1155(msg.sender).safeBatchTransferFrom(
-            address(this),
-            payable(params.sendTo),
-            ids,
-            values,
-            ""
-        );
+        IERC1155(msg.sender).safeBatchTransferFrom(address(this), payable(params.sendTo), ids, values, "");
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    function getRedeemableParams(
-        bytes32 redeemableParamsHash
-    ) external view returns (RedeemableRegistryParamsV0 memory) {
+    function getRedeemableParams(bytes32 redeemableParamsHash)
+        external
+        view
+        returns (RedeemableRegistryParamsV0 memory)
+    {
         return _redeemableParams[redeemableParamsHash];
     }
 
-    function redeemableURI(
-        bytes32 redeemableParamsHash
-    ) external view returns (string memory) {
+    function redeemableURI(bytes32 redeemableParamsHash) external view returns (string memory) {
         return _redeemableURIs[redeemableParamsHash];
     }
 
-    function _getRedeemableParamsHash(
-        RedeemableRegistryParamsV0 memory params
-    ) internal pure returns (bytes32) {
+    function _getRedeemableParamsHash(RedeemableRegistryParamsV0 memory params) internal pure returns (bytes32) {
         return keccak256(abi.encode(params));
     }
 
-    function _checkActive(
-        uint256 startTime,
-        uint256 endTime
-    ) internal view returns (bool inactive) {
+    function _checkActive(uint256 startTime, uint256 endTime) internal view returns (bool inactive) {
         // Using the same check for time boundary from Seaport.
         // startTime <= block.timestamp < endTime
         assembly {
-            inactive := or(
-                iszero(gt(endTime, timestamp())),
-                gt(startTime, timestamp())
-            )
+            inactive := or(iszero(gt(endTime, timestamp())), gt(startTime, timestamp()))
         }
     }
 
-    function _isValidTokenAddress(
-        RedeemableRegistryParamsV0 memory params,
-        address token
-    ) internal pure returns (bool valid) {
-        for (uint256 i = 0; i < params.consideration.length; ) {
+    function _isValidTokenAddress(RedeemableRegistryParamsV0 memory params, address token)
+        internal
+        pure
+        returns (bool valid)
+    {
+        for (uint256 i = 0; i < params.consideration.length;) {
             if (params.consideration[i].token == token) {
                 valid = true;
                 break;
@@ -522,13 +425,10 @@ contract RedeemableContractOffererV0 is
      * @param toRemove    The uint to remove.
      * @param enumeration The enumerated uints to parse.
      */
-    function _removeFromEnumeration(
-        uint256 toRemove,
-        uint256[] storage enumeration
-    ) internal {
+    function _removeFromEnumeration(uint256 toRemove, uint256[] storage enumeration) internal {
         // Cache the length.
         uint256 enumerationLength = enumeration.length;
-        for (uint256 i = 0; i < enumerationLength; ) {
+        for (uint256 i = 0; i < enumerationLength;) {
             // Check if the enumerated element is the one we are deleting.
             if (enumeration[i] == toRemove) {
                 // Swap with the last element.
@@ -553,9 +453,7 @@ contract RedeemableContractOffererV0 is
      *
      * @return fnOut The fn with address input.
      */
-    function _asAddressArray(
-        function(uint256, uint256[] storage) internal fnIn
-    )
+    function _asAddressArray(function(uint256, uint256[] storage) internal fnIn)
         internal
         pure
         returns (function(address, address[] storage) internal fnOut)

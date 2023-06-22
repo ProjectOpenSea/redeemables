@@ -8,11 +8,7 @@ interface RedeemableErrorsAndEvents {
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxTotalRedemptionsReached(uint256 total, uint256 max);
 
-    error NotActive(
-        uint256 currentTimestamp,
-        uint256 startTime,
-        uint256 endTime
-    );
+    error NotActive(uint256 currentTimestamp, uint256 startTime, uint256 endTime);
 
     error NotOwnerOrAllowed();
     error OperatorCannotBeZeroAddress();
@@ -28,21 +24,11 @@ interface RedeemableErrorsAndEvents {
     error RedemptionValuesAreImmutable();
 
     event RedeemableParamsUpdated(RedeemableParams params);
-    event RedeemableParamsUpdated(
-        bytes32 paramsHash,
-        RedeemableRegistryParams params
-    );
-    event RedeemableParamsUpdated(
-        bytes32 paramsHash,
-        RedeemableRegistryParamsV0 params
-    );
+    event RedeemableParamsUpdated(bytes32 paramsHash, RedeemableRegistryParams params);
+    event RedeemableParamsUpdated(bytes32 paramsHash, RedeemableRegistryParamsV0 params);
     event RedeemableURIUpdated(bytes32 paramsHash, string uri);
 
-    event OperatorUpdated(
-        address operator,
-        bytes32 redeemableParamsHash,
-        bool allowed
-    );
+    event OperatorUpdated(address operator, bytes32 redeemableParamsHash, bool allowed);
 
     event Redeemed(address token, uint256[] tokenIds, address by);
 }
