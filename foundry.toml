@@ -4,6 +4,7 @@ out = "out"
 libs = ["lib"]
 solc_version = '0.8.19'
 remappings = [
+  'ds-test/=lib/forge-std/lib/ds-test/src/',
   'solady/=lib/solady/',
   'seaport-core/=lib/seaport-core/',
   'seaport-sol/=lib/seaport-sol/',
