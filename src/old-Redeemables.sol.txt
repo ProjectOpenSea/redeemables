@@ -4,128 +4,127 @@ pragma solidity ^0.8.19;
 import {IERC721} from "forge-std/interfaces/IERC721.sol";
 import {DynamicTraits} from "./lib/DynamicTraits.sol";
 import {SignedRedeem} from "./lib/SignedRedeem.sol";
-import {RedeemablesErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {RedemptionRegistryParams} from "./lib/RedeemableStructs.sol";
+import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
+import {RedeemableRegistryParams} from "./lib/RedeemableStructs.sol";
 
 contract Redeemables is
     SignedRedeem,
-    RedeemablesErrorsAndEvents,
+    RedeemableErrorsAndEvents,
     DynamicTraits
 {
     /// @dev The redeemable parameters stored by their hash.
-    mapping(bytes32 redemptionParamsHash => RedemptionRegistryParams RedemptionParams)
-        private _redemptionParams;
+    mapping(bytes32 redeemableParamsHash => RedeemableRegistryParams RedeemableParams)
+        private _redeemableParams;
 
     /// @dev The redeemable URIs stored by params hash.
-    mapping(bytes32 redemptionParamsHash => string redeemableURI)
+    mapping(bytes32 redeemableParamsHash => string redeemableURI)
         private _redeemableURIs;
 
     /// @dev The total redemptions by params hash.
-    mapping(bytes32 redemptionParamsHash => uint256 count) _totalRedemptions;
+    mapping(bytes32 redeemableParamsHash => uint256 count) _totalRedemptions;
 
     constructor() {}
 
-    function updateRedemptionParams(
-        RedemptionRegistryParams calldata params
+    function updateRedeemableParams(
+        RedeemableRegistryParams calldata params
     ) external {
-        bytes32 paramsHash = _getRedemptionParamsHash(params);
+        bytes32 paramsHash = _getRedeemableParamsHash(params);
 
         if (
             params.registeredBy != msg.sender
-            // && !isApprovedForRedemptionParamsHash(msg.sender, redemptionParamsHash)
+            // && !isApprovedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
         ) revert NotOwnerOrApproved();
 
-        RedemptionRegistryParams storage existingParams = _redemptionParams[
+        RedeemableRegistryParams storage existingParams = _redeemableParams[
             paramsHash
         ];
 
         if (existingParams.redemptionSettingsAreImmutable)
             revert RedemptionSettingsAreImmutable();
 
-        _redemptionParams[paramsHash] = params;
+        _redeemableParams[paramsHash] = params;
 
-        emit RedemptionParamsUpdated(paramsHash, params);
+        emit RedeemableParamsUpdated(paramsHash, params);
     }
 
     function updateRedeemableURI(
-        bytes32 redemptionParamsHash
-    ) external returns (string memory) {
-        RedemptionRegistryParams storage params = _redemptionParams[
-            redemptionParamsHash
+        bytes32 redeemableParamsHash
+    ) external view returns (string memory) {
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
         ];
 
         if (
             params.registeredBy != msg.sender
-            // && !isApprovedForRedemptionParamsHash(msg.sender, redemptionParamsHash)
+            // && !isApprovedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
         ) revert NotOwnerOrApproved();
 
-        return _redeemableURIs[redemptionParamsHash];
+        return _redeemableURIs[redeemableParamsHash];
     }
 
     function ownerOverrideRedemptionCount(
-        bytes32 redemptionParamsHash,
+        bytes32 redeemableParamsHash,
         uint256 tokenId,
         uint256 count
     ) external {
-        RedemptionRegistryParams storage params = _redemptionParams[
-            redemptionParamsHash
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
         ];
 
         if (
             params.registeredBy != msg.sender
-            // && !isApprovedForRedemptionParamsHash(msg.sender, redemptionParamsHash)
+            // && !isApprovedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
         ) revert NotOwnerOrApproved();
 
         if (params.redemptionValuesAreImmutable)
             revert RedemptionValuesAreImmutable();
 
-        _setTrait(tokenId, redemptionParamsHash, bytes32(count));
+        _setTrait(tokenId, redeemableParamsHash, bytes32(count));
     }
 
     function redemptionStatsForToken(
-        bytes32 redemptionParamsHash,
+        bytes32 redeemableParamsHash,
         uint256 tokenId
     ) public view returns (uint256 redeemedCount) {
-        redeemedCount = uint256(getTrait(tokenId, redemptionParamsHash));
+        redeemedCount = uint256(getTrait(tokenId, redeemableParamsHash));
     }
 
     function redemptionStats(
-        bytes32 redemptionParamsHash
+        bytes32 redeemableParamsHash
     )
         public
         view
         returns (uint256 totalRedemptions, uint256 maxTotalRedemptions)
     {
-        RedemptionRegistryParams storage params = _redemptionParams[
-            redemptionParamsHash
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
         ];
 
-        totalRedemptions = _totalRedemptions[redemptionParamsHash];
+        totalRedemptions = _totalRedemptions[redeemableParamsHash];
         maxTotalRedemptions = params.maxTotalRedemptions;
     }
 
-    function getRedemptionParams(
-        bytes32 redemptionParamsHash
-    ) external view returns (RedemptionRegistryParams memory) {
-        return _redemptionParams[redemptionParamsHash];
+    function getRedeemableParams(
+        bytes32 redeemableParamsHash
+    ) external view returns (RedeemableRegistryParams memory) {
+        return _redeemableParams[redeemableParamsHash];
     }
 
     function redeemableURI(
-        bytes32 redemptionParamsHash,
-        uint256 tokenId
+        bytes32 redeemableParamsHash
     ) external view returns (string memory) {
-        return _redeemableURIs[redemptionParamsHash];
+        return _redeemableURIs[redeemableParamsHash];
     }
 
     function redeem(
-        bytes32 redemptionParamsHash,
+        bytes32 redeemableParamsHash,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts,
         bytes calldata signature,
         uint256 salt
     ) public {
-        RedemptionRegistryParams storage params = _redemptionParams[
-            redemptionParamsHash
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
         ];
 
         uint256 tokenIdsLength = tokenIds.length;
@@ -138,11 +137,11 @@ contract Redeemables is
         }
 
         if (
-            _totalRedemptions[redemptionParamsHash] + totalAmount >
+            _totalRedemptions[redeemableParamsHash] + totalAmount >
             params.maxTotalRedemptions
         )
             revert MaxTotalRedemptionsReached(
-                _totalRedemptions[redemptionParamsHash] + totalAmount,
+                _totalRedemptions[redeemableParamsHash] + totalAmount,
                 params.maxTotalRedemptions
             );
 
@@ -159,7 +158,7 @@ contract Redeemables is
 
         for (uint256 i = 0; i < tokenIdsLength; i++) {
             _redeem(
-                redemptionParamsHash,
+                redeemableParamsHash,
                 tokenAddress,
                 tokenIds[i],
                 amounts[i],
@@ -175,7 +174,7 @@ contract Redeemables is
     }
 
     function _redeem(
-        bytes32 redemptionParamsHash,
+        bytes32 redeemableParamsHash,
         address tokenAddress,
         uint256 tokenId,
         uint256 amount,
@@ -190,13 +189,13 @@ contract Redeemables is
             token.getApproved(tokenId) != msg.sender
         ) revert NotOwnerOrApproved();
 
-        uint256 count = redemptionStatsForToken(redemptionParamsHash, tokenId);
+        uint256 count = redemptionStatsForToken(redeemableParamsHash, tokenId);
 
         if (count + amount > maxRedemptions)
             revert MaxRedemptionsReached(count + amount, maxRedemptions);
 
-        _setTrait(tokenId, redemptionParamsHash, bytes32(count + amount));
-        _totalRedemptions[redemptionParamsHash] += amount;
+        _setTrait(tokenId, redeemableParamsHash, bytes32(count + amount));
+        _totalRedemptions[redeemableParamsHash] += amount;
 
         for (uint256 i = 0; i < amount; i++) {
             // _burn(tokenId);
@@ -205,23 +204,26 @@ contract Redeemables is
         // params.receivedOnRedeem[0]._mint(owner, tokenId);
     }
 
-    function _getRedemptionParamsHash(
-        RedemptionRegistryParams calldata params
+    function _getRedeemableParamsHash(
+        RedeemableRegistryParams calldata params
     ) internal pure returns (bytes32) {
         return keccak256(abi.encode(params));
     }
 
     function _checkActive(uint256 startTime, uint256 endTime) internal view {
-        bool valid;
+  // Define a variable if the drop stage is inactive.
+        bool inactive;
 
-        // Check startTime <= block.timestamp < endTime
+        // Using the same check for time boundary from Seaport.
+        // startTime <= block.timestamp < endTime
         assembly {
-            valid := and(
-                iszero(gt(startTime, timestamp())),
-                gt(endTime, timestamp())
+            inactive := or(
+                iszero(gt(endTime, timestamp())),
+                gt(startTime, timestamp())
             )
         }
 
-        if (!valid) revert NotActive(block.timestamp, startTime, endTime);
+        // Revert if the drop stage is not active.
+        if (inactive) revert NotActive(block.timestamp, startTime, endTime);
     }
 }

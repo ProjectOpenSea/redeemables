@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {RedemptionParams, RedemptionRegistryParams} from "./RedeemableStructs.sol";
+import {RedeemableParams, RedeemableRegistryParams, RedeemableRegistryParamsV0} from "./RedeemableStructs.sol";
 
-interface RedeemablesErrorsAndEvents {
+interface RedeemableErrorsAndEvents {
+    error InvalidCaller(address caller);
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxTotalRedemptionsReached(uint256 total, uint256 max);
 
@@ -13,19 +14,35 @@ interface RedeemablesErrorsAndEvents {
         uint256 endTime
     );
 
-    error NotOwnerOrApproved();
+    error NotOwnerOrAllowed();
+    error OperatorCannotBeZeroAddress();
+    error DuplicateOperator();
+    error OperatorNotPresent();
     error RedeemMismatchedLengths();
     error TraitValueUnchanged(bytes32 traitKey, bytes32 value);
+    error UnsupportedTokenAddress(address got);
+    error OfferItemsNotAllowed();
+    error NoConsiderationItems();
 
     error RedemptionSettingsAreImmutable();
     error RedemptionValuesAreImmutable();
 
-    event RedemptionParamsUpdated(RedemptionParams params);
-    event RedemptionParamsUpdated(
+    event RedeemableParamsUpdated(RedeemableParams params);
+    event RedeemableParamsUpdated(
         bytes32 paramsHash,
-        RedemptionRegistryParams params
+        RedeemableRegistryParams params
+    );
+    event RedeemableParamsUpdated(
+        bytes32 paramsHash,
+        RedeemableRegistryParamsV0 params
+    );
+    event RedeemableURIUpdated(bytes32 paramsHash, string uri);
+
+    event OperatorUpdated(
+        address operator,
+        bytes32 redeemableParamsHash,
+        bool allowed
     );
 
-    event Redeemed(uint256 tokenId, address by);
-    event RedeemedBatch(uint256[] tokenIds, address by);
+    event Redeemed(address token, uint256[] tokenIds, address by);
 }

@@ -1,0 +1,527 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {ContractOffererInterface} from "seaport-types/interfaces/ContractOffererInterface.sol";
+import {ItemType} from "seaport-types/lib/ConsiderationEnums.sol";
+import {ReceivedItem, Schema, SpentItem} from "seaport-types/lib/ConsiderationStructs.sol";
+import {IERC721Receiver} from "seaport-types/interfaces/IERC721Receiver.sol";
+import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
+import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
+import {RedeemableRegistryParams} from "./lib/RedeemableStructs.sol";
+import {IERCDynamicTraits} from "./interfaces/IDynamicTraits.sol";
+import {DynamicTraits} from "./lib/DynamicTraits.sol";
+
+/**
+ * @title  RedeemableContractOfferer
+ * @author ryanio
+ * @notice A Seaport contract offerer that allows users to redeem tokens
+ *         for on and off chain redeemables.
+ */
+contract RedeemablesContractOfferer is
+    ContractOffererInterface,
+    RedeemableErrorsAndEvents,
+    DynamicTraits
+{
+    /// @dev The Seaport address allowed to interact with this contract offerer.
+    address internal immutable _SEAPORT;
+
+    /// @dev The redeemable parameters stored by their hash.
+    mapping(bytes32 redeemableParamsHash => RedeemableRegistryParams redeemableParams)
+        private _redeemableParams;
+
+    /// @dev The redeemable URIs stored by params hash.
+    mapping(bytes32 redeemableParamsHash => string redeemableURI)
+        private _redeemableURIs;
+
+    /// @dev The total redemptions by params hash.
+    mapping(bytes32 redeemableParamsHash => uint256 count) _totalRedemptions;
+
+    /// @dev The allowed operators for redeemable params.
+    mapping(bytes32 redeemableParamsHash => mapping(address allowedOperator => bool allowed))
+        private _allowedOperators;
+
+    /// @dev The enumerated allowed operators for redeemable params.
+    mapping(bytes32 redeemableParamsHash => address[] allowedOperators)
+        private _enumeratedAllowedOperators;
+
+    constructor(address seaport) {
+        _SEAPORT = seaport;
+    }
+
+    function updateRedeemableParams(
+        RedeemableRegistryParams calldata params,
+        string calldata uri
+    ) external {
+        bytes32 paramsHash = _getRedeemableParamsHash(params);
+
+        if (
+            params.registeredBy != msg.sender &&
+            !_isAllowedForRedeemableParamsHash(msg.sender, paramsHash)
+        ) revert NotOwnerOrAllowed();
+
+        RedeemableRegistryParams storage existingParams = _redeemableParams[
+            paramsHash
+        ];
+
+        if (existingParams.redemptionSettingsAreImmutable)
+            revert RedemptionSettingsAreImmutable();
+
+        _redeemableParams[paramsHash] = params;
+
+        emit RedeemableParamsUpdated(paramsHash, params);
+
+        if (bytes(uri).length != 0) {
+            _redeemableURIs[paramsHash] = uri;
+            emit RedeemableURIUpdated(paramsHash, uri);
+        }
+    }
+
+    function updateRedeemableURI(
+        bytes32 redeemableParamsHash,
+        string calldata uri
+    ) external {
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
+        ];
+
+        if (
+            params.registeredBy != msg.sender &&
+            !_isAllowedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
+        ) revert NotOwnerOrAllowed();
+
+        _redeemableURIs[redeemableParamsHash] = uri;
+        emit RedeemableURIUpdated(redeemableParamsHash, uri);
+    }
+
+    function ownerOverrideRedemptionCount(
+        bytes32 redeemableParamsHash,
+        uint256 tokenId,
+        uint256 count
+    ) external {
+        RedeemableRegistryParams storage params = _redeemableParams[
+            redeemableParamsHash
+        ];
+
+        if (
+            params.registeredBy != msg.sender &&
+            !_isAllowedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
+        ) revert NotOwnerOrAllowed();
+
+        if (params.redemptionValuesAreImmutable)
+            revert RedemptionValuesAreImmutable();
+
+        _setTrait(tokenId, redeemableParamsHash, bytes32(count));
+    }
+
+    function redemptionStatsForToken(
+        bytes32 redeemableParamsHash,
+        uint256 tokenId
+    ) public view returns (uint256 redeemedCount) {
+        redeemedCount = uint256(getTrait(tokenId, redeemableParamsHash));
+    }
+
+    /**
+     * @dev Generates an order with the specified minimum and maximum spent
+     *      items, and optional context (supplied as extraData).
+     *
+     * @param fulfiller        The address of the fulfiller.
+     * @param minimumReceived  The minimum items that the caller must receive.
+     * @param maximumSpent     The maximum items the caller is willing to spend.
+     * @param context          Additional context of the order.
+     *
+     * @return offer         A tuple containing the offer items.
+     * @return consideration An array containing the consideration items.
+     */
+    function generateOrder(
+        address fulfiller,
+        SpentItem[] calldata minimumReceived,
+        SpentItem[] calldata maximumSpent,
+        bytes calldata context // encoded based on the schemaID
+    )
+        external
+        override
+        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
+    {
+        // Derive the offer and consideration with effects.
+        (offer, consideration) = _createOrder(
+            fulfiller,
+            minimumReceived,
+            maximumSpent,
+            context,
+            true
+        );
+    }
+
+    /**
+     * @dev Ratifies an order with the specified offer, consideration, and
+     *      optional context (supplied as extraData).
+     *
+     * @custom:param offer         The offer items.
+     * @custom:param consideration The consideration items.
+     * @custom:param context       Additional context of the order.
+     * @custom:param orderHashes   The hashes to ratify.
+     * @custom:param contractNonce The nonce of the contract.
+     *
+     * @return ratifyOrderMagicValue The magic value returned by the contract
+     *                               offerer.
+     */
+    function ratifyOrder(
+        SpentItem[] calldata /* offer */,
+        ReceivedItem[] calldata /* consideration */,
+        bytes calldata /* context */, // encoded based on the schemaID
+        bytes32[] calldata /* orderHashes */,
+        uint256 /* contractNonce */
+    ) external pure override returns (bytes4) {
+        assembly {
+            // Return the RatifyOrder magic value.
+            mstore(0, 0xf4dd92ce)
+            return(0x1c, 32)
+        }
+    }
+
+    /**
+     * @dev View function to preview an order generated in response to a minimum
+     *      set of received items, maximum set of spent items, and context
+     *      (supplied as extraData).
+     *
+     * @custom:param caller      The address of the caller (e.g. Seaport).
+     * @param fulfiller          The address of the fulfiller (e.g. the account
+     *                           calling Seaport).
+     * @param minimumReceived    The minimum items that the caller is willing to
+     *                           receive.
+     * @param maximumSpent       The maximum items caller is willing to spend.
+     * @param context            Additional context of the order.
+     *
+     * @return offer         A tuple containing the offer items.
+     * @return consideration A tuple containing the consideration items.
+     */
+    function previewOrder(
+        address /* caller */,
+        address fulfiller,
+        SpentItem[] calldata minimumReceived,
+        SpentItem[] calldata maximumSpent,
+        bytes calldata context // encoded based on the schemaID
+    )
+        external
+        view
+        override
+        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
+    {
+        // To avoid the solidity compiler complaining about calling a non-view
+        // function here (_createOrder), we will cast it as a view and use it.
+        // This is okay because we are not modifying any state when passing
+        // withEffects=false.
+        function(
+            address,
+            SpentItem[] memory,
+            SpentItem[] memory,
+            bytes memory,
+            bool
+        ) internal view returns (SpentItem[] memory, ReceivedItem[] memory) fn;
+        function(
+            address,
+            SpentItem[] memory,
+            SpentItem[] memory,
+            bytes memory,
+            bool
+        )
+            internal
+            returns (
+                SpentItem[] memory,
+                ReceivedItem[] memory
+            ) fn2 = _createOrder;
+        assembly {
+            fn := fn2
+        }
+
+        // Derive the offer and consideration without effects.
+        (offer, consideration) = fn(
+            fulfiller,
+            minimumReceived,
+            maximumSpent,
+            context,
+            false
+        );
+    }
+
+    /**
+     * @dev Gets the metadata for this contract offerer.
+     *
+     * @return name    The name of the contract offerer.
+     * @return schemas The schemas supported by the contract offerer.
+     */
+    function getSeaportMetadata()
+        external
+        pure
+        override
+        returns (
+            string memory name,
+            Schema[] memory schemas // map to Seaport Improvement Proposal IDs
+        )
+    {
+        schemas = new Schema[](0);
+        return ("RedeemablesContractOfferer", schemas);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external view virtual returns (bool) {
+        return
+            interfaceId == type(ContractOffererInterface).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            interfaceId == type(IERCDynamicTraits).interfaceId;
+    }
+
+    function _createOrder(
+        address fulfiller,
+        SpentItem[] memory minimumReceived,
+        SpentItem[] memory maximumSpent,
+        bytes memory context,
+        bool withEffects
+    )
+        internal
+        view
+        returns (SpentItem[] memory offer, ReceivedItem[] memory consideration)
+    {
+        // Declare an error buffer; first check is that caller is Seaport.
+        uint256 errorBuffer = _cast(msg.sender != _SEAPORT);
+
+        // Next, check the length of the maximum spent array.
+        errorBuffer |= _cast(maximumSpent.length != 1) << 1;
+
+        // Check the redemption is active.
+
+        // Check the redemptions are within limits.
+
+        // Check the total redempations are within limits.
+
+        if (errorBuffer > 0) {
+            if (errorBuffer << 255 != 0) {
+                revert InvalidCaller(msg.sender);
+            } else {
+                // todo more errors
+            }
+        }
+
+        offer = minimumReceived;
+        consideration = new ReceivedItem[](1);
+    }
+
+    function onERC721Received(
+        address /* operator */,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        SpentItem[] memory maximumSpent = new SpentItem[](1);
+        maximumSpent[0] = SpentItem({
+            itemType: ItemType.ERC721,
+            token: msg.sender,
+            identifier: tokenId,
+            amount: 1
+        });
+
+        SpentItem[] memory minimumReceived;
+
+        _createOrder(from, minimumReceived, maximumSpent, data, true);
+
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function onERC1155Received(
+        address /* operator */,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external returns (bytes4) {
+        SpentItem[] memory maximumSpent = new SpentItem[](1);
+        maximumSpent[0] = SpentItem({
+            itemType: ItemType.ERC1155,
+            token: msg.sender,
+            identifier: id,
+            amount: value
+        });
+
+        SpentItem[] memory minimumReceived;
+
+        _createOrder(from, minimumReceived, maximumSpent, data, true);
+
+        return IERC1155Receiver.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address /* operator */,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external returns (bytes4) {
+        if (ids.length != values.length) revert RedeemMismatchedLengths();
+
+        SpentItem[] memory maximumSpent = new SpentItem[](ids.length);
+        for (uint256 i = 0; i < ids.length; ) {
+            maximumSpent[i] = SpentItem({
+                itemType: ItemType.ERC1155,
+                token: msg.sender,
+                identifier: ids[i],
+                amount: values[i]
+            });
+            unchecked {
+                ++i;
+            }
+        }
+
+        SpentItem[] memory minimumReceived;
+
+        _createOrder(from, minimumReceived, maximumSpent, data, true);
+
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    function getRedeemableParams(
+        bytes32 redeemableParamsHash
+    ) external view returns (RedeemableRegistryParams memory) {
+        return _redeemableParams[redeemableParamsHash];
+    }
+
+    function redeemableURI(
+        bytes32 redeemableParamsHash
+    ) external view returns (string memory) {
+        return _redeemableURIs[redeemableParamsHash];
+    }
+
+    function _getRedeemableParamsHash(
+        RedeemableRegistryParams calldata params
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(params));
+    }
+
+    function _checkActive(uint256 startTime, uint256 endTime) internal view {
+        // Define a variable if the redemption is inactive.
+        bool inactive;
+
+        // Using the same check for time boundary from Seaport.
+        // startTime <= block.timestamp < endTime
+        assembly {
+            inactive := or(
+                iszero(gt(endTime, timestamp())),
+                gt(startTime, timestamp())
+            )
+        }
+
+        // Revert if the drop stage is not active.
+        if (inactive) revert NotActive(block.timestamp, startTime, endTime);
+    }
+
+    function _isAllowedForRedeemableParamsHash(
+        address operator,
+        bytes32 redeemableParamsHash
+    ) internal view returns (bool) {
+        return _allowedOperators[redeemableParamsHash][operator];
+    }
+
+    function updateAllowedOperator(
+        bytes32 redeemableParamsHash,
+        address operator,
+        bool allowed
+    ) external {
+        if (
+            !_isAllowedForRedeemableParamsHash(msg.sender, redeemableParamsHash)
+        ) revert NotOwnerOrAllowed();
+
+        if (operator == address(0)) revert OperatorCannotBeZeroAddress();
+
+        // Track the enumerated storage.
+        address[] storage enumeratedStorage = _enumeratedAllowedOperators[
+            redeemableParamsHash
+        ];
+        mapping(address => bool) storage operatorsMap = _allowedOperators[
+            redeemableParamsHash
+        ];
+
+        if (allowed) {
+            if (operatorsMap[operator]) {
+                revert DuplicateOperator();
+            }
+            operatorsMap[operator] = true;
+            enumeratedStorage.push(operator);
+        } else {
+            if (!operatorsMap[operator]) {
+                revert OperatorNotPresent();
+            }
+            delete _allowedOperators[redeemableParamsHash][operator];
+            _asAddressArray(_removeFromEnumeration)(
+                operator,
+                enumeratedStorage
+            );
+        }
+
+        // Emit an event with the update.
+        emit OperatorUpdated(operator, redeemableParamsHash, allowed);
+    }
+
+    /**
+     * @notice Internal utility function to remove a uint from a supplied
+     *         enumeration.
+     *
+     * @param toRemove    The uint to remove.
+     * @param enumeration The enumerated uints to parse.
+     */
+    function _removeFromEnumeration(
+        uint256 toRemove,
+        uint256[] storage enumeration
+    ) internal {
+        // Cache the length.
+        uint256 enumerationLength = enumeration.length;
+        for (uint256 i = 0; i < enumerationLength; ) {
+            // Check if the enumerated element is the one we are deleting.
+            if (enumeration[i] == toRemove) {
+                // Swap with the last element.
+                enumeration[i] = enumeration[enumerationLength - 1];
+                // Delete the (now duplicated) last element.
+                enumeration.pop();
+                // Exit the loop.
+                break;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /**
+     * @notice Internal utility function to cast uint types to address
+     *         to dedupe the need for multiple implementations of
+     *         `_removeFromEnumeration`.
+     *
+     * @param fnIn The fn with uint input.
+     *
+     * @return fnOut The fn with address input.
+     */
+    function _asAddressArray(
+        function(uint256, uint256[] storage) internal fnIn
+    )
+        internal
+        pure
+        returns (function(address, address[] storage) internal fnOut)
+    {
+        assembly {
+            fnOut := fnIn
+        }
+    }
+
+    /**
+     * @dev Internal pure function to cast a `bool` value to a `uint256` value.
+     *
+     * @param b The `bool` value to cast.
+     *
+     * @return u The `uint256` value.
+     */
+    function _cast(bool b) internal pure returns (uint256 u) {
+        assembly {
+            u := b
+        }
+    }
+}

@@ -4,17 +4,17 @@ pragma solidity ^0.8.19;
 import {ERC721} from "solady/tokens/ERC721.sol";
 import {DynamicTraits} from "./lib/DynamicTraits.sol";
 import {SignedRedeem} from "./lib/SignedRedeem.sol";
-import {RedeemablesErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {RedemptionParams} from "./lib/RedeemableStructs.sol";
+import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
+import {RedeemableParams} from "./lib/RedeemableStructs.sol";
 
 contract ERC721Redeemable is
     ERC721,
-    RedeemablesErrorsAndEvents,
+    RedeemableErrorsAndEvents,
     DynamicTraits,
     SignedRedeem
 {
     /// @dev The parameters to redeem a token on this contract.
-    RedemptionParams internal _redemptionParams;
+    RedeemableParams internal _redeemableParams;
 
     /// @dev The redeemable URI.
     string internal _redeemableURI;
@@ -32,7 +32,7 @@ contract ERC721Redeemable is
         bytes calldata signature,
         uint256 salt
     ) public {
-        RedemptionParams storage params = _redemptionParams;
+        RedeemableParams storage params = _redeemableParams;
 
         uint256 tokenIdsLength = tokenIds.length;
 
@@ -87,6 +87,9 @@ contract ERC721Redeemable is
         if (count + amount > maxRedemptions)
             revert MaxRedemptionsReached(count + amount, maxRedemptions);
 
+        if (count + amount > maxRedemptions)
+            revert MaxTotalRedemptionsReached(count + amount, maxRedemptions);
+
         _setTrait(tokenId, _REDEEMED_TRAIT_KEY, bytes32(count + amount));
         _totalRedemptions += amount;
 
@@ -109,15 +112,15 @@ contract ERC721Redeemable is
         _mint(to, tokenId);
     }
 
-    function updateRedemptionParams(
-        RedemptionParams memory params
+    function updateRedeemableParams(
+        RedeemableParams memory params
     ) public onlyOwner {
         if (params.redemptionSettingsAreImmutable)
             revert RedemptionSettingsAreImmutable();
 
-        _redemptionParams = params;
+        _redeemableParams = params;
 
-        emit RedemptionParamsUpdated(params);
+        emit RedeemableParamsUpdated(params);
     }
 
     function updateRedeemableURI(string memory uri) public onlyOwner {
@@ -128,12 +131,12 @@ contract ERC721Redeemable is
         return _totalRedemptions;
     }
 
-    function redemptionParams()
+    function redeemableParams()
         external
         view
-        returns (RedemptionParams memory)
+        returns (RedeemableParams memory)
     {
-        return _redemptionParams;
+        return _redeemableParams;
     }
 
     function redeemedCount(uint256 tokenId) public view returns (uint256) {

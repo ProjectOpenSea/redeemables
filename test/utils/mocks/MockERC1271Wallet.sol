@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "solady/utils/ECDSA.sol";
+import "solady/src/utils/ECDSA.sol";
 
 contract MockERC1271Wallet {
     address signer;

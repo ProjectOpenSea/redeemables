@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {ECDSA} from "solady/utils/ECDSA.sol";
+import {ECDSA} from "solady/src/utils/ECDSA.sol";
 import {IERCDynamicTraits} from "../interfaces/IDynamicTraits.sol";
-import {RedeemablesErrorsAndEvents} from "./RedeemableErrorsAndEvents.sol";
+import {RedeemableErrorsAndEvents} from "./RedeemableErrorsAndEvents.sol";
 
-contract DynamicTraits is IERCDynamicTraits, RedeemablesErrorsAndEvents {
+contract DynamicTraits is IERCDynamicTraits, RedeemableErrorsAndEvents {
     mapping(uint256 tokenId => mapping(bytes32 traitKey => bytes32 traitValue))
         internal _traits;
-
-    mapping(address token => address[] operators) internal _allowedOperators;
 
     function getTrait(
         uint256 tokenId,

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Ownable} from "solady/auth/Ownable.sol";
-import {SignatureCheckerLib} from "solady/utils/SignatureCheckerLib.sol";
+import {Ownable} from "solady/src/auth/Ownable.sol";
+import {SignatureCheckerLib} from "solady/src/utils/SignatureCheckerLib.sol";
 import {SignedRedeemErrorsAndEvents} from "./SignedRedeemErrorsAndEvents.sol";
 
 contract SignedRedeem is Ownable, SignedRedeemErrorsAndEvents {
