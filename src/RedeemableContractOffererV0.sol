@@ -14,77 +14,77 @@ import {IERC721} from "forge-std/interfaces/IERC721.sol";
 import {IERC1155} from "forge-std/interfaces/IERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
+import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {RedeemableRegistryParamsV0} from "./lib/RedeemableStructs.sol";
+import {CampaignParamsV0} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOffererV0
  * @author ryanio
  * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
  */
-contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErrorsAndEvents {
+contract RedeemableContractOffererV0 is
+    ContractOffererInterface,
+    RedeemableErrorsAndEvents,
+    SignedRedeemContractOfferer
+{
     /// @dev The Seaport address allowed to interact with this contract offerer.
     address internal immutable _SEAPORT;
 
-    /// @dev The default burn address.
-    address constant _DEFAULT_BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    /// @dev Counter for next campaign id.
+    uint256 private _nextCampaignId = 1;
 
-    /// @dev The redeemable parameters by their hash.
-    mapping(bytes32 paramsHash => RedeemableRegistryParamsV0 params) private _redeemableParams;
+    /// @dev The campaign parameters by campaign id.
+    mapping(uint256 campaignId => CampaignParamsV0 params) private _campaignParams;
 
-    /// @dev The redeemable URIs by params hash.
-    mapping(bytes32 paramsHash => string redeemableURI) private _redeemableURIs;
+    /// @dev The campaign URIs by campaign id.
+    mapping(uint256 campaignId => string campaignURI) private _campaignURIs;
 
-    /// @dev The total current redemptions by params hash.
-    mapping(bytes32 paramsHash => uint256 count) _totalRedemptions;
+    /// @dev The total current redemptions by campaign id.
+    mapping(uint256 campaignId => uint256 count) _totalRedemptions;
 
     constructor(address seaport) {
         _SEAPORT = seaport;
     }
 
-    function updateRedeemableParams(bytes32 paramsHash, RedeemableRegistryParamsV0 calldata params, string calldata uri)
-        external
-    {
-        if (paramsHash == bytes32(0)) {
-            paramsHash = _getRedeemableParamsHash(params);
+    function updateCampaign(uint256 campaignId, CampaignParamsV0 calldata params, string calldata uri) external {
+        if (campaignId == 0) {
+            campaignId = _nextCampaignId;
+            unchecked {
+                ++_nextCampaignId;
+            }
         }
 
         if (params.offer.length != 0) revert OfferItemsNotAllowed();
         if (params.consideration.length == 0) revert NoConsiderationItems();
+        if (params.manager != msg.sender) revert NotManager();
 
-        RedeemableRegistryParamsV0 storage existingParams = _redeemableParams[paramsHash];
-
-        if (
-            params.registeredBy != msg.sender
-                || (existingParams.registeredBy != address(0) && existingParams.registeredBy != msg.sender)
-        ) revert NotOwnerOrAllowed();
-
-        if (existingParams.redemptionSettingsAreImmutable) {
-            revert RedemptionSettingsAreImmutable();
+        // Revert if any of the consideration item recipients is the zero address.
+        for (uint256 i = 0; i < params.consideration.length;) {
+            if (params.consideration[i].recipient == address(0)) revert ConsiderationItemRecipientCannotBeZeroAddress();
+            unchecked {
+                ++i;
+            }
         }
 
-        _redeemableParams[paramsHash] = params;
-
-        // Since params is calldata we cannot modify it, so we set sendTo after if needed.
-        if (params.sendTo == address(0)) {
-            _redeemableParams[paramsHash].sendTo = _DEFAULT_BURN_ADDRESS;
-        }
-
-        emit RedeemableParamsUpdated(paramsHash, params);
+        _campaignParams[campaignId] = params;
 
         if (bytes(uri).length != 0) {
-            _redeemableURIs[paramsHash] = uri;
-            emit RedeemableURIUpdated(paramsHash, uri);
+            _campaignURIs[campaignId] = uri;
         }
+        string storage storedURI = _campaignURIs[campaignId];
+
+        emit CampaignUpdated(campaignId, params, storedURI);
     }
 
-    function updateRedeemableURI(bytes32 redeemableParamsHash, string calldata uri) external {
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[redeemableParamsHash];
+    function updateCampaignURI(uint256 campaignId, string calldata uri) external {
+        CampaignParamsV0 storage params = _campaignParams[campaignId];
 
-        if (params.registeredBy != msg.sender) revert NotOwnerOrAllowed();
+        if (params.manager != msg.sender) revert NotManager();
 
-        _redeemableURIs[redeemableParamsHash] = uri;
-        emit RedeemableURIUpdated(redeemableParamsHash, uri);
+        _campaignURIs[campaignId] = uri;
+
+        emit CampaignUpdated(campaignId, params, uri);
     }
 
     /**
@@ -221,33 +221,37 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
         bytes calldata context,
         bool withEffects
     ) internal returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
-        // Declare an error buffer; first check is that caller is Seaport.
-        uint256 errorBuffer = _cast(msg.sender != _SEAPORT);
+        // Get the campaign.
+        uint256 campaignId = uint256(bytes32(context[0:32]));
+        CampaignParamsV0 storage params = _campaignParams[campaignId];
 
-        // Next, check the maximum spent is not empty.
-        errorBuffer |= _cast(maximumSpent.length != 0) << 1;
-
-        // Get the redemption params hash and load the params from storage.
-        bytes32 paramsHash = bytes32(context[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
+        // Declare an error buffer; first check is that caller is Seaport or the token contract.
+        uint256 errorBuffer = _cast(msg.sender != _SEAPORT && msg.sender != params.consideration[0].token);
 
         // Check the redemption is active.
-        errorBuffer |= _cast(_checkActive(params.startTime, params.endTime)) << 2;
+        errorBuffer |= _cast(_isInactive(params.startTime, params.endTime)) << 2;
 
         // Check max total redemptions would not be exceeded.
-        errorBuffer |= _cast(_totalRedemptions[paramsHash] + maximumSpent.length > params.maxTotalRedemptions) << 3;
+        errorBuffer |= _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxTotalRedemptions) << 3;
 
-        // Check the contract addressses are allowable.
-        address unsupportedTokenAddress;
-        for (uint256 i = 0; i < maximumSpent.length;) {
-            if (!_isValidTokenAddress(params, maximumSpent[i].token)) {
-                unsupportedTokenAddress = maximumSpent[i].token;
-                errorBuffer |= 1 << 4;
-                break;
-            }
-            unchecked {
-                ++i;
-            }
+        // Check the consideration is only one item.
+        errorBuffer |= _cast(maximumSpent.length != 1) << 4;
+
+        // Check the consideration token address is correct.
+        errorBuffer |= _cast(maximumSpent[0].token == params.consideration[0].token) << 5;
+
+        // For V0 spec, offer must be zero due to redeemable being off-chain.
+        errorBuffer |= _cast(minimumReceived.length == 0) << 6;
+
+        // Check the signature is valid if required.
+        if (params.signer != address(0)) {
+            // address token;
+            // uint256[] memory tokenIds;
+            // bytes32 redemptionHash;
+            // uint256 salt;
+            // bytes memory signature;
+            // // _verifySignature will revert if the signature is invalid or digest is already used.
+            // _verifySignature(params.signer, fulfiller, token, tokenIds, redemptionHash, salt, signature, withEffects);
         }
 
         if (errorBuffer > 0) {
@@ -257,21 +261,25 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
                 revert NotActive(block.timestamp, params.startTime, params.endTime);
             } else if (errorBuffer << 253 != 0) {
                 revert MaxTotalRedemptionsReached(
-                    _totalRedemptions[paramsHash] + maximumSpent.length, params.maxTotalRedemptions
+                    _totalRedemptions[campaignId] + maximumSpent.length, params.maxTotalRedemptions
                 );
             } else if (errorBuffer << 252 != 0) {
-                revert UnsupportedTokenAddress(unsupportedTokenAddress);
+                revert InvalidConsiderationLength(maximumSpent.length, params.consideration.length);
+            } else if (errorBuffer << 251 != 0) {
+                revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
+            } else if (errorBuffer << 251 != 0) {
+                revert InvalidOfferLength(minimumReceived.length, 0);
             } else {
-                // todo more errors
+                // todo more validation errors
             }
         }
 
         // If withEffects is true then make state changes.
         if (withEffects) {
             // Increment total redemptions.
-            _totalRedemptions[paramsHash] += maximumSpent.length;
+            _totalRedemptions[campaignId] += maximumSpent.length;
 
-            // Emit Redeemed event.
+            // Emit Redemption event.
             uint256[] memory tokenIds = new uint256[](maximumSpent.length);
             for (uint256 i = 0; i < maximumSpent.length;) {
                 tokenIds[i] = maximumSpent[i].identifier;
@@ -279,21 +287,22 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
                     ++i;
                 }
             }
-            emit Redeemed(maximumSpent[0].token, tokenIds, fulfiller);
+            bytes32 redemptionHash = bytes32(0);
+            emit Redemption(fulfiller, campaignId, maximumSpent[0].token, tokenIds, redemptionHash);
         }
 
         // Off chain redeemables have no offer items.
         offer = new SpentItem[](0);
 
-        // Set the consideration recipients to params.sendTo
-        consideration = new ReceivedItem[](maximumSpent.length);
-        for (uint256 i = 0; i < maximumSpent.length;) {
+        // Set the consideration from the params.
+        consideration = new ReceivedItem[](consideration.length);
+        for (uint256 i = 0; i < consideration.length;) {
             consideration[i] = ReceivedItem({
-                itemType: maximumSpent[i].itemType,
-                token: maximumSpent[i].token,
-                identifier: maximumSpent[i].identifier,
-                amount: maximumSpent[i].amount,
-                recipient: payable(params.sendTo)
+                itemType: ItemType.ERC721,
+                token: params.consideration[i].token,
+                identifier: params.consideration[i].identifierOrCriteria,
+                amount: params.consideration[i].startAmount,
+                recipient: params.consideration[i].recipient
             });
             unchecked {
                 ++i;
@@ -314,11 +323,12 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
         _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Get the params.
-        bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
+        uint256 campaignId = uint256(bytes32(data[0:32]));
+        CampaignParamsV0 storage params = _campaignParams[campaignId];
 
-        // Transfer the token to params.sendTo
-        IERC721(msg.sender).transferFrom(address(this), payable(params.sendTo), tokenId);
+        // Transfer the token to the consideration item recipient.
+        address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
+        IERC721(msg.sender).transferFrom(address(this), payable(recipient), tokenId);
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -336,11 +346,12 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
         _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Get the params.
-        bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
+        uint256 campaignId = uint256(bytes32(data[0:32]));
+        CampaignParamsV0 storage params = _campaignParams[campaignId];
 
-        // Transfer the token to params.sendTo
-        IERC1155(msg.sender).safeTransferFrom(address(this), payable(params.sendTo), id, value, "");
+        // Transfer the token to the consideration item recipient.
+        address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
+        IERC1155(msg.sender).safeTransferFrom(address(this), recipient, id, value, "");
 
         return IERC1155Receiver.onERC1155Received.selector;
     }
@@ -369,32 +380,37 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
         _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Get the params.
-        bytes32 paramsHash = bytes32(data[0:32]);
-        RedeemableRegistryParamsV0 storage params = _redeemableParams[paramsHash];
+        uint256 campaignId = uint256(bytes32(data[0:32]));
+        CampaignParamsV0 storage params = _campaignParams[campaignId];
 
-        // Transfer the tokens to params.sendTo
-        IERC1155(msg.sender).safeBatchTransferFrom(address(this), payable(params.sendTo), ids, values, "");
+        // Transfer the tokens to the consideration item recipient.
+        address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
+        IERC1155(msg.sender).safeBatchTransferFrom(address(this), recipient, ids, values, "");
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    function getRedeemableParams(bytes32 redeemableParamsHash)
-        external
+    function getCampaign(uint256 campaignId) external view returns (CampaignParamsV0 memory, string memory) {
+        return (_campaignParams[campaignId], _campaignURIs[campaignId]);
+    }
+
+    function _getConsiderationRecipient(ConsiderationItem[] storage consideration, address token)
+        internal
         view
-        returns (RedeemableRegistryParamsV0 memory)
+        returns (address)
     {
-        return _redeemableParams[redeemableParamsHash];
+        for (uint256 i = 0; i < consideration.length;) {
+            if (consideration[i].token == token) {
+                return consideration[i].recipient;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        revert ConsiderationRecipientNotFound(token);
     }
 
-    function redeemableURI(bytes32 redeemableParamsHash) external view returns (string memory) {
-        return _redeemableURIs[redeemableParamsHash];
-    }
-
-    function _getRedeemableParamsHash(RedeemableRegistryParamsV0 memory params) internal pure returns (bytes32) {
-        return keccak256(abi.encode(params));
-    }
-
-    function _checkActive(uint256 startTime, uint256 endTime) internal view returns (bool inactive) {
+    function _isInactive(uint256 startTime, uint256 endTime) internal view returns (bool inactive) {
         // Using the same check for time boundary from Seaport.
         // startTime <= block.timestamp < endTime
         assembly {
@@ -402,11 +418,7 @@ contract RedeemableContractOffererV0 is ContractOffererInterface, RedeemableErro
         }
     }
 
-    function _isValidTokenAddress(RedeemableRegistryParamsV0 memory params, address token)
-        internal
-        pure
-        returns (bool valid)
-    {
+    function _isValidTokenAddress(CampaignParamsV0 memory params, address token) internal pure returns (bool valid) {
         for (uint256 i = 0; i < params.consideration.length;) {
             if (params.consideration[i].token == token) {
                 valid = true;
