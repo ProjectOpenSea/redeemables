@@ -14,9 +14,11 @@ import {IERC721} from "forge-std/interfaces/IERC721.sol";
 import {IERC1155} from "forge-std/interfaces/IERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
+import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
+import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParamsV0} from "./lib/RedeemableStructs.sol";
+import {CampaignParamsV0, RedemptionContextV0} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOffererV0
@@ -41,7 +43,7 @@ contract RedeemableContractOffererV0 is
     mapping(uint256 campaignId => string campaignURI) private _campaignURIs;
 
     /// @dev The total current redemptions by campaign id.
-    mapping(uint256 campaignId => uint256 count) _totalRedemptions;
+    mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
 
     constructor(address seaport) {
         _SEAPORT = seaport;
@@ -55,11 +57,19 @@ contract RedeemableContractOffererV0 is
             }
         }
 
-        if (params.offer.length != 0) revert OfferItemsNotAllowed();
+        // Revert if there are no consideration items, since the redemption should require at least something.
         if (params.consideration.length == 0) revert NoConsiderationItems();
-        if (params.manager != msg.sender) revert NotManager();
 
-        // Revert if any of the consideration item recipients is the zero address.
+        // Revert if startTime is past endTime.
+        if (params.startTime > params.endTime) revert InvalidTime();
+
+        // Revert if msg.sender is not the manager.
+        address existingManager = _campaignParams[campaignId].manager;
+        if (params.manager != msg.sender || (existingManager != address(0) && existingManager != params.manager)) {
+            revert NotManager();
+        }
+
+        // Revert if any of the consideration item recipients is the zero address. The 0xdead address should be used instead.
         for (uint256 i = 0; i < params.consideration.length;) {
             if (params.consideration[i].recipient == address(0)) revert ConsiderationItemRecipientCannotBeZeroAddress();
             unchecked {
@@ -69,12 +79,12 @@ contract RedeemableContractOffererV0 is
 
         _campaignParams[campaignId] = params;
 
+        // Update campaign uri if it was provided.
         if (bytes(uri).length != 0) {
             _campaignURIs[campaignId] = uri;
         }
-        string storage storedURI = _campaignURIs[campaignId];
 
-        emit CampaignUpdated(campaignId, params, storedURI);
+        emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
     }
 
     function updateCampaignURI(uint256 campaignId, string calldata uri) external {
@@ -234,24 +244,15 @@ contract RedeemableContractOffererV0 is
         // Check max total redemptions would not be exceeded.
         errorBuffer |= _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxTotalRedemptions) << 3;
 
-        // Check the consideration is only one item.
-        errorBuffer |= _cast(maximumSpent.length != 1) << 4;
-
-        // Check the consideration token address is correct.
-        errorBuffer |= _cast(maximumSpent[0].token == params.consideration[0].token) << 5;
-
-        // For V0 spec, offer must be zero due to redeemable being off-chain.
-        errorBuffer |= _cast(minimumReceived.length == 0) << 6;
+        // Get the redemption hash.
+        bytes32 redemptionHash = bytes32(context[32:64]);
 
         // Check the signature is valid if required.
         if (params.signer != address(0)) {
-            // address token;
-            // uint256[] memory tokenIds;
-            // bytes32 redemptionHash;
-            // uint256 salt;
-            // bytes memory signature;
-            // // _verifySignature will revert if the signature is invalid or digest is already used.
-            // _verifySignature(params.signer, fulfiller, token, tokenIds, redemptionHash, salt, signature, withEffects);
+            uint256 salt = uint256(bytes32(context[64:96]));
+            bytes memory signature = context[96:];
+            // _verifySignature will revert if the signature is invalid or digest is already used.
+            _verifySignature(params.signer, fulfiller, maximumSpent, redemptionHash, salt, signature, withEffects);
         }
 
         if (errorBuffer > 0) {
@@ -280,29 +281,52 @@ contract RedeemableContractOffererV0 is
             _totalRedemptions[campaignId] += maximumSpent.length;
 
             // Emit Redemption event.
-            uint256[] memory tokenIds = new uint256[](maximumSpent.length);
-            for (uint256 i = 0; i < maximumSpent.length;) {
-                tokenIds[i] = maximumSpent[i].identifier;
-                unchecked {
-                    ++i;
-                }
-            }
-            bytes32 redemptionHash = bytes32(0);
-            emit Redemption(fulfiller, campaignId, maximumSpent[0].token, tokenIds, redemptionHash);
+            emit Redemption(fulfiller, campaignId, maximumSpent, minimumReceived, redemptionHash);
         }
 
-        // Off chain redeemables have no offer items.
-        offer = new SpentItem[](0);
+        // Set the offer from the params.
+        offer = new SpentItem[](params.offer.length);
+        for (uint256 i = 0; i < params.offer.length;) {
+            OfferItem memory offerItem = params.offer[i];
+            offer[i] = SpentItem({
+                itemType: offerItem.itemType,
+                token: offerItem.token,
+                identifier: offerItem.identifierOrCriteria,
+                amount: offerItem.startAmount
+            });
+            // If withEffects=true, call mint on the offer items.
+            if (withEffects) {
+                RedemptionContextV0 memory redemptionContext = RedemptionContextV0({spent: maximumSpent});
+                address fulfiller_ = fulfiller;
+                if (offerItem.itemType == ItemType.ERC721) {
+                    IERC721RedemptionMintable(offerItem.token).mintWithRedemptionContext(
+                        fulfiller_, offerItem.startAmount, redemptionContext
+                    );
+                } else if (offerItem.itemType == ItemType.ERC1155) {
+                    uint256[] memory ids = new uint256[](1);
+                    uint256[] memory amounts = new uint256[](1);
+                    ids[0] = offerItem.identifierOrCriteria;
+                    amounts[0] = offerItem.startAmount;
+                    IERC1155RedemptionMintable(offerItem.token).mintWithRedemptionContext(
+                        fulfiller_, ids, amounts, redemptionContext
+                    );
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
 
         // Set the consideration from the params.
-        consideration = new ReceivedItem[](consideration.length);
-        for (uint256 i = 0; i < consideration.length;) {
+        consideration = new ReceivedItem[](params.consideration.length);
+        for (uint256 i = 0; i < params.consideration.length;) {
+            ConsiderationItem memory considerationItem = params.consideration[i];
             consideration[i] = ReceivedItem({
-                itemType: ItemType.ERC721,
-                token: params.consideration[i].token,
-                identifier: params.consideration[i].identifierOrCriteria,
-                amount: params.consideration[i].startAmount,
-                recipient: params.consideration[i].recipient
+                itemType: considerationItem.itemType,
+                token: considerationItem.token,
+                identifier: considerationItem.identifierOrCriteria,
+                amount: considerationItem.startAmount,
+                recipient: considerationItem.recipient
             });
             unchecked {
                 ++i;
@@ -390,8 +414,14 @@ contract RedeemableContractOffererV0 is
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    function getCampaign(uint256 campaignId) external view returns (CampaignParamsV0 memory, string memory) {
-        return (_campaignParams[campaignId], _campaignURIs[campaignId]);
+    function getCampaign(uint256 campaignId)
+        external
+        view
+        returns (CampaignParamsV0 memory params, string memory uri, uint256 totalRedemptions)
+    {
+        params = _campaignParams[campaignId];
+        uri = _campaignURIs[campaignId];
+        totalRedemptions = _totalRedemptions[campaignId];
     }
 
     function _getConsiderationRecipient(ConsiderationItem[] storage consideration, address token)

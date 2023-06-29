@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParamsV0} from "./RedeemableStructs.sol";
 
 interface RedeemableErrorsAndEvents {
@@ -16,8 +17,8 @@ interface RedeemableErrorsAndEvents {
     error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);
-    error OfferItemsNotAllowed();
     error NoConsiderationItems();
+    error InvalidTime();
     error ConsiderationItemRecipientCannotBeZeroAddress();
     error ConsiderationRecipientNotFound(address token);
 
@@ -25,5 +26,5 @@ interface RedeemableErrorsAndEvents {
 
     // v0
     event CampaignUpdated(uint256 campaignId, CampaignParamsV0 params, string uri);
-    event Redemption(address by, uint256 campaignId, address token, uint256[] tokenIds, bytes32 redemptionHash);
+    event Redemption(address by, uint256 campaignId, SpentItem[] spent, SpentItem[] received, bytes32 redemptionHash);
 }

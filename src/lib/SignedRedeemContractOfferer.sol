@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {SignatureCheckerLib} from "solady/src/utils/SignatureCheckerLib.sol";
 import {SignedRedeemErrorsAndEvents} from "./SignedRedeemErrorsAndEvents.sol";
 
@@ -26,15 +27,14 @@ contract SignedRedeemContractOfferer is SignedRedeemErrorsAndEvents {
     function _verifySignature(
         address signer,
         address owner,
-        address token,
-        uint256[] memory tokenIds,
+        SpentItem[] memory maximumSpent,
         bytes32 redemptionHash,
         uint256 salt,
         bytes memory signature,
         bool recordDigest
     ) internal {
         // Get the digest.
-        bytes32 digest = _getDigest(owner, token, tokenIds, redemptionHash, salt);
+        bytes32 digest = _getDigest(owner, maximumSpent, redemptionHash, salt);
 
         // Revert if signature does not recover to signer.
         if (!SignatureCheckerLib.isValidSignatureNow(signer, digest, signature)) revert InvalidSigner();
@@ -51,7 +51,7 @@ contract SignedRedeemContractOfferer is SignedRedeemErrorsAndEvents {
      *         that we signed on the client side, and then using that to recover
      *         the address that signed the signature for this data.
      */
-    function _getDigest(address owner, address token, uint256[] memory tokenIds, bytes32 redemptionHash, uint256 salt)
+    function _getDigest(address owner, SpentItem[] memory maximumSpent, bytes32 redemptionHash, uint256 salt)
         internal
         view
         returns (bytes32 digest)
@@ -60,7 +60,7 @@ contract SignedRedeemContractOfferer is SignedRedeemErrorsAndEvents {
             bytes.concat(
                 bytes2(0x1901),
                 _domainSeparator(),
-                keccak256(abi.encode(_SIGNED_REDEEM_TYPEHASH, owner, token, tokenIds, redemptionHash, salt))
+                keccak256(abi.encode(_SIGNED_REDEEM_TYPEHASH, owner, maximumSpent, redemptionHash, salt))
             )
         );
     }

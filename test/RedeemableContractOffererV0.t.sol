@@ -4,8 +4,10 @@ pragma solidity ^0.8.19;
 import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
-import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType} from "seaport-sol/src/SeaportEnums.sol";
+import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
+import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {RedeemableContractOffererV0} from "../src/RedeemableContractOffererV0.sol";
 import {CampaignParamsV0} from "../src/lib/RedeemableStructs.sol";
 import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
@@ -38,9 +40,11 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateCampaign(campaignId, params, "http://test.com");
 
-        (CampaignParamsV0 memory storedParams, string memory storedURI) = offerer.getCampaign(campaignId);
+        (CampaignParamsV0 memory storedParams, string memory storedURI, uint256 totalRedemptions) =
+            offerer.getCampaign(campaignId);
         assertEq(storedParams.manager, address(this));
         assertEq(storedURI, "http://test.com");
+        assertEq(totalRedemptions, 0);
 
         params.endTime = uint32(block.timestamp + 2000);
 
@@ -49,7 +53,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateCampaign(campaignId, params, "");
 
-        (storedParams, storedURI) = offerer.getCampaign(campaignId);
+        (storedParams, storedURI,) = offerer.getCampaign(campaignId);
         assertEq(storedParams.endTime, params.endTime);
         assertEq(storedParams.manager, address(this));
         assertEq(storedURI, "http://test.com");
@@ -59,7 +63,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateCampaign(campaignId, params, "http://example.com");
 
-        (, storedURI) = offerer.getCampaign(campaignId);
+        (, storedURI,) = offerer.getCampaign(campaignId);
         assertEq(storedURI, "http://example.com");
 
         vm.expectEmit(true, true, true, true);
@@ -67,14 +71,16 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateCampaignURI(campaignId, "http://foobar.com");
 
-        (, storedURI) = offerer.getCampaign(campaignId);
+        (, storedURI,) = offerer.getCampaign(campaignId);
         assertEq(storedURI, "http://foobar.com");
     }
 
     function testRedeemWith721SafeTransferFrom() public {
         TestERC721 token = new TestERC721();
-        token.mint(address(this), 1);
+        uint256 tokenId = 1;
+        token.mint(address(this), tokenId);
 
+        OfferItem[] memory offer;
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721,
@@ -86,7 +92,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
         });
 
         CampaignParamsV0 memory params = CampaignParamsV0({
-            offer: new OfferItem[](0),
+            offer: offer,
             consideration: consideration,
             signer: address(0),
             startTime: uint32(block.timestamp),
@@ -98,11 +104,22 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
         uint256 campaignId = 1;
         offerer.updateCampaign(campaignId, params, "");
 
+        ConsiderationItem[] memory expectedConsideration = consideration;
+        expectedConsideration[0].identifierOrCriteria = tokenId;
+        expectedConsideration[0].startAmount = 1;
+        expectedConsideration[0].endAmount = 1;
+        bytes32 redemptionHash = bytes32(0);
         vm.expectEmit(true, true, true, true);
-        emit Redemption(address(this), campaignId, address(token), Solarray.uint256s(1), bytes32(0));
+        emit Redemption(
+            address(this),
+            campaignId,
+            ConsiderationItemLib.toSpentItemArray(consideration),
+            OfferItemLib.toSpentItemArray(offer),
+            redemptionHash
+        );
 
-        bytes memory data = abi.encode(campaignId);
-        token.safeTransferFrom(address(this), address(offerer), 1, data);
+        bytes memory data = abi.encode(campaignId, redemptionHash);
+        token.safeTransferFrom(address(this), address(offerer), tokenId, data);
 
         assertEq(token.ownerOf(1), _BURN_ADDRESS);
     }

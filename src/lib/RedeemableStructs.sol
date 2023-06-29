@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 struct CampaignParamsV0 {
     OfferItem[] offer;
@@ -12,4 +12,8 @@ struct CampaignParamsV0 {
     uint32 maxTotalRedemptions;
     // Additional parameters for registry functionality
     address manager;
+}
+
+struct RedemptionContextV0 {
+    SpentItem[] spent;
 }
