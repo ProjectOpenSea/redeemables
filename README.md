@@ -75,4 +75,4 @@ When making a pull request, ensure that:
 
 ## License
 
-[MIT](LICENSE) Copyright 2022 Ozone Networks, Inc.
+[MIT](LICENSE) Copyright 2023 Ozone Networks, Inc.
