@@ -26,6 +26,8 @@ interface RedeemableErrorsAndEvents {
     error RedemptionValuesAreImmutable();
 
     // v0
-    event CampaignUpdated(uint256 campaignId, CampaignParamsV0 params, string uri);
-    event Redemption(address by, uint256 campaignId, SpentItem[] spent, SpentItem[] received, bytes32 redemptionHash);
+    event CampaignUpdated(uint256 indexed campaignId, CampaignParamsV0 params, string uri);
+    event Redemption(
+        address indexed by, uint256 indexed campaignId, SpentItem[] spent, SpentItem[] received, bytes32 redemptionHash
+    );
 }
