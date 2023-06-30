@@ -10,7 +10,6 @@ struct CampaignParamsV0 {
     uint32 startTime;
     uint32 endTime;
     uint32 maxTotalRedemptions;
-    // Additional parameters for registry functionality
     address manager;
 }
 

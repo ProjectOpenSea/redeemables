@@ -5,9 +5,8 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 
 // Used for minting test ERC721s in our tests
 contract TestERC721 is ERC721 {
-    function mint(address to, uint256 tokenId) public returns (bool) {
+    function mint(address to, uint256 tokenId) public {
         _mint(to, tokenId);
-        return true;
     }
 
     function tokenURI(uint256) public pure override returns (string memory) {

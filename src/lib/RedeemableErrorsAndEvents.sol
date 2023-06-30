@@ -17,6 +17,7 @@ interface RedeemableErrorsAndEvents {
     error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);
+    error InvalidCampaignId();
     error NoConsiderationItems();
     error InvalidTime();
     error ConsiderationItemRecipientCannotBeZeroAddress();

@@ -34,11 +34,10 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
         params.consideration[0].recipient = payable(_BURN_ADDRESS);
 
         uint256 campaignId = 1;
-
         vm.expectEmit(true, true, true, true);
         emit CampaignUpdated(campaignId, params, "http://test.com");
 
-        offerer.updateCampaign(campaignId, params, "http://test.com");
+        offerer.updateCampaign(0, params, "http://test.com");
 
         (CampaignParamsV0 memory storedParams, string memory storedURI, uint256 totalRedemptions) =
             offerer.getCampaign(campaignId);
@@ -86,8 +85,8 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
             itemType: ItemType.ERC721,
             token: address(token),
             identifierOrCriteria: 0,
-            startAmount: 0,
-            endAmount: 0,
+            startAmount: 1,
+            endAmount: 1,
             recipient: payable(_BURN_ADDRESS)
         });
 
@@ -101,13 +100,13 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
             manager: address(this)
         });
 
-        uint256 campaignId = 1;
-        offerer.updateCampaign(campaignId, params, "");
+        offerer.updateCampaign(0, params, "");
 
         ConsiderationItem[] memory expectedConsideration = consideration;
         expectedConsideration[0].identifierOrCriteria = tokenId;
         expectedConsideration[0].startAmount = 1;
         expectedConsideration[0].endAmount = 1;
+        uint256 campaignId = 1;
         bytes32 redemptionHash = bytes32(0);
         vm.expectEmit(true, true, true, true);
         emit Redemption(

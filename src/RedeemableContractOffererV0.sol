@@ -10,8 +10,8 @@ import {
     Schema,
     SpentItem
 } from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {IERC721} from "forge-std/interfaces/IERC721.sol";
-import {IERC1155} from "forge-std/interfaces/IERC1155.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
 import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
@@ -50,6 +50,8 @@ contract RedeemableContractOffererV0 is
     }
 
     function updateCampaign(uint256 campaignId, CampaignParamsV0 calldata params, string calldata uri) external {
+        if (campaignId >= _nextCampaignId) revert InvalidCampaignId();
+
         if (campaignId == 0) {
             campaignId = _nextCampaignId;
             unchecked {
@@ -65,7 +67,7 @@ contract RedeemableContractOffererV0 is
 
         // Revert if msg.sender is not the manager.
         address existingManager = _campaignParams[campaignId].manager;
-        if (params.manager != msg.sender || (existingManager != address(0) && existingManager != params.manager)) {
+        if (params.manager != msg.sender && (existingManager != address(0) && existingManager != params.manager)) {
             revert NotManager();
         }
 
@@ -299,17 +301,9 @@ contract RedeemableContractOffererV0 is
                 RedemptionContextV0 memory redemptionContext = RedemptionContextV0({spent: maximumSpent});
                 address fulfiller_ = fulfiller;
                 if (offerItem.itemType == ItemType.ERC721) {
-                    IERC721RedemptionMintable(offerItem.token).mintWithRedemptionContext(
-                        fulfiller_, offerItem.startAmount, redemptionContext
-                    );
+                    IERC721RedemptionMintable(offerItem.token).mintWithRedemptionContext(fulfiller_, redemptionContext);
                 } else if (offerItem.itemType == ItemType.ERC1155) {
-                    uint256[] memory ids = new uint256[](1);
-                    uint256[] memory amounts = new uint256[](1);
-                    ids[0] = offerItem.identifierOrCriteria;
-                    amounts[0] = offerItem.startAmount;
-                    IERC1155RedemptionMintable(offerItem.token).mintWithRedemptionContext(
-                        fulfiller_, ids, amounts, redemptionContext
-                    );
+                    IERC1155RedemptionMintable(offerItem.token).mintWithRedemptionContext(fulfiller_, redemptionContext);
                 }
             }
             unchecked {
@@ -352,7 +346,7 @@ contract RedeemableContractOffererV0 is
 
         // Transfer the token to the consideration item recipient.
         address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
-        IERC721(msg.sender).transferFrom(address(this), payable(recipient), tokenId);
+        ERC721(msg.sender).transferFrom(address(this), payable(recipient), tokenId);
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -375,7 +369,7 @@ contract RedeemableContractOffererV0 is
 
         // Transfer the token to the consideration item recipient.
         address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
-        IERC1155(msg.sender).safeTransferFrom(address(this), recipient, id, value, "");
+        ERC1155(msg.sender).safeTransferFrom(address(this), recipient, id, value, "");
 
         return IERC1155Receiver.onERC1155Received.selector;
     }
@@ -409,7 +403,7 @@ contract RedeemableContractOffererV0 is
 
         // Transfer the tokens to the consideration item recipient.
         address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
-        IERC1155(msg.sender).safeBatchTransferFrom(address(this), recipient, ids, values, "");
+        ERC1155(msg.sender).safeBatchTransferFrom(address(this), recipient, ids, values, "");
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
