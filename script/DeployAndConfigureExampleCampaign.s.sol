@@ -20,7 +20,7 @@ contract DeployAndConfigureExampleCampaign is Script {
     function run() external {
         vm.startBroadcast();
 
-        RedeemableContractOffererV0 offerer = new RedeemableContractOffererV0(seaport);
+        RedeemableContractOffererV0 offerer = new RedeemableContractOffererV0(conduit, seaport);
         TestERC721 redeemableToken = new TestERC721();
         ERC721RedemptionMintable redemptionToken = new ERC721RedemptionMintable(address(offerer));
 
