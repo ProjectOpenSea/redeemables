@@ -456,6 +456,7 @@ contract RedeemableContractOfferer is
         view
         returns (CampaignParams memory params, string memory uri, uint256 totalRedemptions)
     {
+        if (campaignId >= _nextCampaignId) revert InvalidCampaignId();
         params = _campaignParams[campaignId];
         uri = _campaignURIs[campaignId];
         totalRedemptions = _totalRedemptions[campaignId];
