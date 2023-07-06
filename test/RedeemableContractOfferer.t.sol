@@ -14,15 +14,15 @@ import {
 } from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
-import {RedeemableContractOffererV0} from "../src/RedeemableContractOffererV0.sol";
-import {CampaignParamsV0} from "../src/lib/RedeemableStructs.sol";
+import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
+import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
 import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 
-contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEvents {
+contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
     using OrderParametersLib for OrderParameters;
 
-    RedeemableContractOffererV0 offerer;
+    RedeemableContractOfferer offerer;
     TestERC721 redeemableToken;
     ERC721RedemptionMintable redemptionToken;
     CriteriaResolver[] criteriaResolvers;
@@ -31,13 +31,13 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
     function setUp() public override {
         super.setUp();
-        offerer = new RedeemableContractOffererV0(address(conduit), address(seaport));
+        offerer = new RedeemableContractOfferer(address(conduit), address(seaport));
         redeemableToken = new TestERC721();
         redemptionToken = new ERC721RedemptionMintable(address(offerer), address(redeemableToken));
     }
 
     function testUpdateParamsAndURI() public {
-        CampaignParamsV0 memory params = CampaignParamsV0({
+        CampaignParams memory params = CampaignParams({
             offer: new OfferItem[](0),
             consideration: new ConsiderationItem[](1),
             signer: address(0),
@@ -54,7 +54,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
 
         offerer.updateCampaign(0, params, "http://test.com");
 
-        (CampaignParamsV0 memory storedParams, string memory storedURI, uint256 totalRedemptions) =
+        (CampaignParams memory storedParams, string memory storedURI, uint256 totalRedemptions) =
             offerer.getCampaign(campaignId);
         assertEq(storedParams.manager, address(this));
         assertEq(storedURI, "http://test.com");
@@ -112,7 +112,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
             recipient: payable(_BURN_ADDRESS)
         });
 
-        CampaignParamsV0 memory params = CampaignParamsV0({
+        CampaignParams memory params = CampaignParams({
             offer: offer,
             consideration: consideration,
             signer: address(0),
@@ -171,7 +171,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
             recipient: payable(_BURN_ADDRESS)
         });
 
-        CampaignParamsV0 memory params = CampaignParamsV0({
+        CampaignParams memory params = CampaignParams({
             offer: offer,
             consideration: consideration,
             signer: address(0),

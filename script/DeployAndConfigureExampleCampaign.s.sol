@@ -5,8 +5,8 @@ import "forge-std/Script.sol";
 
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {RedeemableContractOffererV0} from "../src/RedeemableContractOffererV0.sol";
-import {CampaignParamsV0} from "../src/lib/RedeemableStructs.sol";
+import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
+import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {TestERC721} from "../test/utils/mocks/TestERC721.sol";
 
@@ -20,7 +20,7 @@ contract DeployAndConfigureExampleCampaign is Script {
     function run() external {
         vm.startBroadcast();
 
-        RedeemableContractOffererV0 offerer = new RedeemableContractOffererV0(conduit, seaport);
+        RedeemableContractOfferer offerer = new RedeemableContractOfferer(conduit, seaport);
         TestERC721 redeemableToken = new TestERC721();
         ERC721RedemptionMintable redemptionToken =
             new ERC721RedemptionMintable(address(offerer), address(redeemableToken));
@@ -45,7 +45,7 @@ contract DeployAndConfigureExampleCampaign is Script {
             recipient: payable(_BURN_ADDRESS)
         });
 
-        CampaignParamsV0 memory params = CampaignParamsV0({
+        CampaignParams memory params = CampaignParams({
             offer: offer,
             consideration: consideration,
             signer: address(0),

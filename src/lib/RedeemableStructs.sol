@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-struct CampaignParamsV0 {
+struct CampaignParams {
     OfferItem[] offer;
     ConsiderationItem[] consideration;
     address signer;
@@ -13,6 +13,6 @@ struct CampaignParamsV0 {
     address manager;
 }
 
-struct RedemptionContextV0 {
+struct RedemptionContext {
     SpentItem[] spent;
 }

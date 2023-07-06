@@ -18,14 +18,14 @@ import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParamsV0} from "./lib/RedeemableStructs.sol";
+import {CampaignParams} from "./lib/RedeemableStructs.sol";
 
 /**
- * @title  RedeemablesContractOffererV0
+ * @title  RedeemablesContractOfferer
  * @author ryanio
  * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
  */
-contract RedeemableContractOffererV0 is
+contract RedeemableContractOfferer is
     ContractOffererInterface,
     RedeemableErrorsAndEvents,
     SignedRedeemContractOfferer
@@ -40,7 +40,7 @@ contract RedeemableContractOffererV0 is
     uint256 private _nextCampaignId = 1;
 
     /// @dev The campaign parameters by campaign id.
-    mapping(uint256 campaignId => CampaignParamsV0 params) private _campaignParams;
+    mapping(uint256 campaignId => CampaignParams params) private _campaignParams;
 
     /// @dev The campaign URIs by campaign id.
     mapping(uint256 campaignId => string campaignURI) private _campaignURIs;
@@ -53,7 +53,7 @@ contract RedeemableContractOffererV0 is
         _SEAPORT = seaport;
     }
 
-    function updateCampaign(uint256 campaignId, CampaignParamsV0 calldata params, string calldata uri) external {
+    function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external {
         if (campaignId >= _nextCampaignId) revert InvalidCampaignId();
 
         if (campaignId == 0) {
@@ -108,7 +108,7 @@ contract RedeemableContractOffererV0 is
     }
 
     function updateCampaignURI(uint256 campaignId, string calldata uri) external {
-        CampaignParamsV0 storage params = _campaignParams[campaignId];
+        CampaignParams storage params = _campaignParams[campaignId];
 
         if (params.manager != msg.sender) revert NotManager();
 
@@ -253,7 +253,7 @@ contract RedeemableContractOffererV0 is
     ) internal returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(context[0:32]));
-        CampaignParamsV0 storage params = _campaignParams[campaignId];
+        CampaignParams storage params = _campaignParams[campaignId];
 
         // Declare an error buffer; first check is that caller is Seaport or the token contract.
         uint256 errorBuffer = _cast(msg.sender != _SEAPORT && msg.sender != params.consideration[0].token);
@@ -350,7 +350,7 @@ contract RedeemableContractOffererV0 is
     {
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(data[0:32]));
-        CampaignParamsV0 storage params = _campaignParams[campaignId];
+        CampaignParams storage params = _campaignParams[campaignId];
 
         SpentItem[] memory minimumReceived = new SpentItem[](1);
         minimumReceived[0] = SpentItem({
@@ -382,7 +382,7 @@ contract RedeemableContractOffererV0 is
     {
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(data[0:32]));
-        CampaignParamsV0 storage params = _campaignParams[campaignId];
+        CampaignParams storage params = _campaignParams[campaignId];
 
         SpentItem[] memory minimumReceived = new SpentItem[](1);
         minimumReceived[0] = SpentItem({
@@ -419,7 +419,7 @@ contract RedeemableContractOffererV0 is
 
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(data[0:32]));
-        CampaignParamsV0 storage params = _campaignParams[campaignId];
+        CampaignParams storage params = _campaignParams[campaignId];
 
         SpentItem[] memory minimumReceived = new SpentItem[](1);
         minimumReceived[0] = SpentItem({
@@ -454,7 +454,7 @@ contract RedeemableContractOffererV0 is
     function getCampaign(uint256 campaignId)
         external
         view
-        returns (CampaignParamsV0 memory params, string memory uri, uint256 totalRedemptions)
+        returns (CampaignParams memory params, string memory uri, uint256 totalRedemptions)
     {
         params = _campaignParams[campaignId];
         uri = _campaignURIs[campaignId];
@@ -485,7 +485,7 @@ contract RedeemableContractOffererV0 is
         }
     }
 
-    function _isValidTokenAddress(CampaignParamsV0 memory params, address token) internal pure returns (bool valid) {
+    function _isValidTokenAddress(CampaignParams memory params, address token) internal pure returns (bool valid) {
         for (uint256 i = 0; i < params.consideration.length;) {
             if (params.consideration[i].token == token) {
                 valid = true;
