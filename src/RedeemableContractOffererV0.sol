@@ -18,7 +18,7 @@ import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParamsV0, RedemptionContextV0} from "./lib/RedeemableStructs.sol";
+import {CampaignParamsV0} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOffererV0
@@ -83,15 +83,15 @@ contract RedeemableContractOffererV0 is
             }
         }
 
-        // Allow the conduit as an operator on behalf of this contract for offer items to be minted and transferred.
+        // Allow Seaport and the conduit as operators on behalf of this contract for offer items to be minted and transferred.
         for (uint256 i = 0; i < params.offer.length;) {
+            // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
             if (!ERC721(params.offer[i].token).isApprovedForAll(_SEAPORT, address(this))) {
                 ERC721(params.offer[i].token).setApprovalForAll(_SEAPORT, true);
             }
             if (!ERC721(params.offer[i].token).isApprovedForAll(_CONDUIT, address(this))) {
                 ERC721(params.offer[i].token).setApprovalForAll(_CONDUIT, true);
             }
-
             unchecked {
                 ++i;
             }
@@ -289,7 +289,7 @@ contract RedeemableContractOffererV0 is
             } else if (errorBuffer << 251 != 0) {
                 revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
             } else if (errorBuffer << 251 != 0) {
-                revert InvalidOfferLength(minimumReceived.length, 0);
+                revert InvalidOfferLength(minimumReceived.length, params.offer.length);
             } else {
                 // todo more validation errors
             }
@@ -316,17 +316,10 @@ contract RedeemableContractOffererV0 is
             });
             // If withEffects=true, call mint on the offer items.
             if (withEffects) {
-                RedemptionContextV0 memory redemptionContext = RedemptionContextV0({spent: maximumSpent});
-                // address fulfiller_ = fulfiller;
-
                 if (offerItem.itemType == ItemType.ERC721) {
-                    IERC721RedemptionMintable(offerItem.token).mintWithRedemptionContext(
-                        address(this), redemptionContext
-                    );
+                    IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent);
                 } else if (offerItem.itemType == ItemType.ERC1155) {
-                    IERC1155RedemptionMintable(offerItem.token).mintWithRedemptionContext(
-                        address(this), redemptionContext
-                    );
+                    IERC1155RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent);
                 }
             }
             unchecked {

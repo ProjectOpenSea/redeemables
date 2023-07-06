@@ -33,7 +33,7 @@ contract TestRedeemableContractOffererV0 is BaseOrderTest, RedeemableErrorsAndEv
         super.setUp();
         offerer = new RedeemableContractOffererV0(address(conduit), address(seaport));
         redeemableToken = new TestERC721();
-        redemptionToken = new ERC721RedemptionMintable(address(offerer));
+        redemptionToken = new ERC721RedemptionMintable(address(offerer), address(redeemableToken));
     }
 
     function testUpdateParamsAndURI() public {

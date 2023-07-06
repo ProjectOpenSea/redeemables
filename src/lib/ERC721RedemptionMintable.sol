@@ -3,24 +3,31 @@ pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
-import {RedemptionContextV0} from "../lib/RedeemableStructs.sol";
+import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
-    address private _redeemableContractOfferer;
+    address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
+    address internal immutable _REDEEM_TOKEN;
 
-    /// @dev Revert with an error if the redeemable contract offerer is not the sender of mintWithRedemptionContext.
+    /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    constructor(address redeemableContractOfferer) {
-        _redeemableContractOfferer = redeemableContractOfferer;
+    /// @dev Revert if the redemption spent is not the required token.
+    error InvalidRedemption();
+
+    constructor(address redeemableContractOfferer, address redeemToken) {
+        _REDEEMABLE_CONTRACT_OFFERER = redeemableContractOfferer;
+        _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintWithRedemptionContext(address to, RedemptionContextV0 calldata context) external {
-        if (msg.sender != _redeemableContractOfferer) revert InvalidSender();
+    function mintRedemption(address to, SpentItem[] calldata spent) external {
+        if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        // Mint the same token IDs redeemed.
-        for (uint256 i = 0; i < context.spent.length;) {
-            _mint(to, context.spent[i].identifier);
+        for (uint256 i = 0; i < spent.length;) {
+            if (spent[i].token != _REDEEM_TOKEN) revert InvalidRedemption();
+
+            // Mint the same token IDs redeemed.
+            _mint(to, spent[i].identifier);
 
             unchecked {
                 ++i;

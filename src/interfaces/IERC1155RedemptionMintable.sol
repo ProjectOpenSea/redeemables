@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {RedemptionContextV0} from "../lib/RedeemableStructs.sol";
+import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 interface IERC1155RedemptionMintable {
-    function mintWithRedemptionContext(address to, RedemptionContextV0 calldata context) external;
+    function mintRedemption(address to, SpentItem[] calldata spent) external;
 }
