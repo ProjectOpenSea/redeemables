@@ -20,19 +20,19 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, SpentItem[] calldata spent) external {
+    function mintRedemption(
+        address to,
+        SpentItem[] calldata spent
+    ) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        for (uint256 i = 0; i < spent.length;) {
-            if (spent[i].token != _REDEEM_TOKEN) revert InvalidRedemption();
+        SpentItem memory spentItem = spent[0];
+        if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
-            // Mint the same token IDs redeemed.
-            _mint(to, spent[i].identifier);
+        // Mint the same token ID redeemed.
+        _mint(to, spentItem.identifier);
 
-            unchecked {
-                ++i;
-            }
-        }
+        return spentItem.identifier;
     }
 
     function name() public pure override returns (string memory) {
@@ -43,7 +43,9 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         return "721RM";
     }
 
-    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public pure override returns (string memory) {
         return string(abi.encodePacked("https://example.com/", tokenId));
     }
 }
