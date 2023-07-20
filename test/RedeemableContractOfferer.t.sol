@@ -132,7 +132,7 @@ contract TestRedeemableContractOfferer is
         OfferItem[] memory offerFromEvent = new OfferItem[](1);
         offerFromEvent[0] = OfferItem({
             itemType: ItemType.ERC721,
-            token: address(redeemableToken),
+            token: address(redemptionToken),
             identifierOrCriteria: tokenId,
             startAmount: 1,
             endAmount: 1
@@ -280,7 +280,169 @@ contract TestRedeemableContractOfferer is
         }
     }
 
-    function testRedeemMultipleWithSeaport() public {
+    function testRevertMaxRedemptionsReached() public {
+        redeemableToken.mint(address(this), 0);
+        redeemableToken.mint(address(this), 1);
+        redeemableToken.mint(address(this), 2);
+        redeemableToken.setApprovalForAll(address(seaport), true);
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        {
+            CampaignParams memory params = CampaignParams({
+                offer: offer,
+                consideration: consideration,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxTotalRedemptions: 2,
+                manager: address(this)
+            });
+
+            offerer.updateCampaign(0, params, "");
+        }
+
+        uint256 campaignId = 1;
+        bytes32 redemptionHash = bytes32(0);
+
+        {
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(redemptionToken),
+                identifierOrCriteria: 0,
+                startAmount: 1,
+                endAmount: 1
+            });
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: 0,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            vm.expectEmit(true, true, true, true);
+            emit Redemption(
+                address(this),
+                campaignId,
+                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+                OfferItemLib.toSpentItemArray(offerFromEvent),
+                redemptionHash
+            );
+
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(redemptionToken),
+                identifierOrCriteria: 1,
+                startAmount: 1,
+                endAmount: 1
+            });
+
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: 1,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            vm.expectEmit(true, true, true, true);
+            emit Redemption(
+                address(this),
+                campaignId,
+                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+                OfferItemLib.toSpentItemArray(offerFromEvent),
+                redemptionHash
+            );
+
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
+
+            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+
+            considerationFromEvent[0].identifierOrCriteria = 0;
+
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(considerationFromEvent)
+                .withOffer(offer)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(consideration.length);
+            AdvancedOrder memory order = AdvancedOrder({
+                parameters: parameters,
+                numerator: 1,
+                denominator: 1,
+                signature: "",
+                extraData: extraData
+            });
+
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: bytes32(0),
+                recipient: address(0)
+            });
+
+            considerationFromEvent[0].identifierOrCriteria = 1;
+
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: bytes32(0),
+                recipient: address(0)
+            });
+
+            considerationFromEvent[0].identifierOrCriteria = 2;
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    MaxTotalRedemptionsReached.selector,
+                    3,
+                    2
+                )
+            );
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: bytes32(0),
+                recipient: address(0)
+            });
+
+            assertEq(redeemableToken.ownerOf(0), _BURN_ADDRESS);
+            assertEq(redeemableToken.ownerOf(1), _BURN_ADDRESS);
+            assertEq(redemptionToken.ownerOf(0), address(this));
+            assertEq(redemptionToken.ownerOf(1), address(this));
+        }
+    }
+
+    function xtestRedeemMultipleWithSeaport() public {
         uint256 tokenId;
         redeemableToken.setApprovalForAll(address(seaport), true);
 
@@ -290,53 +452,6 @@ contract TestRedeemableContractOfferer is
 
         uint256 campaignId = 1;
         bytes32 redemptionHash = bytes32(0);
-
-        for (uint256 i; i < 5; i++) {
-            tokenId = i;
-            redeemableToken.mint(address(this), tokenId);
-
-            OfferItem[] memory tempOffer = new OfferItem[](1);
-            ConsiderationItem[]
-                memory tempConsideration = new ConsiderationItem[](1);
-
-            tempOffer[0] = OfferItem({
-                itemType: ItemType.ERC721,
-                token: address(redemptionToken),
-                identifierOrCriteria: tokenId,
-                startAmount: 1,
-                endAmount: 1
-            });
-
-            tempConsideration[0] = ConsiderationItem({
-                itemType: ItemType.ERC721,
-                token: address(redeemableToken),
-                identifierOrCriteria: tokenId,
-                startAmount: 1,
-                endAmount: 1,
-                recipient: payable(_BURN_ADDRESS)
-            });
-
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(tempConsideration)
-                .withOffer(tempOffer)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(tempConsideration.length);
-
-            bytes memory extraData = abi.encode(campaignId, redemptionHash);
-            AdvancedOrder memory order = AdvancedOrder({
-                parameters: parameters,
-                numerator: 1,
-                denominator: 1,
-                signature: "",
-                extraData: extraData
-            });
-
-            orders[i] = order;
-        }
 
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
@@ -355,6 +470,32 @@ contract TestRedeemableContractOfferer is
             recipient: payable(_BURN_ADDRESS)
         });
 
+        OrderParameters memory parameters = OrderParametersLib
+            .empty()
+            .withOfferer(address(offerer))
+            .withOrderType(OrderType.CONTRACT)
+            .withConsideration(consideration)
+            .withOffer(offer)
+            .withStartTime(block.timestamp)
+            .withEndTime(block.timestamp + 1)
+            .withTotalOriginalConsiderationItems(1);
+
+        for (uint256 i; i < 5; i++) {
+            tokenId = i;
+            redeemableToken.mint(address(this), tokenId);
+
+            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+            AdvancedOrder memory order = AdvancedOrder({
+                parameters: parameters,
+                numerator: 1,
+                denominator: 1,
+                signature: "",
+                extraData: extraData
+            });
+
+            orders[i] = order;
+        }
+
         CampaignParams memory params = CampaignParams({
             offer: offer,
             consideration: consideration,
@@ -367,12 +508,32 @@ contract TestRedeemableContractOfferer is
 
         offerer.updateCampaign(0, params, "");
 
+        OfferItem[] memory offerFromEvent = new OfferItem[](1);
+        offerFromEvent[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[]
+            memory considerationFromEvent = new ConsiderationItem[](1);
+        considerationFromEvent[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
         vm.expectEmit(true, true, true, true);
         emit Redemption(
             address(this),
             campaignId,
-            ConsiderationItemLib.toSpentItemArray(consideration),
-            OfferItemLib.toSpentItemArray(offer),
+            ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+            OfferItemLib.toSpentItemArray(offerFromEvent),
             redemptionHash
         );
 

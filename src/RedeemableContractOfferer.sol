@@ -462,6 +462,9 @@ contract RedeemableContractOfferer is
         uint256 tokenId,
         bytes calldata data
     ) external returns (bytes4) {
+        if (from == address(0))
+            return IERC721Receiver.onERC721Received.selector;
+
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(data[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
@@ -513,6 +516,9 @@ contract RedeemableContractOfferer is
         uint256 value,
         bytes calldata data
     ) external returns (bytes4) {
+        if (from == address(0))
+            return IERC1155Receiver.onERC1155Received.selector;
+
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(data[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
@@ -567,6 +573,9 @@ contract RedeemableContractOfferer is
         uint256[] calldata values,
         bytes calldata data
     ) external returns (bytes4) {
+        if (from == address(0))
+            return IERC1155Receiver.onERC1155BatchReceived.selector;
+
         if (ids.length != values.length) revert RedeemMismatchedLengths();
 
         // Get the campaign.
