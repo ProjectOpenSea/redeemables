@@ -308,7 +308,7 @@ contract RedeemableContractOfferer is
         // Check the redemption is active.
         errorBuffer |=
             _cast(_isInactive(params.startTime, params.endTime)) <<
-            2;
+            1;
 
         // Check max total redemptions would not be exceeded.
         errorBuffer |=
@@ -316,7 +316,7 @@ contract RedeemableContractOfferer is
                 _totalRedemptions[campaignId] + maximumSpent.length >
                     params.maxTotalRedemptions
             ) <<
-            3;
+            2;
 
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
@@ -351,20 +351,16 @@ contract RedeemableContractOfferer is
                     _totalRedemptions[campaignId] + maximumSpent.length,
                     params.maxTotalRedemptions
                 );
+                // TODO: do we need this error?
+                // } else if (errorBuffer << 252 != 0) {
+                //     revert InvalidConsiderationLength(
+                //         maximumSpent.length,
+                //         params.consideration.length
+                //     );
             } else if (errorBuffer << 252 != 0) {
-                revert InvalidConsiderationLength(
-                    maximumSpent.length,
-                    params.consideration.length
-                );
-            } else if (errorBuffer << 251 != 0) {
                 revert InvalidConsiderationItem(
                     maximumSpent[0].token,
                     params.consideration[0].token
-                );
-            } else if (errorBuffer << 251 != 0) {
-                revert InvalidOfferLength(
-                    minimumReceived.length,
-                    params.offer.length
                 );
             } else {
                 // todo more validation errors
@@ -487,6 +483,8 @@ contract RedeemableContractOfferer is
 
         // _createOrder will revert if any validations fail.
         _createOrder(from, minimumReceived, maximumSpent, data, true);
+
+        // TODO: call fulfillAdvancedOrder on seaport
 
         // Transfer the redeemable token to the consideration item recipient.
         address recipient = _getConsiderationRecipient(

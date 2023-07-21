@@ -280,7 +280,9 @@ contract TestRedeemableContractOfferer is
         }
     }
 
-    function testRevertMaxRedemptionsReached() public {
+    // TODO: write test providing criteria resolver, success and failure case
+
+    function testRevertMaxTotalRedemptionsReached() public {
         redeemableToken.mint(address(this), 0);
         redeemableToken.mint(address(this), 1);
         redeemableToken.mint(address(this), 2);
@@ -368,15 +370,6 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(
-                address(this),
-                campaignId,
-                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-                OfferItemLib.toSpentItemArray(offerFromEvent),
-                redemptionHash
-            );
-
             assertGt(
                 uint256(consideration[0].itemType),
                 uint256(considerationFromEvent[0].itemType)
@@ -412,6 +405,15 @@ contract TestRedeemableContractOfferer is
 
             considerationFromEvent[0].identifierOrCriteria = 1;
 
+            vm.expectEmit(true, true, true, true);
+            emit Redemption(
+                address(this),
+                campaignId,
+                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+                OfferItemLib.toSpentItemArray(offerFromEvent),
+                redemptionHash
+            );
+
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
@@ -421,6 +423,7 @@ contract TestRedeemableContractOfferer is
 
             considerationFromEvent[0].identifierOrCriteria = 2;
 
+            // Should revert on the third redemption
             vm.expectRevert(
                 abi.encodeWithSelector(
                     MaxTotalRedemptionsReached.selector,
@@ -439,6 +442,50 @@ contract TestRedeemableContractOfferer is
             assertEq(redeemableToken.ownerOf(1), _BURN_ADDRESS);
             assertEq(redemptionToken.ownerOf(0), address(this));
             assertEq(redemptionToken.ownerOf(1), address(this));
+        }
+    }
+
+    function testRevertConsiderationItemRecipientCannotBeZeroAddress() public {
+        uint256 tokenId = 2;
+        redeemableToken.mint(address(this), tokenId);
+        redeemableToken.setApprovalForAll(address(seaport), true);
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(address(0))
+        });
+
+        {
+            CampaignParams memory params = CampaignParams({
+                offer: offer,
+                consideration: consideration,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxTotalRedemptions: 5,
+                manager: address(this)
+            });
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    ConsiderationItemRecipientCannotBeZeroAddress.selector
+                )
+            );
+            offerer.updateCampaign(0, params, "");
         }
     }
 
