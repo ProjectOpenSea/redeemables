@@ -403,16 +403,16 @@ contract RedeemableContractOfferer is
 
             // TODO: make helper getItemTypeWithoutCriteria
 
-            // Set the itemType without criteria.
-            ItemType itemType = considerationItem.itemType ==
-                ItemType.ERC721_WITH_CRITERIA
-                ? ItemType.ERC721
-                : considerationItem.itemType == ItemType.ERC1155_WITH_CRITERIA
-                ? ItemType.ERC1155
-                : considerationItem.itemType;
+            // // Set the itemType without criteria.
+            // ItemType itemType = considerationItem.itemType ==
+            //     ItemType.ERC721_WITH_CRITERIA
+            //     ? ItemType.ERC721
+            //     : considerationItem.itemType == ItemType.ERC1155_WITH_CRITERIA
+            //     ? ItemType.ERC1155
+            //     : considerationItem.itemType;
 
             consideration[i] = ReceivedItem({
-                itemType: itemType,
+                itemType: considerationItem.itemType,
                 token: considerationItem.token,
                 identifier: maximumSpent[0].identifier,
                 amount: considerationItem.startAmount,

@@ -5,12 +5,13 @@ import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {ItemType, OrderType} from "seaport-sol/src/SeaportEnums.sol";
+import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
 import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
+import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer is
     BaseOrderTest,
@@ -22,6 +23,7 @@ contract TestRedeemableContractOfferer is
     TestERC721 redeemableToken;
     ERC721RedemptionMintable redemptionToken;
     CriteriaResolver[] criteriaResolvers;
+    Merkle merkle = new Merkle();
 
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -271,6 +273,131 @@ contract TestRedeemableContractOfferer is
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: bytes32(0),
+                recipient: address(0)
+            });
+
+            assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
+            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+        }
+    }
+
+    function testRedeemWithCriteriaResolversViaSeaport() public {
+        uint256 tokenId = 2;
+        redeemableToken.mint(address(this), tokenId);
+        redeemableToken.setApprovalForAll(address(seaport), true);
+
+        CriteriaResolver[] memory resolvers = new CriteriaResolver[](1);
+
+        // Create an array of hashed identifiers (0-4)
+        // Only tokenIds 0-4 can be redeemed
+        bytes32[] memory hashedIdentifiers = new bytes32[](5);
+        for (uint256 i = 0; i < hashedIdentifiers.length; i++) {
+            hashedIdentifiers[i] = keccak256(abi.encode(i));
+        }
+        bytes32 root = merkle.getRoot(hashedIdentifiers);
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        // Contract offerer will only consider tokenIds 0-4
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: uint256(root),
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        {
+            CampaignParams memory params = CampaignParams({
+                offer: offer,
+                consideration: consideration,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxTotalRedemptions: 5,
+                manager: address(this)
+            });
+
+            offerer.updateCampaign(0, params, "");
+        }
+
+        uint256 campaignId = 1;
+        bytes32 redemptionHash = bytes32(0);
+
+        {
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(redemptionToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1
+            });
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            vm.expectEmit(true, true, true, true);
+            emit Redemption(
+                address(this),
+                campaignId,
+                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+                OfferItemLib.toSpentItemArray(offerFromEvent),
+                redemptionHash
+            );
+
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
+
+            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(consideration)
+                .withOffer(offer)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(consideration.length);
+            AdvancedOrder memory order = AdvancedOrder({
+                parameters: parameters,
+                numerator: 1,
+                denominator: 1,
+                signature: "",
+                extraData: extraData
+            });
+
+            resolvers[0] = CriteriaResolver({
+                orderIndex: 0,
+                side: Side.CONSIDERATION,
+                index: 0,
+                identifier: tokenId,
+                criteriaProof: merkle.getProof(hashedIdentifiers, 2)
+            });
+
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: resolvers,
                 fulfillerConduitKey: bytes32(0),
                 recipient: address(0)
             });

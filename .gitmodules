@@ -16,3 +16,6 @@
 [submodule "lib/seaport-core"]
 	path = lib/seaport-core
 	url = https://github.com/ProjectOpenSea/seaport-core
+[submodule "murky"]
+	path = murky
+	url = https://github.com/dmfxyz/murky.git
