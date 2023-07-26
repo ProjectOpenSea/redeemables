@@ -38,6 +38,8 @@ contract TestRedeemableContractOfferer is
             address(offerer),
             address(redeemableToken)
         );
+        vm.label(address(redeemableToken), "redeemableToken");
+        vm.label(address(redemptionToken), "redemptionToken");
     }
 
     function testUpdateParamsAndURI() public {
