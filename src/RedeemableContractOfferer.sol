@@ -2,8 +2,9 @@
 pragma solidity ^0.8.19;
 
 import {ContractOffererInterface} from "seaport-types/src/interfaces/ContractOffererInterface.sol";
-import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
-import {OfferItem, ConsiderationItem, ReceivedItem, Schema, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {SeaportInterface} from "seaport-types/src/interfaces/SeaportInterface.sol";
+import {ItemType, OrderType} from "seaport-types/src/lib/ConsiderationEnums.sol";
+import {AdvancedOrder, CriteriaResolver, OrderParameters, OfferItem, ConsiderationItem, ReceivedItem, Schema, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
@@ -473,43 +474,54 @@ contract RedeemableContractOfferer is
         uint256 campaignId = uint256(bytes32(data[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
 
-        SpentItem[] memory minimumReceived = new SpentItem[](1);
-        minimumReceived[0] = SpentItem({
-            itemType: ItemType.ERC721,
-            token: params.offer[0].token,
-            identifier: params.offer[0].identifierOrCriteria,
-            amount: params.offer[0].startAmount
-        });
-
-        SpentItem[] memory maximumSpent = new SpentItem[](1);
-        maximumSpent[0] = SpentItem({
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
             itemType: ItemType.ERC721,
             token: msg.sender,
-            identifier: tokenId,
-            amount: 1
+            identifierOrCriteria: tokenId,
+            startAmount: 1,
+            endAmount: 1
         });
 
-        // _createOrder will revert if any validations fail.
-        _createOrder(from, minimumReceived, maximumSpent, data, true);
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721,
+            token: params.offer[0].token,
+            identifierOrCriteria: params.offer[0].identifierOrCriteria,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(from)
+        });
 
-        // TODO: call fulfillAdvancedOrder on seaport
+        // TODO: add extraData and redemptionHash
 
-        // Transfer the redeemable token to the consideration item recipient.
-        address recipient = _getConsiderationRecipient(
-            params.consideration,
-            msg.sender
-        );
-        ERC721(msg.sender).safeTransferFrom(
-            address(this),
-            payable(recipient),
-            tokenId
-        );
+        OrderParameters memory parameters = OrderParameters({
+            offerer: from,
+            zone: address(0),
+            offer: offer,
+            consideration: consideration,
+            orderType: OrderType.CONTRACT,
+            startTime: block.timestamp,
+            endTime: block.timestamp + 10, // TODO: fix
+            zoneHash: bytes32(0), // TODO: fix
+            salt: uint256(0), // TODO: fix
+            conduitKey: bytes32(0), // TODO: fix
+            totalOriginalConsiderationItems: consideration.length
+        });
 
-        // Transfer the newly minted token to the fulfiller.
-        ERC721(params.offer[0].token).safeTransferFrom(
-            address(this),
-            from,
-            tokenId
+        AdvancedOrder memory order = AdvancedOrder({
+            parameters: parameters,
+            numerator: 1,
+            denominator: 1,
+            signature: "",
+            extraData: new bytes(0)
+        });
+
+        SeaportInterface(_SEAPORT).fulfillAdvancedOrder(
+            order,
+            new CriteriaResolver[](0),
+            bytes32(0),
+            from
         );
 
         return IERC721Receiver.onERC721Received.selector;
