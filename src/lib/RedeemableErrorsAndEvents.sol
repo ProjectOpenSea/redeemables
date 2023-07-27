@@ -35,11 +35,5 @@ interface RedeemableErrorsAndEvents {
         CampaignParams params,
         string uri
     );
-    event Redemption(
-        address indexed by,
-        uint256 indexed campaignId,
-        SpentItem[] spent,
-        SpentItem[] received,
-        bytes32 redemptionHash
-    );
+    event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
 }

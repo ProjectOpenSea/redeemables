@@ -31,6 +31,8 @@ contract RedeemableContractOfferer is
     /// @dev The conduit address to allow as an operator for this contract for newly minted tokens.
     address internal immutable _CONDUIT;
 
+    bytes32 internal immutable _CONDUIT_KEY;
+
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
@@ -44,8 +46,9 @@ contract RedeemableContractOfferer is
     /// @dev The total current redemptions by campaign id.
     mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
 
-    constructor(address conduit, address seaport) {
+    constructor(address conduit, bytes32 conduitKey, address seaport) {
         _CONDUIT = conduit;
+        _CONDUIT_KEY = conduitKey;
         _SEAPORT = seaport;
     }
 
@@ -90,14 +93,14 @@ contract RedeemableContractOfferer is
         // Allow Seaport and the conduit as operators on behalf of this contract for offer items to be minted and transferred.
         for (uint256 i = 0; i < params.offer.length; ) {
             // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
-            if (
-                !ERC721(params.offer[i].token).isApprovedForAll(
-                    _SEAPORT,
-                    address(this)
-                )
-            ) {
-                ERC721(params.offer[i].token).setApprovalForAll(_SEAPORT, true);
-            }
+            // if (
+            //     !ERC721(params.offer[i].token).isApprovedForAll(
+            //         _SEAPORT,
+            //         address(this)
+            //     )
+            // ) {
+            //     ERC721(params.offer[i].token).setApprovalForAll(_SEAPORT, true);
+            // }
             if (
                 !ERC721(params.offer[i].token).isApprovedForAll(
                     _CONDUIT,
@@ -105,6 +108,36 @@ contract RedeemableContractOfferer is
                 )
             ) {
                 ERC721(params.offer[i].token).setApprovalForAll(_CONDUIT, true);
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Allow Seaport and the conduit as operators on behalf of this contract for consideration items to be transferred in the onReceived hooks.
+        for (uint256 i = 0; i < params.consideration.length; ) {
+            // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
+            // if (
+            //     !ERC721(params.consideration[i].token).isApprovedForAll(
+            //         _SEAPORT,
+            //         address(this)
+            //     )
+            // ) {
+            //     ERC721(params.consideration[i].token).setApprovalForAll(
+            //         _SEAPORT,
+            //         true
+            //     );
+            // }
+            if (
+                !ERC721(params.consideration[i].token).isApprovedForAll(
+                    _CONDUIT,
+                    address(this)
+                )
+            ) {
+                ERC721(params.consideration[i].token).setApprovalForAll(
+                    _CONDUIT,
+                    true
+                );
             }
             unchecked {
                 ++i;
@@ -452,10 +485,7 @@ contract RedeemableContractOfferer is
 
             // Emit Redemption event.
             emit Redemption(
-                fulfiller,
                 campaignId,
-                spent,
-                offer,
                 redemptionHash
             );
         }
@@ -476,9 +506,9 @@ contract RedeemableContractOfferer is
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
-            itemType: ItemType.ERC721,
-            token: msg.sender,
-            identifierOrCriteria: tokenId,
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: params.offer[0].token,
+            identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
         });
@@ -486,17 +516,17 @@ contract RedeemableContractOfferer is
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721,
-            token: params.offer[0].token,
-            identifierOrCriteria: params.offer[0].identifierOrCriteria,
+            token: msg.sender,
+            identifierOrCriteria: tokenId,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(from)
+            recipient: payable(
+                address(0x000000000000000000000000000000000000dEaD)
+            )
         });
 
-        // TODO: add extraData and redemptionHash
-
         OrderParameters memory parameters = OrderParameters({
-            offerer: from,
+            offerer: address(this),
             zone: address(0),
             offer: offer,
             consideration: consideration,
@@ -505,7 +535,7 @@ contract RedeemableContractOfferer is
             endTime: block.timestamp + 10, // TODO: fix
             zoneHash: bytes32(0), // TODO: fix
             salt: uint256(0), // TODO: fix
-            conduitKey: bytes32(0), // TODO: fix
+            conduitKey: _CONDUIT_KEY,
             totalOriginalConsiderationItems: consideration.length
         });
 
@@ -514,13 +544,13 @@ contract RedeemableContractOfferer is
             numerator: 1,
             denominator: 1,
             signature: "",
-            extraData: new bytes(0)
+            extraData: data
         });
 
         SeaportInterface(_SEAPORT).fulfillAdvancedOrder(
             order,
             new CriteriaResolver[](0),
-            bytes32(0),
+            _CONDUIT_KEY,
             from
         );
 

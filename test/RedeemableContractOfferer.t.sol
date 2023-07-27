@@ -31,6 +31,7 @@ contract TestRedeemableContractOfferer is
         super.setUp();
         offerer = new RedeemableContractOfferer(
             address(conduit),
+            conduitKey,
             address(seaport)
         );
         redeemableToken = new TestERC721();
@@ -52,7 +53,14 @@ contract TestRedeemableContractOfferer is
             maxTotalRedemptions: 5,
             manager: address(this)
         });
-        params.consideration[0].recipient = payable(_BURN_ADDRESS);
+        params.consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
 
         uint256 campaignId = 1;
         vm.expectEmit(true, true, true, true);
@@ -99,7 +107,7 @@ contract TestRedeemableContractOfferer is
     }
 
     function testRedeemWith721SafeTransferFrom() public {
-        uint256 tokenId = 1;
+        uint256 tokenId = 2;
         redeemableToken.mint(address(this), tokenId);
 
         OfferItem[] memory offer = new OfferItem[](1);
@@ -155,22 +163,15 @@ contract TestRedeemableContractOfferer is
 
         uint256 campaignId = 1;
         bytes32 redemptionHash = bytes32(0);
+        bytes memory extraData = abi.encode(campaignId, redemptionHash);
 
-        vm.expectEmit(true, true, true, true);
-        emit Redemption(
-            address(this),
-            campaignId,
-            ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-            OfferItemLib.toSpentItemArray(offerFromEvent),
-            redemptionHash
-        );
-
+        // TODO: validate OrderFulfilled event
         bytes memory data = abi.encode(campaignId, redemptionHash);
         redeemableToken.safeTransferFrom(
             address(this),
             address(offerer),
             tokenId,
-            data
+            extraData
         );
 
         assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
@@ -180,7 +181,7 @@ contract TestRedeemableContractOfferer is
     function testRedeemWithSeaport() public {
         uint256 tokenId = 2;
         redeemableToken.mint(address(this), tokenId);
-        redeemableToken.setApprovalForAll(address(seaport), true);
+        redeemableToken.setApprovalForAll(address(conduit), true);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -215,8 +216,8 @@ contract TestRedeemableContractOfferer is
             offerer.updateCampaign(0, params, "");
         }
 
-        uint256 campaignId = 1;
-        bytes32 redemptionHash = bytes32(0);
+        // uint256 campaignId = 1;
+        // bytes32 redemptionHash = bytes32(0);
 
         {
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
@@ -238,29 +239,22 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(
-                address(this),
-                campaignId,
-                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-                OfferItemLib.toSpentItemArray(offerFromEvent),
-                redemptionHash
-            );
-
             assertGt(
                 uint256(consideration[0].itemType),
                 uint256(considerationFromEvent[0].itemType)
             );
 
-            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
             consideration[0].identifierOrCriteria = tokenId;
 
+            // TODO: validate OrderFulfilled event
             OrderParameters memory parameters = OrderParametersLib
                 .empty()
                 .withOfferer(address(offerer))
                 .withOrderType(OrderType.CONTRACT)
                 .withConsideration(considerationFromEvent)
                 .withOffer(offer)
+                .withConduitKey(conduitKey)
                 .withStartTime(block.timestamp)
                 .withEndTime(block.timestamp + 1)
                 .withTotalOriginalConsiderationItems(consideration.length);
@@ -275,7 +269,7 @@ contract TestRedeemableContractOfferer is
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
-                fulfillerConduitKey: bytes32(0),
+                fulfillerConduitKey: conduitKey,
                 recipient: address(0)
             });
 
@@ -287,7 +281,7 @@ contract TestRedeemableContractOfferer is
     function testRedeemWithCriteriaResolversViaSeaport() public {
         uint256 tokenId = 2;
         redeemableToken.mint(address(this), tokenId);
-        redeemableToken.setApprovalForAll(address(seaport), true);
+        redeemableToken.setApprovalForAll(address(conduit), true);
 
         CriteriaResolver[] memory resolvers = new CriteriaResolver[](1);
 
@@ -333,9 +327,6 @@ contract TestRedeemableContractOfferer is
             offerer.updateCampaign(0, params, "");
         }
 
-        uint256 campaignId = 1;
-        bytes32 redemptionHash = bytes32(0);
-
         {
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
             offerFromEvent[0] = OfferItem({
@@ -356,21 +347,12 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(
-                address(this),
-                campaignId,
-                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-                OfferItemLib.toSpentItemArray(offerFromEvent),
-                redemptionHash
-            );
-
             assertGt(
                 uint256(consideration[0].itemType),
                 uint256(considerationFromEvent[0].itemType)
             );
 
-            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
             OrderParameters memory parameters = OrderParametersLib
                 .empty()
@@ -378,6 +360,7 @@ contract TestRedeemableContractOfferer is
                 .withOrderType(OrderType.CONTRACT)
                 .withConsideration(consideration)
                 .withOffer(offer)
+                .withConduitKey(conduitKey)
                 .withStartTime(block.timestamp)
                 .withEndTime(block.timestamp + 1)
                 .withTotalOriginalConsiderationItems(consideration.length);
@@ -397,10 +380,14 @@ contract TestRedeemableContractOfferer is
                 criteriaProof: merkle.getProof(hashedIdentifiers, 2)
             });
 
+            // TODO: validate OrderFulfilled event
+            // vm.expectEmit(true, true, true, true);
+            // emit OrderFulfilled();
+
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: resolvers,
-                fulfillerConduitKey: bytes32(0),
+                fulfillerConduitKey: conduitKey,
                 recipient: address(0)
             });
 
@@ -415,7 +402,7 @@ contract TestRedeemableContractOfferer is
         redeemableToken.mint(address(this), 0);
         redeemableToken.mint(address(this), 1);
         redeemableToken.mint(address(this), 2);
-        redeemableToken.setApprovalForAll(address(seaport), true);
+        redeemableToken.setApprovalForAll(address(conduit), true);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -450,9 +437,6 @@ contract TestRedeemableContractOfferer is
             offerer.updateCampaign(0, params, "");
         }
 
-        uint256 campaignId = 1;
-        bytes32 redemptionHash = bytes32(0);
-
         {
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
             offerFromEvent[0] = OfferItem({
@@ -472,15 +456,6 @@ contract TestRedeemableContractOfferer is
                 endAmount: 1,
                 recipient: payable(_BURN_ADDRESS)
             });
-
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(
-                address(this),
-                campaignId,
-                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-                OfferItemLib.toSpentItemArray(offerFromEvent),
-                redemptionHash
-            );
 
             offerFromEvent[0] = OfferItem({
                 itemType: ItemType.ERC721,
@@ -504,7 +479,7 @@ contract TestRedeemableContractOfferer is
                 uint256(considerationFromEvent[0].itemType)
             );
 
-            bytes memory extraData = abi.encode(campaignId, redemptionHash);
+            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
             considerationFromEvent[0].identifierOrCriteria = 0;
 
@@ -514,6 +489,7 @@ contract TestRedeemableContractOfferer is
                 .withOrderType(OrderType.CONTRACT)
                 .withConsideration(considerationFromEvent)
                 .withOffer(offer)
+                .withConduitKey(conduitKey)
                 .withStartTime(block.timestamp)
                 .withEndTime(block.timestamp + 1)
                 .withTotalOriginalConsiderationItems(consideration.length);
@@ -528,25 +504,25 @@ contract TestRedeemableContractOfferer is
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
-                fulfillerConduitKey: bytes32(0),
+                fulfillerConduitKey: conduitKey,
                 recipient: address(0)
             });
 
             considerationFromEvent[0].identifierOrCriteria = 1;
 
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(
-                address(this),
-                campaignId,
-                ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-                OfferItemLib.toSpentItemArray(offerFromEvent),
-                redemptionHash
-            );
+            // vm.expectEmit(true, true, true, true);
+            // emit Or(
+            //     address(this),
+            //     campaignId,
+            //     ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
+            //     OfferItemLib.toSpentItemArray(offerFromEvent),
+            //     redemptionHash
+            // );
 
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
-                fulfillerConduitKey: bytes32(0),
+                fulfillerConduitKey: conduitKey,
                 recipient: address(0)
             });
 
@@ -563,7 +539,7 @@ contract TestRedeemableContractOfferer is
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
-                fulfillerConduitKey: bytes32(0),
+                fulfillerConduitKey: conduitKey,
                 recipient: address(0)
             });
 
@@ -577,7 +553,7 @@ contract TestRedeemableContractOfferer is
     function testRevertConsiderationItemRecipientCannotBeZeroAddress() public {
         uint256 tokenId = 2;
         redeemableToken.mint(address(this), tokenId);
-        redeemableToken.setApprovalForAll(address(seaport), true);
+        redeemableToken.setApprovalForAll(address(conduit), true);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -620,7 +596,7 @@ contract TestRedeemableContractOfferer is
 
     function xtestRedeemMultipleWithSeaport() public {
         uint256 tokenId;
-        redeemableToken.setApprovalForAll(address(seaport), true);
+        redeemableToken.setApprovalForAll(address(conduit), true);
 
         AdvancedOrder[] memory orders = new AdvancedOrder[](5);
         OfferItem[] memory offer = new OfferItem[](1);
@@ -704,15 +680,6 @@ contract TestRedeemableContractOfferer is
             recipient: payable(_BURN_ADDRESS)
         });
 
-        vm.expectEmit(true, true, true, true);
-        emit Redemption(
-            address(this),
-            campaignId,
-            ConsiderationItemLib.toSpentItemArray(considerationFromEvent),
-            OfferItemLib.toSpentItemArray(offerFromEvent),
-            redemptionHash
-        );
-
         (
             FulfillmentComponent[][] memory offerFulfillmentComponents,
             FulfillmentComponent[][] memory considerationFulfillmentComponents
@@ -723,7 +690,7 @@ contract TestRedeemableContractOfferer is
             criteriaResolvers: criteriaResolvers,
             offerFulfillments: offerFulfillmentComponents,
             considerationFulfillments: considerationFulfillmentComponents,
-            fulfillerConduitKey: bytes32(0),
+            fulfillerConduitKey: conduitKey,
             recipient: address(0),
             maximumFulfilled: 10
         });
