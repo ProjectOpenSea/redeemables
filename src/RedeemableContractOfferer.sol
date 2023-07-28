@@ -17,7 +17,7 @@ import {CampaignParams} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOfferer
- * @author ryanio
+ * @author ryanio, stephankmin
  * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
  */
 contract RedeemableContractOfferer is
@@ -406,6 +406,12 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
+            if (
+                offerItem.itemType == ItemType.ERC721_WITH_CRITERIA ||
+                offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA
+            ) {
+                // Get the
+            }
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
@@ -484,10 +490,7 @@ contract RedeemableContractOfferer is
             }
 
             // Emit Redemption event.
-            emit Redemption(
-                campaignId,
-                redemptionHash
-            );
+            emit Redemption(campaignId, redemptionHash);
         }
     }
 
