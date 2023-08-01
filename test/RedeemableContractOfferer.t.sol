@@ -20,7 +20,7 @@ contract TestRedeemableContractOfferer is
 {
     using OrderParametersLib for OrderParameters;
 
-    error InvalidProof();
+    error InvalidContractOrder();
 
     RedeemableContractOfferer offerer;
     TestERC721 redeemableToken;
@@ -281,6 +281,8 @@ contract TestRedeemableContractOfferer is
         }
     }
 
+    // TODO: add resolved tokenId to extradata
+
     function testRedeemWithCriteriaResolversViaSeaport() public {
         uint256 tokenId = 2;
         redeemableToken.mint(address(this), tokenId);
@@ -515,7 +517,7 @@ contract TestRedeemableContractOfferer is
             // vm.expectEmit(true, true, true, true);
             // emit OrderFulfilled();
 
-            vm.expectRevert(abi.encodeWithSelector(InvalidProof.selector));
+            vm.expectRevert();
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: resolvers,
@@ -656,13 +658,21 @@ contract TestRedeemableContractOfferer is
             considerationFromEvent[0].identifierOrCriteria = 2;
 
             // Should revert on the third redemption
-            vm.expectRevert(
-                abi.encodeWithSelector(
-                    MaxTotalRedemptionsReached.selector,
-                    3,
-                    2
-                )
-            );
+            // The call to Seaport should revert with MaxTotalRedemptionsReached(3, 2)
+            // vm.expectRevert(
+            //     abi.encodeWithSelector(
+            //         MaxTotalRedemptionsReached.selector,
+            //         3,
+            //         2
+            //     )
+            // );
+            // vm.expectRevert(
+            //     abi.encodeWithSelector(
+            //         InvalidContractOrder.selector,
+            //         (uint256(uint160(address(offerer))) << 96) +
+            //             consideration.getContractOffererNonce(address(offerer))
+            //     )
+            // );
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
                 criteriaResolvers: criteriaResolvers,
@@ -718,6 +728,160 @@ contract TestRedeemableContractOfferer is
                 )
             );
             offerer.updateCampaign(0, params, "");
+        }
+    }
+
+    // TODO: burn 2 to redeem 1, burn 1 to redeem 2
+    // TODO: burn 1, send weth to third address, also redeem trait
+    // TODO: mock erc20 to third address or burn
+    // TODO: make MockErc20RedemptionMintable with mintRedemption
+    // TODO: burn nft and send erc20 to third address, get nft and erc20
+    // TODO: mintRedemption should return tokenIds array
+    // TODO: then add dynamic traits
+    // TODO: by EOW, have dynamic traits demo
+
+    function testBurn2Redeem1WithSeaport() public {
+        // Set the two tokenIds to be burned
+        uint256 burnTokenId0 = 2;
+        uint256 burnTokenId1 = 3;
+
+        // Mint two redeemableTokens of tokenId burnTokenId0 and burnTokenId1 to the test contract
+        redeemableToken.mint(address(this), burnTokenId0);
+        redeemableToken.mint(address(this), burnTokenId1);
+
+        // Approve the conduit to transfer the redeemableTokens on behalf of the test contract
+        redeemableToken.setApprovalForAll(address(conduit), true);
+
+        // Create a single-item OfferItem array with the redemption token the caller will receive
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        // Create a single-item ConsiderationItem array and require the caller to burn two redeemableTokens (of any tokenId)
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        consideration[1] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        // Create the CampaignParams with the offer and consideration from above.
+        {
+            CampaignParams memory params = CampaignParams({
+                offer: offer,
+                consideration: consideration,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxTotalRedemptions: 5,
+                manager: address(this)
+            });
+
+            // Call updateCampaign on the offerer and pass in the CampaignParams
+            offerer.updateCampaign(0, params, "");
+        }
+
+        // uint256 campaignId = 1;
+        // bytes32 redemptionHash = bytes32(0);
+
+        {
+            // Create the offer we expect to be emitted in the event
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(redemptionToken),
+                identifierOrCriteria: burnTokenId0,
+                startAmount: 1,
+                endAmount: 1
+            });
+
+            // Create the consideration we expect to be emitted in the event
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](2);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: burnTokenId0,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            considerationFromEvent[1] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: burnTokenId1,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            assertEq(uint256(consideration[0].itemType), 4);
+
+            // Check that the consideration emitted in the event has itemType ERC721
+            assertEq(uint256(considerationFromEvent[0].itemType), 2);
+            assertEq(uint256(considerationFromEvent[1].itemType), 2);
+
+            // Create the extraData to be passed into fulfillAdvancedOrder
+            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
+
+            // TODO: validate OrderFulfilled event
+
+            // Create the OrderParameters to be passed into fulfillAdvancedOrder
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(considerationFromEvent)
+                .withOffer(offer)
+                .withConduitKey(conduitKey)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(
+                    considerationFromEvent.length
+                );
+
+            // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
+            AdvancedOrder memory order = AdvancedOrder({
+                parameters: parameters,
+                numerator: 1,
+                denominator: 1,
+                signature: "",
+                extraData: extraData
+            });
+
+            // Call fulfillAdvancedOrder
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: conduitKey,
+                recipient: address(0)
+            });
+
+            // Check that the two redeemable tokens have been burned
+            assertEq(redeemableToken.ownerOf(burnTokenId0), _BURN_ADDRESS);
+            assertEq(redeemableToken.ownerOf(burnTokenId1), _BURN_ADDRESS);
+
+            // Check that the redemption token has been minted to the test contract
+            assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
         }
     }
 

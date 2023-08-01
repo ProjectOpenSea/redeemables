@@ -406,12 +406,6 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
-            if (
-                offerItem.itemType == ItemType.ERC721_WITH_CRITERIA ||
-                offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA
-            ) {
-                // Get the
-            }
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
@@ -443,26 +437,32 @@ contract RedeemableContractOfferer is
 
             // TODO: make helper getItemTypeWithoutCriteria
             ItemType itemType;
+            uint256 identifier;
 
+            // If consideration item is wildcard criteria item, set itemType to ERC721
+            // and identifier to the maximumSpent item identifier.
             if (
                 (considerationItem.itemType == ItemType.ERC721_WITH_CRITERIA) &&
                 (considerationItem.identifierOrCriteria == 0)
             ) {
                 itemType = ItemType.ERC721;
+                identifier = maximumSpent[i].identifier;
             } else if (
                 (considerationItem.itemType ==
                     ItemType.ERC1155_WITH_CRITERIA) &&
                 (considerationItem.identifierOrCriteria == 0)
             ) {
                 itemType = ItemType.ERC1155;
+                identifier = maximumSpent[i].identifier;
             } else {
                 itemType = considerationItem.itemType;
+                identifier = considerationItem.identifierOrCriteria;
             }
 
             consideration[i] = ReceivedItem({
                 itemType: itemType,
                 token: considerationItem.token,
-                identifier: maximumSpent[0].identifier,
+                identifier: identifier,
                 amount: considerationItem.startAmount,
                 recipient: considerationItem.recipient
             });
