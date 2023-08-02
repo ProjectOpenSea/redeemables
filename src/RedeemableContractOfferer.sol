@@ -406,6 +406,7 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
+            if (params.offer.length > maximumSpent.length) {}
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
