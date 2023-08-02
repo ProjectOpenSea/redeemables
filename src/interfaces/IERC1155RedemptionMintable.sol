@@ -7,5 +7,5 @@ interface IERC1155RedemptionMintable {
     function mintRedemption(
         address to,
         SpentItem[] calldata spent
-    ) external returns (uint256[] memory tokenIds);
+    ) external returns (uint256 tokenId);
 }
