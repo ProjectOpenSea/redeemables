@@ -5,6 +5,7 @@ import {ContractOffererInterface} from "seaport-types/src/interfaces/ContractOff
 import {SeaportInterface} from "seaport-types/src/interfaces/SeaportInterface.sol";
 import {ItemType, OrderType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {AdvancedOrder, CriteriaResolver, OrderParameters, OfferItem, ConsiderationItem, ReceivedItem, Schema, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {ERC20} from "solady/src/tokens/ERC20.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
@@ -92,22 +93,34 @@ contract RedeemableContractOfferer is
 
         // Allow Seaport and the conduit as operators on behalf of this contract for offer items to be minted and transferred.
         for (uint256 i = 0; i < params.offer.length; ) {
+            // Native items do not need to be approved.
+            if (params.offer[i].itemType == ItemType.NATIVE) {
+                revert NativeOfferItemsNotAllowed();
+            }
             // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
-            // if (
-            //     !ERC721(params.offer[i].token).isApprovedForAll(
-            //         _SEAPORT,
-            //         address(this)
-            //     )
-            // ) {
-            //     ERC721(params.offer[i].token).setApprovalForAll(_SEAPORT, true);
-            // }
-            if (
-                !ERC721(params.offer[i].token).isApprovedForAll(
-                    _CONDUIT,
-                    address(this)
-                )
+            else if (
+                params.offer[i].itemType == ItemType.ERC721 ||
+                params.offer[i].itemType == ItemType.ERC721_WITH_CRITERIA ||
+                params.offer[i].itemType == ItemType.ERC1155 ||
+                params.offer[i].itemType == ItemType.ERC1155_WITH_CRITERIA
             ) {
-                ERC721(params.offer[i].token).setApprovalForAll(_CONDUIT, true);
+                if (
+                    !ERC721(params.offer[i].token).isApprovedForAll(
+                        _CONDUIT,
+                        address(this)
+                    )
+                ) {
+                    ERC721(params.offer[i].token).setApprovalForAll(
+                        _CONDUIT,
+                        true
+                    );
+                }
+                // Set the maximum approval amount for ERC20 tokens.
+            } else {
+                ERC20(params.offer[i].token).approve(
+                    _CONDUIT,
+                    type(uint256).max
+                );
             }
             unchecked {
                 ++i;
@@ -117,27 +130,18 @@ contract RedeemableContractOfferer is
         // Allow Seaport and the conduit as operators on behalf of this contract for consideration items to be transferred in the onReceived hooks.
         for (uint256 i = 0; i < params.consideration.length; ) {
             // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
-            // if (
-            //     !ERC721(params.consideration[i].token).isApprovedForAll(
-            //         _SEAPORT,
-            //         address(this)
-            //     )
-            // ) {
-            //     ERC721(params.consideration[i].token).setApprovalForAll(
-            //         _SEAPORT,
-            //         true
-            //     );
-            // }
-            if (
-                !ERC721(params.consideration[i].token).isApprovedForAll(
-                    _CONDUIT,
-                    address(this)
-                )
-            ) {
-                ERC721(params.consideration[i].token).setApprovalForAll(
-                    _CONDUIT,
-                    true
-                );
+            if (params.consideration[i].itemType >= ItemType.ERC721) {
+                if (
+                    !ERC721(params.consideration[i].token).isApprovedForAll(
+                        _CONDUIT,
+                        address(this)
+                    )
+                ) {
+                    ERC721(params.consideration[i].token).setApprovalForAll(
+                        _CONDUIT,
+                        true
+                    );
+                }
             }
             unchecked {
                 ++i;
@@ -406,16 +410,13 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
-            if (params.offer.length > maximumSpent.length) {}
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
             // Set the itemType without criteria.
-            ItemType itemType = offerItem.itemType ==
+            ItemType itemType = offerItem.itemType >=
                 ItemType.ERC721_WITH_CRITERIA
-                ? ItemType.ERC721
-                : offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA
-                ? ItemType.ERC1155
+                ? offerItem.itemType - 2
                 : offerItem.itemType;
 
             offer[i] = SpentItem({

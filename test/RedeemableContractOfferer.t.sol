@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
+import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
 // import {CriteriaResolutionErrors} from "seaport-types/src/interfaces/CriteriaResolutionErrors.sol";
@@ -278,6 +279,138 @@ contract TestRedeemableContractOfferer is
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(redemptionToken.ownerOf(tokenId), address(this));
+        }
+    }
+
+    // TODO: write test with ETH redemption consideration
+    // TODO: 1155 tests with same tokenId (amount > 1), different tokenIds
+    // TODO: update erc20 amount to use decimals
+
+    function testRedeemAndSendErc20ToThirdAddressWithSeaport() public {
+        uint256 tokenId = 2;
+        redeemableToken.mint(address(this), tokenId);
+        redeemableToken.setApprovalForAll(address(conduit), true);
+
+        // Deploy the ERC20
+        TestERC20 erc20 = new TestERC20();
+        uint256 erc20Amount = 10;
+
+        // Mint 100 tokens to the test contract
+        erc20.mint(address(this), 100);
+
+        // Approve the conduit to spend tokens
+        erc20.approve(address(conduit), type(uint256).max);
+
+        OfferItem[] memory campaignOffer = new OfferItem[](1);
+        campaignOffer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redemptionToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[]
+            memory campaignConsideration = new ConsiderationItem[](2);
+        campaignConsideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(redeemableToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+        campaignConsideration[1] = ConsiderationItem({
+            itemType: ItemType.ERC20,
+            token: address(erc20),
+            identifierOrCriteria: 0,
+            startAmount: erc20Amount,
+            endAmount: erc20Amount,
+            recipient: payable(eve.addr)
+        });
+
+        {
+            CampaignParams memory params = CampaignParams({
+                offer: campaignOffer,
+                consideration: campaignConsideration,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxTotalRedemptions: 5,
+                manager: address(this)
+            });
+
+            offerer.updateCampaign(0, params, "");
+        }
+
+        // uint256 campaignId = 1;
+        // bytes32 redemptionHash = bytes32(0);
+
+        {
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(redemptionToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1
+            });
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemableToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            assertGt(
+                uint256(campaignConsideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
+
+            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
+
+            campaignConsideration[0].identifierOrCriteria = tokenId;
+
+            // TODO: validate OrderFulfilled event
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(campaignConsideration)
+                .withOffer(campaignOffer)
+                .withConduitKey(conduitKey)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(
+                    campaignConsideration.length
+                );
+            AdvancedOrder memory order = AdvancedOrder({
+                parameters: parameters,
+                numerator: 1,
+                denominator: 1,
+                signature: "",
+                extraData: extraData
+            });
+
+            uint256 erc20BalanceBefore = erc20.balanceOf(address(this));
+
+            seaport.fulfillAdvancedOrder({
+                advancedOrder: order,
+                criteriaResolvers: criteriaResolvers,
+                fulfillerConduitKey: conduitKey,
+                recipient: address(0)
+            });
+
+            assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
+            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(
+                erc20.balanceOf(address(eve.addr)) - erc20BalanceBefore,
+                erc20Amount
+            );
         }
     }
 
@@ -733,9 +866,9 @@ contract TestRedeemableContractOfferer is
         }
     }
 
-    // TODO: burn 1 to redeem 2
     // TODO: burn 1, send weth to third address, also redeem trait
     // TODO: mock erc20 to third address or burn
+    // TODO: mock erc721 with tokenId counter
     // TODO: make MockErc20RedemptionMintable with mintRedemption
     // TODO: burn nft and send erc20 to third address, get nft and erc20
     // TODO: mintRedemption should return tokenIds array
@@ -887,6 +1020,8 @@ contract TestRedeemableContractOfferer is
             assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
         }
     }
+
+    // TODO: add counter to Mock ERC721
 
     function testBurn1Redeem2WithSeaport() public {
         // Set the two tokenIds to be redeemed
@@ -1188,6 +1323,8 @@ contract TestRedeemableContractOfferer is
             assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
         }
     }
+
+    // TODO: add multi-redeem file
 
     function testBurn1Redeem2SeparateRedemptionTokensWithSeaport() public {
         // Set the tokenId to be redeemed
