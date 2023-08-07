@@ -8,13 +8,14 @@ import {AdvancedOrder, CriteriaResolver, OrderParameters, OfferItem, Considerati
 import {ERC20} from "solady/src/tokens/ERC20.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
+import {IERC7XXX} from "./interfaces/IERC7XXX.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
 import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParams} from "./lib/RedeemableStructs.sol";
+import {CampaignParams, TraitRedemption} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOfferer
@@ -95,7 +96,7 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             // Native items do not need to be approved.
             if (params.offer[i].itemType == ItemType.NATIVE) {
-                revert NativeOfferItemsNotAllowed();
+                revert InvalidNativeOfferItem();
             }
             // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
             else if (
@@ -336,6 +337,7 @@ contract RedeemableContractOfferer is
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(context[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
+        TraitRedemption[] memory traitRedemptions;
 
         // Declare an error buffer; first check is that caller is Seaport or the token contract.
         uint256 errorBuffer = _cast(
@@ -362,7 +364,7 @@ contract RedeemableContractOfferer is
         // Check the signature is valid if required.
         if (params.signer != address(0)) {
             uint256 salt = uint256(bytes32(context[64:96]));
-            bytes memory signature = context[96:];
+            bytes memory signature = context[96:159];
             // _verifySignature will revert if the signature is invalid or digest is already used.
             _verifySignature(
                 params.signer,
@@ -373,6 +375,10 @@ contract RedeemableContractOfferer is
                 signature,
                 withEffects
             );
+            traitRedemptions = abi.decode(context[159:], (TraitRedemption[]));
+        } else {
+            // The campaign has no signer, so traitRedemptions start at 64
+            traitRedemptions = abi.decode(context[64:], (TraitRedemption[]));
         }
 
         if (errorBuffer > 0) {
@@ -405,22 +411,123 @@ contract RedeemableContractOfferer is
             }
         }
 
+        if (traitRedemptions.length != 0) {
+            for (uint256 i = 0; i < traitRedemptions.length; ) {
+                TraitRedemption memory traitRedemption = traitRedemptions[i];
+                address traitRedemptionToken = traitRedemption.token;
+                bytes32 traitKey = traitRedemption.traitKey;
+                uint256 identifier = traitRedemption.identifier;
+
+                // Check that the fulfiller owns the token having its trait redeemed.
+                if (
+                    ERC721(traitRedemptionToken).ownerOf(identifier) !=
+                    fulfiller
+                ) {
+                    // Revert if the fulfiller does not own the token.
+                    revert InvalidOwner();
+                }
+
+                // Check if the trait redemption token implements IERC7XXX.
+                if (
+                    IERC7XXX(traitRedemptionToken).supportsInterface(
+                        type(IERC7XXX).interfaceId
+                    ) == false
+                ) {
+                    // Revert if the token does not implement IERC7XXX.
+                    revert InvalidTraitRedemptionToken(traitRedemptionToken);
+                }
+
+                // Get the trait's prior value.
+                bytes32 priorTraitValue = IERC7XXX(traitRedemptionToken)
+                    .getTrait(traitKey, identifier);
+
+                // Check if the trait's prior value is equal to the required value.
+                if (
+                    priorTraitValue !=
+                    traitRedemption.maxOrMinOrRequiredPriorValue
+                ) {
+                    revert InvalidRequiredValue(
+                        priorTraitValue,
+                        traitRedemption.maxOrMinOrRequiredPriorValue
+                    );
+                }
+
+                // Get the trait redemption's substandard.
+                uint8 substandard = traitRedemption.substandard;
+
+                // Get the trait redemption's trait value.
+                bytes32 traitValue = traitRedemption.traitValue;
+
+                // Set the trait's new value based on the substandard.
+                // If substandard is 0, increment the trait by traitValue.
+                if (substandard == 0) {
+                    // Get the new trait value.
+                    bytes32 newTraitValue = bytes32(
+                        uint256(priorTraitValue) + uint256(traitValue)
+                    );
+
+                    // Set the trait with the new value.
+                    IERC7XXX(traitRedemptionToken).setTrait(
+                        identifier,
+                        traitKey,
+                        newTraitValue
+                    );
+                } else if (substandard == 1) {
+                    // Get the new trait value.
+                    bytes32 newTraitValue = bytes32(
+                        uint256(priorTraitValue) - uint256(traitValue)
+                    );
+
+                    // Set the trait with the new value.
+                    IERC7XXX(traitRedemptionToken).setTrait(
+                        identifier,
+                        traitKey,
+                        newTraitValue
+                    );
+                } else if (substandard == 2) {
+                    // Set the trait with the new value.
+                    IERC7XXX(traitRedemptionToken).setTrait(
+                        identifier,
+                        traitKey,
+                        traitValue
+                    );
+                } else {
+                    // Revert if the substandard is invalid.
+                    revert InvalidSubstandard(substandard);
+                }
+
+                unchecked {
+                    ++i;
+                }
+            }
+        }
+
         // Set the offer from the params.
         offer = new SpentItem[](params.offer.length);
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
+            // TODO: set trait if trait redemption
+
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
-            // Set the itemType without criteria.
-            ItemType itemType = offerItem.itemType >=
-                ItemType.ERC721_WITH_CRITERIA
-                ? offerItem.itemType - 2
-                : offerItem.itemType;
+            // Read the offerItem itemType and place on the stack.
+            ItemType itemType = offerItem.itemType;
 
+            // Declare a variable to store the new item type.
+            ItemType newItemType;
+
+            // Update item type to remove criteria usage.
+            // Use assembly to operate on ItemType enum as a number.
+            assembly {
+                // Item type 4 becomes 2 and item type 5 becomes 3.
+                newItemType := sub(3, eq(itemType, 4))
+            }
+
+            // Set the offer item with the new item type.
             offer[i] = SpentItem({
-                itemType: itemType,
+                itemType: newItemType,
                 token: offerItem.token,
                 identifier: tokenId,
                 amount: offerItem.startAmount
