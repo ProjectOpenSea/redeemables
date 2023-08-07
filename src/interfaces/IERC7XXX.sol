@@ -22,14 +22,14 @@ interface IERC7XXX {
         uint256 tokenId
     ) external view returns (bytes32);
 
-    function getTotalTraitKeys() external view returns (uint256);
+    // function getTotalTraitKeys() external view returns (uint256);
 
-    function getTraitKeyAt(uint256 index) external view returns (bytes32);
+    // function getTraitKeyAt(uint256 index) external view returns (bytes32);
 
-    function getTraitLabelsURI() external view returns (string memory);
+    // function getTraitLabelsURI() external view returns (string memory);
 
     // TODO to consider:
-    function getTraitKeys() external view returns (bytes32[] memory);
+    // function getTraitKeys() external view returns (bytes32[] memory);
 
     function getTraits(
         bytes32 traitKey,
@@ -43,5 +43,7 @@ interface IERC7XXX {
         bytes32 value
     ) external;
 
-    function setTraitLabelsURI(string calldata uri) external;
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+
+    // function setTraitLabelsURI(string calldata uri) external;
 }

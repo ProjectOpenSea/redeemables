@@ -26,6 +26,11 @@ interface RedeemableErrorsAndEvents {
     error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);
+    error InvalidNativeOfferItem();
+    error InvalidOwner();
+    error InvalidRequiredValue(bytes32 got, bytes32 want);
+    error InvalidSubstandard(uint256 substandard);
+    error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);
     error RedemptionValuesAreImmutable();
 
