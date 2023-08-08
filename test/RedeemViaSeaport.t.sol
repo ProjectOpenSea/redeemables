@@ -13,6 +13,7 @@ import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemableStructs.sol";
 import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer is
@@ -561,11 +562,16 @@ contract TestRedeemableContractOfferer is
 
     function testBurn1Redeem2WithSeaport() public {
         // Set the two tokenIds to be redeemed
-        uint256 redemptionTokenId0 = 2;
-        uint256 redemptionTokenId1 = 3;
+        uint256 redemptionTokenId0 = 0;
+        uint256 redemptionTokenId1 = 1;
 
         // Set the tokenId to be burned to the first tokenId to be redeemed
         uint256 redeemableTokenId0 = redemptionTokenId0;
+
+        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+                address(offerer),
+                address(redeemableToken)
+            );
 
         // Mint a redeemableToken of tokenId redeemableTokenId0 to the test contract
         redeemableToken.mint(address(this), redeemableTokenId0);
@@ -577,7 +583,7 @@ contract TestRedeemableContractOfferer is
         OfferItem[] memory offer = new OfferItem[](2);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redemptionToken),
+            token: address(redemptionTokenWithCounter),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -585,7 +591,7 @@ contract TestRedeemableContractOfferer is
 
         offer[1] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redemptionToken),
+            token: address(redemptionTokenWithCounter),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -626,7 +632,7 @@ contract TestRedeemableContractOfferer is
             OfferItem[] memory offerFromEvent = new OfferItem[](2);
             offerFromEvent[0] = OfferItem({
                 itemType: ItemType.ERC721,
-                token: address(redemptionToken),
+                token: address(redemptionTokenWithCounter),
                 identifierOrCriteria: redemptionTokenId0,
                 startAmount: 1,
                 endAmount: 1
@@ -634,7 +640,7 @@ contract TestRedeemableContractOfferer is
 
             offerFromEvent[1] = OfferItem({
                 itemType: ItemType.ERC721,
-                token: address(redemptionToken),
+                token: address(redemptionTokenWithCounter),
                 identifierOrCriteria: redemptionTokenId1,
                 startAmount: 1,
                 endAmount: 1
@@ -702,11 +708,11 @@ contract TestRedeemableContractOfferer is
 
             // Check that the two redemptionTokens has been minted to the test contract
             assertEq(
-                redemptionToken.ownerOf(redemptionTokenId0),
+                redemptionTokenWithCounter.ownerOf(redemptionTokenId0),
                 address(this)
             );
             assertEq(
-                redemptionToken.ownerOf(redemptionTokenId1),
+                redemptionTokenWithCounter.ownerOf(redemptionTokenId1),
                 address(this)
             );
         }
