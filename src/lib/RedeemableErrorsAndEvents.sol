@@ -30,6 +30,7 @@ interface RedeemableErrorsAndEvents {
     error InvalidOwner();
     error InvalidRequiredValue(bytes32 got, bytes32 want);
     error InvalidSubstandard(uint256 substandard);
+    error InvalidTraitRedemption();
     error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);
     error RedemptionValuesAreImmutable();
