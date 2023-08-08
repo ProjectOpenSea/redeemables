@@ -8,14 +8,13 @@ import {AdvancedOrder, CriteriaResolver, OrderParameters, OfferItem, Considerati
 import {ERC20} from "solady/src/tokens/ERC20.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
-import {IERC7XXX} from "./interfaces/IERC7XXX.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
 import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParams, TraitRedemption} from "./lib/RedeemableStructs.sol";
+import {CampaignParams} from "./lib/RedeemableStructs.sol";
 
 /**
  * @title  RedeemablesContractOfferer
@@ -131,7 +130,14 @@ contract RedeemableContractOfferer is
         // Allow Seaport and the conduit as operators on behalf of this contract for consideration items to be transferred in the onReceived hooks.
         for (uint256 i = 0; i < params.consideration.length; ) {
             // ERC721 and ERC1155 have the same function signatures for isApprovedForAll and setApprovalForAll.
-            if (params.consideration[i].itemType >= ItemType.ERC721) {
+            if (
+                params.consideration[i].itemType == ItemType.ERC721 ||
+                params.consideration[i].itemType ==
+                ItemType.ERC721_WITH_CRITERIA ||
+                params.consideration[i].itemType == ItemType.ERC1155 ||
+                params.consideration[i].itemType ==
+                ItemType.ERC1155_WITH_CRITERIA
+            ) {
                 if (
                     !ERC721(params.consideration[i].token).isApprovedForAll(
                         _CONDUIT,
@@ -143,6 +149,12 @@ contract RedeemableContractOfferer is
                         true
                     );
                 }
+                // Set the maximum approval amount for ERC20 tokens.
+            } else {
+                ERC20(params.consideration[i].token).approve(
+                    _CONDUIT,
+                    type(uint256).max
+                );
             }
             unchecked {
                 ++i;
@@ -326,7 +338,7 @@ contract RedeemableContractOfferer is
 
     function _createOrder(
         address fulfiller,
-        SpentItem[] memory, // minimumReceived
+        SpentItem[] memory minimumReceived,
         SpentItem[] memory maximumSpent,
         bytes calldata context,
         bool withEffects
@@ -338,56 +350,24 @@ contract RedeemableContractOfferer is
         uint256 campaignId = uint256(bytes32(context[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
 
-        {
-            // Declare an error buffer; first check is that caller is Seaport or the token contract.
-            uint256 errorBuffer = _cast(
-                msg.sender != _SEAPORT &&
-                    msg.sender != params.consideration[0].token
-            );
+        // Declare an error buffer; first check is that caller is Seaport or the token contract.
+        uint256 errorBuffer = _cast(
+            msg.sender != _SEAPORT &&
+                msg.sender != params.consideration[0].token
+        );
 
-            // Check the redemption is active.
-            errorBuffer |=
-                _cast(_isInactive(params.startTime, params.endTime)) <<
-                1;
+        // Check the redemption is active.
+        errorBuffer |=
+            _cast(_isInactive(params.startTime, params.endTime)) <<
+            1;
 
-            // Check max total redemptions would not be exceeded.
-            errorBuffer |=
-                _cast(
-                    _totalRedemptions[campaignId] + maximumSpent.length >
-                        params.maxTotalRedemptions
-                ) <<
-                2;
-
-            if (errorBuffer > 0) {
-                if (errorBuffer << 255 != 0) {
-                    revert InvalidCaller(msg.sender);
-                } else if (errorBuffer << 254 != 0) {
-                    revert NotActive(
-                        block.timestamp,
-                        params.startTime,
-                        params.endTime
-                    );
-                } else if (errorBuffer << 253 != 0) {
-                    revert MaxTotalRedemptionsReached(
-                        _totalRedemptions[campaignId] + maximumSpent.length,
-                        params.maxTotalRedemptions
-                    );
-                    // TODO: do we need this error?
-                    // } else if (errorBuffer << 252 != 0) {
-                    //     revert InvalidConsiderationLength(
-                    //         maximumSpent.length,
-                    //         params.consideration.length
-                    //     );
-                } else if (errorBuffer << 252 != 0) {
-                    revert InvalidConsiderationItem(
-                        maximumSpent[0].token,
-                        params.consideration[0].token
-                    );
-                } else {
-                    // todo more validation errors
-                }
-            }
-        }
+        // Check max total redemptions would not be exceeded.
+        errorBuffer |=
+            _cast(
+                _totalRedemptions[campaignId] + maximumSpent.length >
+                    params.maxTotalRedemptions
+            ) <<
+            2;
 
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
@@ -395,7 +375,7 @@ contract RedeemableContractOfferer is
         // Check the signature is valid if required.
         if (params.signer != address(0)) {
             uint256 salt = uint256(bytes32(context[64:96]));
-            bytes memory signature = context[96:159];
+            bytes memory signature = context[96:];
             // _verifySignature will revert if the signature is invalid or digest is already used.
             _verifySignature(
                 params.signer,
@@ -408,19 +388,33 @@ contract RedeemableContractOfferer is
             );
         }
 
-        TraitRedemption[] memory traitRedemptions;
-        if (params.signer != address(0)) {
-            traitRedemptions = abi.decode(context[159:], (TraitRedemption[]));
-        } else {
-            // The campaign has no signer, so traitRedemptions start at 64
-            traitRedemptions = abi.decode(context[64:], (TraitRedemption[]));
-        }
-
-        if (traitRedemptions.length != 0) {
-            bool success = _redeemTraits(params, fulfiller, traitRedemptions);
-
-            if (!success) {
-                revert InvalidTraitRedemption();
+        if (errorBuffer > 0) {
+            if (errorBuffer << 255 != 0) {
+                revert InvalidCaller(msg.sender);
+            } else if (errorBuffer << 254 != 0) {
+                revert NotActive(
+                    block.timestamp,
+                    params.startTime,
+                    params.endTime
+                );
+            } else if (errorBuffer << 253 != 0) {
+                revert MaxTotalRedemptionsReached(
+                    _totalRedemptions[campaignId] + maximumSpent.length,
+                    params.maxTotalRedemptions
+                );
+                // TODO: do we need this error?
+                // } else if (errorBuffer << 252 != 0) {
+                //     revert InvalidConsiderationLength(
+                //         maximumSpent.length,
+                //         params.consideration.length
+                //     );
+            } else if (errorBuffer << 252 != 0) {
+                revert InvalidConsiderationItem(
+                    maximumSpent[0].token,
+                    params.consideration[0].token
+                );
+            } else {
+                // todo more validation errors
             }
         }
 
@@ -429,25 +423,20 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
+            if (params.offer.length > maximumSpent.length) {}
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
                 .mintRedemption(address(this), maximumSpent);
 
-            // Read the offerItem itemType and place on the stack.
-            ItemType itemType = offerItem.itemType;
+            // Set the itemType without criteria.
+            ItemType itemType = offerItem.itemType ==
+                ItemType.ERC721_WITH_CRITERIA
+                ? ItemType.ERC721
+                : offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA
+                ? ItemType.ERC1155
+                : offerItem.itemType;
 
-            // Declare a variable to store the new item type.
-            ItemType newItemType;
-
-            // Update item type to remove criteria usage.
-            // Use assembly to operate on ItemType enum as a number.
-            assembly {
-                // Item type 4 becomes 2 and item type 5 becomes 3.
-                newItemType := sub(3, eq(itemType, 4))
-            }
-
-            // Set the offer item with the new item type.
             offer[i] = SpentItem({
-                itemType: newItemType,
+                itemType: itemType,
                 token: offerItem.token,
                 identifier: tokenId,
                 amount: offerItem.startAmount
@@ -521,101 +510,6 @@ contract RedeemableContractOfferer is
             // Emit Redemption event.
             emit Redemption(campaignId, redemptionHash);
         }
-    }
-
-    function _redeemTraits(
-        CampaignParams memory params,
-        address fulfiller,
-        TraitRedemption[] memory traitRedemptions
-    ) internal returns (bool success) {
-        for (uint256 i = 0; i < traitRedemptions.length; ) {
-            TraitRedemption memory traitRedemption = traitRedemptions[i];
-
-            // Check that the fulfiller owns the token having its trait redeemed.
-            if (
-                ERC721(traitRedemption.token).ownerOf(
-                    traitRedemption.identifier
-                ) != fulfiller
-            ) {
-                // Revert if the fulfiller does not own the token.
-                revert InvalidOwner();
-            }
-
-            // Check if the trait redemption token implements IERC7XXX.
-            if (
-                IERC7XXX(traitRedemption.token).supportsInterface(
-                    type(IERC7XXX).interfaceId
-                ) == false
-            ) {
-                // Revert if the token does not implement IERC7XXX.
-                revert InvalidTraitRedemptionToken(traitRedemption.token);
-            }
-
-            // Get the trait's prior value.
-            bytes32 priorTraitValue = IERC7XXX(traitRedemption.token).getTrait(
-                traitRedemption.traitKey,
-                traitRedemption.identifier
-            );
-
-            // Check if the trait's prior value is equal to the required value.
-            if (
-                priorTraitValue != traitRedemption.maxOrMinOrRequiredPriorValue
-            ) {
-                revert InvalidRequiredValue(
-                    priorTraitValue,
-                    traitRedemption.maxOrMinOrRequiredPriorValue
-                );
-            }
-
-            // Get the trait redemption's substandard.
-            uint8 substandard = traitRedemption.substandard;
-
-            // Get the trait redemption's trait value.
-            bytes32 traitValue = traitRedemption.traitValue;
-
-            // Set the trait's new value based on the substandard.
-            // If substandard is 0, increment the trait by traitValue.
-            if (substandard == 0) {
-                // Get the new trait value.
-                bytes32 newTraitValue = bytes32(
-                    uint256(priorTraitValue) + uint256(traitValue)
-                );
-
-                // Set the trait with the new value.
-                IERC7XXX(traitRedemption.token).setTrait(
-                    traitRedemption.identifier,
-                    traitRedemption.traitKey,
-                    newTraitValue
-                );
-            } else if (substandard == 1) {
-                // Get the new trait value.
-                bytes32 newTraitValue = bytes32(
-                    uint256(priorTraitValue) - uint256(traitValue)
-                );
-
-                // Set the trait with the new value.
-                IERC7XXX(traitRedemption.token).setTrait(
-                    traitRedemption.identifier,
-                    traitRedemption.traitKey,
-                    newTraitValue
-                );
-            } else if (substandard == 2) {
-                // Set the trait with the new value.
-                IERC7XXX(traitRedemption.token).setTrait(
-                    traitRedemption.identifier,
-                    traitRedemption.traitKey,
-                    traitValue
-                );
-            } else {
-                // Revert if the substandard is invalid.
-                revert InvalidSubstandard(substandard);
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-        return true;
     }
 
     function onERC721Received(
