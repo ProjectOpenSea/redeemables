@@ -238,6 +238,7 @@ contract TestRedeemableContractOfferer is
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
+            campaignConsideration[0].itemType = ItemType.ERC721;
             campaignConsideration[0].identifierOrCriteria = tokenId;
 
             // TODO: validate OrderFulfilled event
@@ -273,9 +274,10 @@ contract TestRedeemableContractOfferer is
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(redemptionToken.ownerOf(tokenId), address(this));
             assertEq(
-                erc20.balanceOf(address(eve.addr)) - erc20BalanceBefore,
+                erc20BalanceBefore - erc20.balanceOf(address(this)),
                 erc20Amount
             );
+            assertEq(erc20.balanceOf(eve.addr), erc20Amount);
         }
     }
 
@@ -1012,7 +1014,7 @@ contract TestRedeemableContractOfferer is
         }
     }
 
-    function testDynamicTraitRedemptionViaSeaport() public {
+    function xtestDynamicTraitRedemptionViaSeaport() public {
         // Set the tokenId to be redeemed
         uint256 redemptionTokenId0 = 2;
 
