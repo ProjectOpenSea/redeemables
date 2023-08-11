@@ -5,15 +5,7 @@ import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
-import {
-    OfferItem,
-    ConsiderationItem,
-    SpentItem,
-    AdvancedOrder,
-    OrderParameters,
-    CriteriaResolver,
-    FulfillmentComponent
-} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
 // import {CriteriaResolutionErrors} from "seaport-types/src/interfaces/CriteriaResolutionErrors.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
@@ -23,7 +15,10 @@ import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.so
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
+contract TestRedeemableContractOfferer is
+    BaseOrderTest,
+    RedeemableErrorsAndEvents
+{
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -95,7 +90,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 5,
+                maxCampaignRedemptions: 5,
                 manager: address(this)
             });
 
@@ -119,7 +114,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -129,15 +125,23 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
-            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
-                OrderType.CONTRACT
-            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(consideration)
+                .withOffer(offer)
+                .withConduitKey(conduitKey)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -157,7 +161,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             vm.expectRevert(
                 abi.encodeWithSelector(
                     InvalidContractOrder.selector,
-                    (uint256(uint160(address(offerer))) << 96) + seaport.getContractOffererNonce(address(offerer))
+                    (uint256(uint160(address(offerer))) << 96) +
+                        seaport.getContractOffererNonce(address(offerer))
                 )
             );
             seaport.fulfillAdvancedOrder({
@@ -169,7 +174,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         }
     }
 
-    function testRevertMaxTotalRedemptionsReached() public {
+    function testRevertmaxCampaignRedemptionsReached() public {
         redeemableToken.mint(address(this), 0);
         redeemableToken.mint(address(this), 1);
         redeemableToken.mint(address(this), 2);
@@ -201,7 +206,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 2,
+                maxCampaignRedemptions: 2,
                 manager: address(this)
             });
 
@@ -217,7 +222,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -244,17 +250,25 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
             considerationFromEvent[0].identifierOrCriteria = 0;
 
-            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
-                OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib
+                .empty()
+                .withOfferer(address(offerer))
+                .withOrderType(OrderType.CONTRACT)
+                .withConsideration(considerationFromEvent)
+                .withOffer(offer)
+                .withConduitKey(conduitKey)
+                .withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1)
+                .withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -291,10 +305,10 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             considerationFromEvent[0].identifierOrCriteria = 2;
 
             // Should revert on the third redemption
-            // The call to Seaport should revert with MaxTotalRedemptionsReached(3, 2)
+            // The call to Seaport should revert with maxCampaignRedemptionsReached(3, 2)
             // vm.expectRevert(
             //     abi.encodeWithSelector(
-            //         MaxTotalRedemptionsReached.selector,
+            //         maxCampaignRedemptionsReached.selector,
             //         3,
             //         2
             //     )
@@ -302,7 +316,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             vm.expectRevert(
                 abi.encodeWithSelector(
                     InvalidContractOrder.selector,
-                    (uint256(uint160(address(offerer))) << 96) + seaport.getContractOffererNonce(address(offerer))
+                    (uint256(uint160(address(offerer))) << 96) +
+                        seaport.getContractOffererNonce(address(offerer))
                 )
             );
             seaport.fulfillAdvancedOrder({
@@ -350,11 +365,15 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 5,
+                maxCampaignRedemptions: 5,
                 manager: address(this)
             });
 
-            vm.expectRevert(abi.encodeWithSelector(ConsiderationItemRecipientCannotBeZeroAddress.selector));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    ConsiderationItemRecipientCannotBeZeroAddress.selector
+                )
+            );
             offerer.createCampaign(params, "");
         }
     }

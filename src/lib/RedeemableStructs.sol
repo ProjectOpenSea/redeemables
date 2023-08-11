@@ -4,13 +4,13 @@ pragma solidity ^0.8.19;
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 struct CampaignParams {
-    OfferItem[] offer;
-    ConsiderationItem[] consideration;
-    address signer;
     uint32 startTime;
     uint32 endTime;
-    uint32 maxTotalRedemptions;
+    uint32 maxCampaignRedemptions;
     address manager;
+    address signer;
+    OfferItem[] offer;
+    ConsiderationItem[] consideration;
 }
 
 struct TraitRedemption {
@@ -19,7 +19,7 @@ struct TraitRedemption {
     uint256 identifier;
     bytes32 traitKey;
     bytes32 traitValue;
-    bytes32 maxOrMinOrRequiredPriorValue;
+    bytes32 substandardValue;
 }
 
 struct RedemptionContext {
