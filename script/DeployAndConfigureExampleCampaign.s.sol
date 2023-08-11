@@ -14,16 +14,23 @@ contract DeployAndConfigureExampleCampaign is Script {
     // Addresses: Seaport
     address seaport = 0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC;
     address conduit = 0x1E0049783F008A0085193E00003D00cd54003c71;
+    bytes32 conduitKey = 0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000;
 
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function run() external {
         vm.startBroadcast();
 
-        RedeemableContractOfferer offerer = new RedeemableContractOfferer(conduit, seaport);
+        RedeemableContractOfferer offerer = new RedeemableContractOfferer(
+            conduit,
+            conduitKey,
+            seaport
+        );
         TestERC721 redeemableToken = new TestERC721();
-        ERC721RedemptionMintable redemptionToken =
-            new ERC721RedemptionMintable(address(offerer), address(redeemableToken));
+        ERC721RedemptionMintable redemptionToken = new ERC721RedemptionMintable(
+            address(offerer),
+            address(redeemableToken)
+        );
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);

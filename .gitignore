@@ -12,3 +12,5 @@ docs/
 .env
 
 .vscode
+
+lib/

@@ -5,9 +5,10 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
+contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
     address internal immutable _REDEEM_TOKEN;
+    uint256 internal _tokenIdCounter;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
@@ -27,9 +28,11 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
         // Mint the same token ID redeemed.
-        _mint(to, spentItem.identifier);
+        _mint(to, _tokenIdCounter);
 
-        return spentItem.identifier;
+        _tokenIdCounter++;
+
+        return _tokenIdCounter - 1;
     }
 
     function name() public pure override returns (string memory) {

@@ -13,6 +13,7 @@ interface RedeemableErrorsAndEvents {
 
     /// Redemption errors
     error InvalidCampaignId();
+    error CampaignAlreadyExists();
     error InvalidCaller(address caller);
     error NotActive(uint256 currentTimestamp, uint256 startTime, uint256 endTime);
     error MaxRedemptionsReached(uint256 total, uint256 max);
@@ -22,12 +23,16 @@ interface RedeemableErrorsAndEvents {
     error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);
+    error InvalidNativeOfferItem();
+    error InvalidOwner();
+    error InvalidRequiredValue(bytes32 got, bytes32 want);
+    error InvalidSubstandard(uint256 substandard);
+    error InvalidTraitRedemption();
+    error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);
     error RedemptionValuesAreImmutable();
 
     /// Events
     event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string uri);
-    event Redemption(
-        address indexed by, uint256 indexed campaignId, SpentItem[] spent, SpentItem[] received, bytes32 redemptionHash
-    );
+    event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
 }
