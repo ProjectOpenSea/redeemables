@@ -5,7 +5,15 @@ import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
-import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {
+    OfferItem,
+    ConsiderationItem,
+    SpentItem,
+    AdvancedOrder,
+    OrderParameters,
+    CriteriaResolver,
+    FulfillmentComponent
+} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {MockERC721DynamicTraits} from "./utils/mocks/MockERC721DynamicTraits.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
@@ -16,10 +24,7 @@ import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol"
 import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract TestRedeemableContractOfferer is
-    BaseOrderTest,
-    RedeemableErrorsAndEvents
-{
+contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -83,7 +88,7 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            offerer.updateCampaign(0, params, "");
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -98,8 +103,7 @@ contract TestRedeemableContractOfferer is
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -109,25 +113,17 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(consideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
             consideration[0].identifierOrCriteria = tokenId;
 
             // TODO: validate OrderFulfilled event
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -135,6 +131,12 @@ contract TestRedeemableContractOfferer is
                 signature: "",
                 extraData: extraData
             });
+
+            // {
+            //     bytes
+            //     vm.expectEmit(true, true, true, true);
+            //     emit OrderFulfilled();
+            // }
 
             seaport.fulfillAdvancedOrder({
                 advancedOrder: order,
@@ -176,8 +178,7 @@ contract TestRedeemableContractOfferer is
             endAmount: 1
         });
 
-        ConsiderationItem[]
-            memory campaignConsideration = new ConsiderationItem[](2);
+        ConsiderationItem[] memory campaignConsideration = new ConsiderationItem[](2);
         campaignConsideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redeemableToken),
@@ -206,7 +207,7 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            offerer.updateCampaign(0, params, "");
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -221,8 +222,7 @@ contract TestRedeemableContractOfferer is
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -232,10 +232,7 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(campaignConsideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(campaignConsideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
@@ -243,18 +240,11 @@ contract TestRedeemableContractOfferer is
             campaignConsideration[0].identifierOrCriteria = tokenId;
 
             // TODO: validate OrderFulfilled event
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(campaignConsideration)
-                .withOffer(campaignOffer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    campaignConsideration.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(campaignConsideration).withOffer(campaignOffer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(campaignConsideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -274,10 +264,7 @@ contract TestRedeemableContractOfferer is
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(redemptionToken.ownerOf(tokenId), address(this));
-            assertEq(
-                erc20BalanceBefore - erc20.balanceOf(address(this)),
-                erc20Amount
-            );
+            assertEq(erc20BalanceBefore - erc20.balanceOf(address(this)), erc20Amount);
             assertEq(erc20.balanceOf(eve.addr), erc20Amount);
         }
     }
@@ -330,7 +317,7 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            offerer.updateCampaign(0, params, "");
+            offerer.createCampaign(params, "");
         }
 
         {
@@ -342,8 +329,7 @@ contract TestRedeemableContractOfferer is
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -353,23 +339,15 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(consideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(consideration)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -467,8 +445,8 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            // Call updateCampaign on the offerer and pass in the CampaignParams
-            offerer.updateCampaign(0, params, "");
+            // Call createCampaign on the offerer and pass in the CampaignParams
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -486,8 +464,7 @@ contract TestRedeemableContractOfferer is
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](2);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](2);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -506,7 +483,7 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
 
             // Check that the consideration emitted in the event has itemType ERC721
@@ -519,18 +496,11 @@ contract TestRedeemableContractOfferer is
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -557,8 +527,6 @@ contract TestRedeemableContractOfferer is
             assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
         }
     }
-
-    // TODO: add counter to Mock ERC721
 
     function testBurn1Redeem2WithSeaport() public {
         // Set the two tokenIds to be redeemed
@@ -620,8 +588,8 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            // Call updateCampaign on the offerer and pass in the CampaignParams
-            offerer.updateCampaign(0, params, "");
+            // Call createCampaign on the offerer and pass in the CampaignParams
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -647,8 +615,7 @@ contract TestRedeemableContractOfferer is
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -658,7 +625,7 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
 
             // Check that the consideration emitted in the event has itemType ERC721
@@ -670,18 +637,11 @@ contract TestRedeemableContractOfferer is
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -701,20 +661,11 @@ contract TestRedeemableContractOfferer is
             });
 
             // Check that the redeemableToken has been burned
-            assertEq(
-                redeemableToken.ownerOf(redeemableTokenId0),
-                _BURN_ADDRESS
-            );
+            assertEq(redeemableToken.ownerOf(redeemableTokenId0), _BURN_ADDRESS);
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(
-                redemptionTokenWithCounter.ownerOf(redemptionTokenId0),
-                address(this)
-            );
-            assertEq(
-                redemptionTokenWithCounter.ownerOf(redemptionTokenId1),
-                address(this)
-            );
+            assertEq(redemptionTokenWithCounter.ownerOf(redemptionTokenId0), address(this));
+            assertEq(redemptionTokenWithCounter.ownerOf(redemptionTokenId1), address(this));
         }
     }
 
@@ -775,8 +726,8 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            // Call updateCampaign on the offerer and pass in the CampaignParams
-            offerer.updateCampaign(0, params, "");
+            // Call createCampaign on the offerer and pass in the CampaignParams
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -794,8 +745,7 @@ contract TestRedeemableContractOfferer is
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](2);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](2);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -814,7 +764,7 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
 
             // Check that the consideration emitted in the event has itemType ERC721
@@ -827,18 +777,11 @@ contract TestRedeemableContractOfferer is
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -928,8 +871,8 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            // Call updateCampaign on the offerer and pass in the CampaignParams
-            offerer.updateCampaign(0, params, "");
+            // Call createCampaign on the offerer and pass in the CampaignParams
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -955,8 +898,7 @@ contract TestRedeemableContractOfferer is
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -966,7 +908,7 @@ contract TestRedeemableContractOfferer is
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
 
             // Check that the consideration emitted in the event has itemType ERC721
@@ -978,18 +920,11 @@ contract TestRedeemableContractOfferer is
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -1013,10 +948,7 @@ contract TestRedeemableContractOfferer is
 
             // Check that the two redemptionTokens has been minted to the test contract
             assertEq(redemptionToken.ownerOf(redemptionTokenId), address(this));
-            assertEq(
-                redemptionTokenTwo.ownerOf(redemptionTokenId),
-                address(this)
-            );
+            assertEq(redemptionTokenTwo.ownerOf(redemptionTokenId), address(this));
         }
     }
 
@@ -1064,8 +996,8 @@ contract TestRedeemableContractOfferer is
                 manager: address(this)
             });
 
-            // Call updateCampaign on the offerer and pass in the CampaignParams
-            offerer.updateCampaign(0, params, "");
+            // Call createCampaign on the offerer and pass in the CampaignParams
+            offerer.createCampaign(params, "");
         }
 
         // uint256 campaignId = 1;
@@ -1082,7 +1014,7 @@ contract TestRedeemableContractOfferer is
                 endAmount: 1
             });
 
-            // Check that the consideration passed into updateCampaign has itemType ERC721_WITH_CRITERIA
+            // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
 
             TraitRedemption memory traitRedemption = TraitRedemption({
@@ -1100,16 +1032,11 @@ contract TestRedeemableContractOfferer is
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(consideration)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -1129,16 +1056,10 @@ contract TestRedeemableContractOfferer is
             });
 
             // Check that the redeemableToken has been burned
-            assertEq(
-                dynamicTraitsToken.ownerOf(redeemableTokenId0),
-                address(this)
-            );
+            assertEq(dynamicTraitsToken.ownerOf(redeemableTokenId0), address(this));
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(
-                redemptionToken.ownerOf(redemptionTokenId0),
-                address(this)
-            );
+            assertEq(redemptionToken.ownerOf(redemptionTokenId0), address(this));
         }
     }
 
@@ -1170,15 +1091,11 @@ contract TestRedeemableContractOfferer is
             recipient: payable(_BURN_ADDRESS)
         });
 
-        OrderParameters memory parameters = OrderParametersLib
-            .empty()
-            .withOfferer(address(offerer))
-            .withOrderType(OrderType.CONTRACT)
-            .withConsideration(consideration)
-            .withOffer(offer)
-            .withStartTime(block.timestamp)
-            .withEndTime(block.timestamp + 1)
-            .withTotalOriginalConsiderationItems(1);
+        OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+            OrderType.CONTRACT
+        ).withConsideration(consideration).withOffer(offer).withStartTime(block.timestamp).withEndTime(
+            block.timestamp + 1
+        ).withTotalOriginalConsiderationItems(1);
 
         for (uint256 i; i < 5; i++) {
             tokenId = i;
@@ -1206,7 +1123,7 @@ contract TestRedeemableContractOfferer is
             manager: address(this)
         });
 
-        offerer.updateCampaign(0, params, "");
+        offerer.createCampaign(params, "");
 
         OfferItem[] memory offerFromEvent = new OfferItem[](1);
         offerFromEvent[0] = OfferItem({
@@ -1217,8 +1134,7 @@ contract TestRedeemableContractOfferer is
             endAmount: 1
         });
 
-        ConsiderationItem[]
-            memory considerationFromEvent = new ConsiderationItem[](1);
+        ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
         considerationFromEvent[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redeemableToken),

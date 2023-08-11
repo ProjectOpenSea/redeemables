@@ -5,10 +5,7 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-contract ERC721RedemptionMintableWithCounter is
-    ERC721,
-    IERC721RedemptionMintable
-{
+contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
     address internal immutable _REDEEM_TOKEN;
     uint256 internal _tokenIdCounter;
@@ -24,10 +21,7 @@ contract ERC721RedemptionMintableWithCounter is
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(
-        address to,
-        SpentItem[] calldata spent
-    ) external returns (uint256 tokenId) {
+    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
         SpentItem memory spentItem = spent[0];
@@ -49,9 +43,7 @@ contract ERC721RedemptionMintableWithCounter is
         return "721RM";
     }
 
-    function tokenURI(
-        uint256 tokenId
-    ) public pure override returns (string memory) {
+    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
         return string(abi.encodePacked("https://example.com/", tokenId));
     }
 }
