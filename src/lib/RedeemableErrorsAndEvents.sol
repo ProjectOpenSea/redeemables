@@ -15,11 +15,7 @@ interface RedeemableErrorsAndEvents {
     error InvalidCampaignId();
     error CampaignAlreadyExists();
     error InvalidCaller(address caller);
-    error NotActive(
-        uint256 currentTimestamp,
-        uint256 startTime,
-        uint256 endTime
-    );
+    error NotActive(uint256 currentTimestamp, uint256 startTime, uint256 endTime);
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
     error RedeemMismatchedLengths();
@@ -37,10 +33,6 @@ interface RedeemableErrorsAndEvents {
     error RedemptionValuesAreImmutable();
 
     /// Events
-    event CampaignUpdated(
-        uint256 indexed campaignId,
-        CampaignParams params,
-        string uri
-    );
+    event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string uri);
     event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
 }
