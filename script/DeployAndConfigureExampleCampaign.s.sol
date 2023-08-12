@@ -58,7 +58,7 @@ contract DeployAndConfigureExampleCampaign is Script {
             signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
-            maxTotalRedemptions: 1_000,
+            maxCampaignRedemptions: 1_000,
             manager: address(this)
         });
         offerer.updateCampaign(0, params, "");

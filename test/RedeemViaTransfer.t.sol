@@ -81,7 +81,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1000),
-            maxTotalRedemptions: 5,
+            maxCampaignRedemptions: 5,
             manager: address(this)
         });
 

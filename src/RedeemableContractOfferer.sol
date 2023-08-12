@@ -334,7 +334,7 @@ contract RedeemableContractOfferer is
         errorBuffer |= _cast(_isInactive(params.startTime, params.endTime)) << 1;
 
         // Check max total redemptions would not be exceeded.
-        errorBuffer |= _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxTotalRedemptions) << 2;
+        errorBuffer |= _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxCampaignRedemptions) << 2;
 
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
@@ -353,8 +353,8 @@ contract RedeemableContractOfferer is
             } else if (errorBuffer << 254 != 0) {
                 revert NotActive(block.timestamp, params.startTime, params.endTime);
             } else if (errorBuffer << 253 != 0) {
-                revert MaxTotalRedemptionsReached(
-                    _totalRedemptions[campaignId] + maximumSpent.length, params.maxTotalRedemptions
+                revert MaxCampaignRedemptionsReached(
+                    _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
                 );
                 // TODO: do we need this error?
                 // } else if (errorBuffer << 252 != 0) {

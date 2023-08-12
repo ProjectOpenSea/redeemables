@@ -95,7 +95,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 5,
+                maxCampaignRedemptions: 5,
                 manager: address(this)
             });
 
@@ -169,7 +169,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         }
     }
 
-    function testRevertMaxTotalRedemptionsReached() public {
+    function testRevertmaxCampaignRedemptionsReached() public {
         redeemableToken.mint(address(this), 0);
         redeemableToken.mint(address(this), 1);
         redeemableToken.mint(address(this), 2);
@@ -201,7 +201,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 2,
+                maxCampaignRedemptions: 2,
                 manager: address(this)
             });
 
@@ -291,10 +291,10 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             considerationFromEvent[0].identifierOrCriteria = 2;
 
             // Should revert on the third redemption
-            // The call to Seaport should revert with MaxTotalRedemptionsReached(3, 2)
+            // The call to Seaport should revert with maxCampaignRedemptionsReached(3, 2)
             // vm.expectRevert(
             //     abi.encodeWithSelector(
-            //         MaxTotalRedemptionsReached.selector,
+            //         maxCampaignRedemptionsReached.selector,
             //         3,
             //         2
             //     )
@@ -350,7 +350,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
-                maxTotalRedemptions: 5,
+                maxCampaignRedemptions: 5,
                 manager: address(this)
             });
 

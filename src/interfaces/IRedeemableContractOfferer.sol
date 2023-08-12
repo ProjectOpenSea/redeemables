@@ -10,31 +10,12 @@ import {
     CriteriaResolver,
     FulfillmentComponent
 } from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {CampaignParams, TraitRedemption} from "../lib/RedeemableStructs.sol";
 
 interface IRedeemableContractOfferer {
     /* Events */
     event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string URI);
     event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
-
-    /* Structs */
-    struct CampaignParams {
-        uint32 startTime;
-        uint32 endTime;
-        uint32 maxTotalRedemptions;
-        address manager; // the address that can modify the campaign
-        address signer; // null address means no EIP-712 signature required
-        OfferItem[] offer; // items to be minted, empty for off chain redeemable
-        ConsiderationItem[] consideration; // the items you are transferring to recipient
-    }
-
-    struct TraitRedemption {
-        uint8 substandard;
-        address token;
-        uint256 identifier;
-        bytes32 traitKey;
-        bytes32 traitValue;
-        bytes32 maxOrMinOrRequiredPriorValue;
-    }
 
     /* Getters */
     function getCampaign(uint256 campaignId)

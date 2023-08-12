@@ -17,7 +17,7 @@ interface RedeemableErrorsAndEvents {
     error InvalidCaller(address caller);
     error NotActive(uint256 currentTimestamp, uint256 startTime, uint256 endTime);
     error MaxRedemptionsReached(uint256 total, uint256 max);
-    error MaxTotalRedemptionsReached(uint256 total, uint256 max);
+    error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
     error RedeemMismatchedLengths();
     error TraitValueUnchanged(bytes32 traitKey, bytes32 value);
     error InvalidConsiderationLength(uint256 got, uint256 want);
