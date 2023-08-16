@@ -20,10 +20,7 @@ contract ERC1155RedemptionMintable is ERC1155, IERC1155RedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(
-        address to,
-        SpentItem[] calldata spent
-    ) external returns (uint256 tokenId) {
+    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
         SpentItem memory spentItem = spent[0];
