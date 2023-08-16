@@ -27,12 +27,12 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintabl
         SpentItem memory spentItem = spent[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
-        // Mint the same token ID redeemed.
+        // Mint the token.
         _mint(to, _tokenIdCounter);
 
-        _tokenIdCounter++;
+        tokenId = _tokenIdCounter;
 
-        return _tokenIdCounter - 1;
+        _tokenIdCounter++;
     }
 
     function name() public pure override returns (string memory) {
