@@ -35,7 +35,7 @@ contract DeployAndConfigureExampleCampaign is Script {
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
-            itemType: ItemType.ERC721,
+            itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redemptionToken),
             identifierOrCriteria: 0,
             startAmount: 1,
@@ -44,7 +44,7 @@ contract DeployAndConfigureExampleCampaign is Script {
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = ConsiderationItem({
-            itemType: ItemType.ERC721,
+            itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redeemableToken),
             identifierOrCriteria: 0,
             startAmount: 1,
@@ -59,9 +59,9 @@ contract DeployAndConfigureExampleCampaign is Script {
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: address(this)
+            manager: msg.sender
         });
-        offerer.updateCampaign(0, params, "");
+        offerer.createCampaign(params, "ipfs://QmdChMVnMSq4U6oVKhud7wUSEZGnwuMuTY5rUQx57Ayp6H");
 
         // Mint tokens 1 and 5 to redeem for tokens 1 and 5.
         redeemableToken.mint(msg.sender, 1);
