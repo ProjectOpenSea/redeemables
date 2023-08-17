@@ -374,7 +374,6 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length;) {
             OfferItem memory offerItem = params.offer[i];
 
-            if (params.offer.length > maximumSpent.length) {}
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent);
 
             // Set the itemType without criteria.
@@ -386,7 +385,7 @@ contract RedeemableContractOfferer is
                 itemType: itemType,
                 token: offerItem.token,
                 identifier: tokenId,
-                amount: offerItem.startAmount
+                amount: offerItem.startAmount // TODO: do we need to calculate amount based on timestamp?
             });
             unchecked {
                 ++i;

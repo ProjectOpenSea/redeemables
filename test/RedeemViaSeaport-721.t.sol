@@ -24,7 +24,7 @@ import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol"
 import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
+contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -276,6 +276,11 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         redeemableToken.mint(address(this), tokenId);
         redeemableToken.setApprovalForAll(address(conduit), true);
 
+        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+                address(offerer),
+                address(redeemableToken)
+            );
+
         CriteriaResolver[] memory resolvers = new CriteriaResolver[](1);
 
         // Create an array of hashed identifiers (0-4)
@@ -289,7 +294,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redemptionToken),
+            token: address(redemptionTokenWithCounter),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -324,8 +329,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
             offerFromEvent[0] = OfferItem({
                 itemType: ItemType.ERC721,
-                token: address(redemptionToken),
-                identifierOrCriteria: tokenId,
+                token: address(redemptionTokenWithCounter),
+                identifierOrCriteria: 0,
                 startAmount: 1,
                 endAmount: 1
             });
@@ -377,7 +382,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
 
             // TODO: failing because redemptionToken tokenId is merkle root
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            // assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionTokenWithCounter.ownerOf(0), address(this));
         }
     }
 

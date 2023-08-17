@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
+import {ERC1155} from "solady/src/tokens/ERC1155.sol";
+import {IERC1155RedemptionMintable} from "../interfaces/IERC1155RedemptionMintable.sol";
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintable {
+contract ERC1155RedemptionMintable is ERC1155, IERC1155RedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
     address internal immutable _REDEEM_TOKEN;
-    uint256 internal _tokenIdCounter;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
@@ -27,23 +26,13 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintabl
         SpentItem memory spentItem = spent[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
-        // Mint the token.
-        _mint(to, _tokenIdCounter);
+        // Mint the same token ID redeemed and same amount redeemed.
+        _mint(to, spentItem.identifier, spentItem.amount, "");
 
-        tokenId = _tokenIdCounter;
-
-        _tokenIdCounter++;
+        return spentItem.identifier;
     }
 
-    function name() public pure override returns (string memory) {
-        return "ERC721RedemptionMintable";
-    }
-
-    function symbol() public pure override returns (string memory) {
-        return "721RM";
-    }
-
-    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
-        return string(abi.encodePacked("https://example.com/", tokenId));
+    function uri(uint256 id) public pure override returns (string memory) {
+        return string(abi.encodePacked("https://example.com/", id));
     }
 }
