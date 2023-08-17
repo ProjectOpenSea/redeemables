@@ -449,25 +449,35 @@ contract RedeemableContractOfferer is
 
         // Set the offer from the params.
         offer = new SpentItem[](params.offer.length);
+
+        // Iterate over the campaign offer items
         for (uint256 i = 0; i < params.offer.length; ) {
             OfferItem memory offerItem = params.offer[i];
 
+            // Mint the redemption token.
+            // Pass in the campaign consideration to the redemption token contract.
             uint256 tokenId = IERC721RedemptionMintable(offerItem.token)
-                .mintRedemption(address(this), maximumSpent);
+                .mintRedemption(address(this), params.consideration);
 
-            // Set the itemType without criteria.
-            ItemType itemType = offerItem.itemType ==
-                ItemType.ERC721_WITH_CRITERIA
-                ? ItemType.ERC721
-                : offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA
-                ? ItemType.ERC1155
-                : offerItem.itemType;
+            if (uint256(offerItem.itemType) > 3) {
+                uint256 itemType;
+
+                // Place the original item type on the stack.
+                uint256 originalItemType = uint256(offerItem.itemType);
+
+                assembly {
+                    // Item type 4 becomes 2 and item type 5 becomes 3.
+                    itemType := sub(3, eq(originalItemType, 4))
+                }
+
+                offerItem.itemType = ItemType(itemType);
+            }
 
             offer[i] = SpentItem({
-                itemType: itemType,
+                itemType: offerItem.itemType,
                 token: offerItem.token,
                 identifier: tokenId,
-                amount: offerItem.startAmount // TODO: do we need to calculate amount based on timestamp?
+                amount: offerItem.startAmount
             });
             unchecked {
                 ++i;
@@ -485,22 +495,24 @@ contract RedeemableContractOfferer is
             ItemType itemType;
             uint256 identifier;
 
-            // If consideration item is wildcard criteria item, set itemType to ERC721
+            // If consideration item is a wildcard criteria item, set itemType to non-criteria
             // and identifier to the maximumSpent item identifier.
             if (
-                (considerationItem.itemType == ItemType.ERC721_WITH_CRITERIA) &&
-                (considerationItem.identifierOrCriteria == 0)
+                uint256(considerationItem.itemType) > 3 ||
+                considerationItem.identifierOrCriteria == 0
             ) {
-                itemType = ItemType.ERC721;
-                identifier = maximumSpent[i].identifier;
-            } else if (
-                (considerationItem.itemType ==
-                    ItemType.ERC1155_WITH_CRITERIA) &&
-                (considerationItem.identifierOrCriteria == 0)
-            ) {
-                itemType = ItemType.ERC1155;
+                // Place the original item type on the stack.
+                uint256 originalItemType = uint256(considerationItem.itemType);
+
+                assembly {
+                    // Item type 4 becomes 2 and item type 5 becomes 3.
+                    itemType := sub(3, eq(originalItemType, 4))
+                }
+
+                // Set the identifier to the maximumSpent item identifier.
                 identifier = maximumSpent[i].identifier;
             } else {
+                // Set the itemType and identifier to the consideration item itemType and identifier.
                 itemType = considerationItem.itemType;
                 identifier = considerationItem.identifierOrCriteria;
             }

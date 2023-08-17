@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
-import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
@@ -20,7 +20,10 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
+    function mintRedemption(
+        address to,
+        ConsiderationItem[] calldata spent
+    ) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
         SpentItem memory spentItem = spent[0];
@@ -40,7 +43,9 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         return "721RM";
     }
 
-    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public pure override returns (string memory) {
         return string(abi.encodePacked("https://example.com/", tokenId));
     }
 }
