@@ -311,7 +311,7 @@ contract RedeemableContractOfferer is
 
     function _createOrder(
         address fulfiller,
-        SpentItem[] memory minimumReceived,
+        SpentItem[] memory,
         SpentItem[] memory maximumSpent,
         bytes calldata context,
         bool withEffects
@@ -371,27 +371,17 @@ contract RedeemableContractOfferer is
 
             // Mint the redemption token.
             // Pass in the campaign consideration to the redemption token contract.
-            uint256 tokenId =
+            uint256 identifier =
                 IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), params.consideration);
 
-            if (uint256(offerItem.itemType) > 3) {
-                uint256 itemType;
+            // If the offer item is a criteria item, set the itemType to non-criteria.
+            ItemType itemType = _getItemTypeWithoutCriteria(offerItem.itemType);
 
-                // Place the original item type on the stack.
-                uint256 originalItemType = uint256(offerItem.itemType);
-
-                assembly {
-                    // Item type 4 becomes 2 and item type 5 becomes 3.
-                    itemType := sub(3, eq(originalItemType, 4))
-                }
-
-                offerItem.itemType = ItemType(itemType);
-            }
-
+            // Set the offer item.
             offer[i] = SpentItem({
-                itemType: offerItem.itemType,
+                itemType: itemType,
                 token: offerItem.token,
-                identifier: tokenId,
+                identifier: identifier,
                 amount: offerItem.startAmount
             });
             unchecked {
@@ -404,28 +394,19 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.consideration.length;) {
             ConsiderationItem memory considerationItem = params.consideration[i];
 
-            // TODO: make helper getItemTypeWithoutCriteria
-            ItemType itemType;
             uint256 identifier;
 
-            // If consideration item is a wildcard criteria item, set itemType to non-criteria
-            // and identifier to the maximumSpent item identifier.
+            // If consideration item is a wildcard criteria item, set the identifier
+            // to the maximumSpent item identifier.
             if (uint256(considerationItem.itemType) > 3 || considerationItem.identifierOrCriteria == 0) {
-                // Place the original item type on the stack.
-                uint256 originalItemType = uint256(considerationItem.itemType);
-
-                assembly {
-                    // Item type 4 becomes 2 and item type 5 becomes 3.
-                    itemType := sub(3, eq(originalItemType, 4))
-                }
-
-                // Set the identifier to the maximumSpent item identifier.
                 identifier = maximumSpent[i].identifier;
             } else {
-                // Set the itemType and identifier to the consideration item itemType and identifier.
-                itemType = considerationItem.itemType;
+                // Otherwise, set the identifier to the consideration item identifier.
                 identifier = considerationItem.identifierOrCriteria;
             }
+
+            // If the consideration item is a criteria item, set the itemType to non-criteria.
+            ItemType itemType = _getItemTypeWithoutCriteria(considerationItem.itemType);
 
             consideration[i] = ReceivedItem({
                 itemType: itemType,
@@ -459,6 +440,21 @@ contract RedeemableContractOfferer is
 
             // Emit Redemption event.
             emit Redemption(campaignId, redemptionHash);
+        }
+    }
+
+    function _getItemTypeWithoutCriteria(ItemType itemType) internal pure returns (ItemType newItemType) {
+        // Return early if the item type is not a criteria item.
+        if (uint256(itemType) < 3) {
+            return itemType;
+        } else {
+            assembly {
+                // Item type 4 becomes 2 and item type 5 becomes 3.
+                newItemType := sub(3, eq(itemType, 4))
+            }
+
+            // Cast the integer to an ItemType.
+            newItemType = ItemType(newItemType);
         }
     }
 
