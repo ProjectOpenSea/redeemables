@@ -5,15 +5,7 @@ import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
-import {
-    OfferItem,
-    ConsiderationItem,
-    SpentItem,
-    AdvancedOrder,
-    OrderParameters,
-    CriteriaResolver,
-    FulfillmentComponent
-} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
 // import {CriteriaResolutionErrors} from "seaport-types/src/interfaces/CriteriaResolutionErrors.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
@@ -23,7 +15,10 @@ import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.so
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
+contract TestRedeemableContractOfferer is
+    BaseOrderTest,
+    RedeemableErrorsAndEvents
+{
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -96,7 +91,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
             endAmount: 1
         });
 
-        ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+        ConsiderationItem[]
+            memory considerationFromEvent = new ConsiderationItem[](1);
         considerationFromEvent[0] = ConsiderationItem({
             itemType: ItemType.ERC721,
             token: address(redeemableToken),
@@ -112,9 +108,14 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
 
         // TODO: validate OrderFulfilled event
         bytes memory data = abi.encode(campaignId, redemptionHash);
-        redeemableToken.safeTransferFrom(address(this), address(offerer), tokenId, extraData);
+        redeemableToken.safeTransferFrom(
+            address(this),
+            address(offerer),
+            tokenId,
+            extraData
+        );
 
         assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-        assertEq(redemptionToken.ownerOf(tokenId), address(this));
+        assertEq(redemptionToken.ownerOf(0), address(this));
     }
 }
