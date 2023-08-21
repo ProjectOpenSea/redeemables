@@ -146,7 +146,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -263,7 +263,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
             assertEq(erc20BalanceBefore - erc20.balanceOf(address(this)), erc20Amount);
             assertEq(erc20.balanceOf(eve.addr), erc20Amount);
         }
@@ -529,7 +529,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableToken.ownerOf(burnTokenId1), _BURN_ADDRESS);
 
             // Check that the redemption token has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -810,7 +810,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableTokenTwo.ownerOf(burnTokenId0), _BURN_ADDRESS);
 
             // Check that the redemption token has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -952,8 +952,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableToken.ownerOf(redeemableTokenId), _BURN_ADDRESS);
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(redemptionTokenId), address(this));
-            assertEq(redemptionTokenTwo.ownerOf(redemptionTokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
+            assertEq(redemptionTokenTwo.ownerOf(0), address(this));
         }
     }
 
@@ -1167,7 +1167,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         for (uint256 i; i < 5; i++) {
             tokenId = i;
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 }
