@@ -28,7 +28,7 @@ import {CampaignParams} from "./lib/RedeemableStructs.sol";
 /**
  * @title  RedeemablesContractOfferer
  * @author ryanio, stephankmin
- * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
+ * @notice A Seaport contract offerer that allows users to burn to redeem on chain redeemables.
  */
 contract RedeemableContractOfferer is
     ContractOffererInterface,
@@ -356,17 +356,9 @@ contract RedeemableContractOfferer is
                 revert MaxCampaignRedemptionsReached(
                     _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
                 );
-                // TODO: do we need this error?
-                // } else if (errorBuffer << 252 != 0) {
-                //     revert InvalidConsiderationLength(
-                //         maximumSpent.length,
-                //         params.consideration.length
-                //     );
             } else if (errorBuffer << 252 != 0) {
                 revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
-            } else {
-                // todo more validation errors
-            }
+            } else {}
         }
 
         // Set the offer from the params.
@@ -398,7 +390,6 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.consideration.length;) {
             ConsiderationItem memory considerationItem = params.consideration[i];
 
-            // TODO: make helper getItemTypeWithoutCriteria
             ItemType itemType;
             uint256 identifier;
 
@@ -497,9 +488,9 @@ contract RedeemableContractOfferer is
             consideration: consideration,
             orderType: OrderType.CONTRACT,
             startTime: block.timestamp,
-            endTime: block.timestamp + 10, // TODO: fix
-            zoneHash: bytes32(0), // TODO: fix
-            salt: uint256(0), // TODO: fix
+            endTime: block.timestamp + 10,
+            zoneHash: bytes32(0),
+            salt: uint256(0),
             conduitKey: _CONDUIT_KEY,
             totalOriginalConsiderationItems: consideration.length
         });
