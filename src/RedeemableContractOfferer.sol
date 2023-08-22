@@ -101,6 +101,7 @@ contract RedeemableContractOfferer is
     }
 
     function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external {
+        // Revert if campaignId is invalid.
         if (campaignId == 0 || campaignId >= _nextCampaignId) {
             revert InvalidCampaignId();
         }
@@ -170,7 +171,7 @@ contract RedeemableContractOfferer is
                     ERC721(params.consideration[i].token).setApprovalForAll(_CONDUIT, true);
                 }
                 // Set the maximum approval amount for ERC20 tokens.
-            } else {
+            } else if (params.consideration[i].itemType == ItemType.ERC20) {
                 ERC20(params.consideration[i].token).approve(_CONDUIT, type(uint256).max);
             }
             unchecked {
