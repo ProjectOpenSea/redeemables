@@ -5,7 +5,15 @@ import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
-import {OfferItem, ConsiderationItem, SpentItem, AdvancedOrder, OrderParameters, CriteriaResolver, FulfillmentComponent} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {
+    OfferItem,
+    ConsiderationItem,
+    SpentItem,
+    AdvancedOrder,
+    OrderParameters,
+    CriteriaResolver,
+    FulfillmentComponent
+} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {MockERC721DynamicTraits} from "./utils/mocks/MockERC721DynamicTraits.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
@@ -95,8 +103,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -106,25 +113,17 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(consideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
             consideration[0].identifierOrCriteria = tokenId;
 
             // TODO: validate OrderFulfilled event
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -179,8 +178,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             endAmount: 1
         });
 
-        ConsiderationItem[]
-            memory campaignConsideration = new ConsiderationItem[](2);
+        ConsiderationItem[] memory campaignConsideration = new ConsiderationItem[](2);
         campaignConsideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redeemableToken),
@@ -224,8 +222,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -235,10 +232,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(campaignConsideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(campaignConsideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
@@ -246,18 +240,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             campaignConsideration[0].identifierOrCriteria = tokenId;
 
             // TODO: validate OrderFulfilled event
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(campaignConsideration)
-                .withOffer(campaignOffer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    campaignConsideration.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(campaignConsideration).withOffer(campaignOffer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(campaignConsideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -277,10 +264,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(redemptionToken.ownerOf(tokenId), address(this));
-            assertEq(
-                erc20BalanceBefore - erc20.balanceOf(address(this)),
-                erc20Amount
-            );
+            assertEq(erc20BalanceBefore - erc20.balanceOf(address(this)), erc20Amount);
             assertEq(erc20.balanceOf(eve.addr), erc20Amount);
         }
     }
@@ -350,8 +334,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -361,23 +344,15 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(
-                uint256(consideration[0].itemType),
-                uint256(considerationFromEvent[0].itemType)
-            );
+            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
 
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(consideration)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -494,8 +469,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](2);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](2);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -527,18 +501,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -653,8 +620,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -676,18 +642,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -707,20 +666,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Check that the redeemableToken has been burned
-            assertEq(
-                redeemableToken.ownerOf(redeemableTokenId0),
-                _BURN_ADDRESS
-            );
+            assertEq(redeemableToken.ownerOf(redeemableTokenId0), _BURN_ADDRESS);
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(
-                redemptionTokenWithCounter.ownerOf(redemptionTokenId0),
-                address(this)
-            );
-            assertEq(
-                redemptionTokenWithCounter.ownerOf(redemptionTokenId1),
-                address(this)
-            );
+            assertEq(redemptionTokenWithCounter.ownerOf(redemptionTokenId0), address(this));
+            assertEq(redemptionTokenWithCounter.ownerOf(redemptionTokenId1), address(this));
         }
     }
 
@@ -800,8 +750,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](2);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](2);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -833,18 +782,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -961,8 +903,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Create the consideration we expect to be emitted in the event
-            ConsiderationItem[]
-                memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemableToken),
@@ -984,18 +925,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(considerationFromEvent)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(
-                    considerationFromEvent.length
-                );
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -1019,10 +953,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
 
             // Check that the two redemptionTokens has been minted to the test contract
             assertEq(redemptionToken.ownerOf(redemptionTokenId), address(this));
-            assertEq(
-                redemptionTokenTwo.ownerOf(redemptionTokenId),
-                address(this)
-            );
+            assertEq(redemptionTokenTwo.ownerOf(redemptionTokenId), address(this));
         }
     }
 
@@ -1123,16 +1054,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
 
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
-            OrderParameters memory parameters = OrderParametersLib
-                .empty()
-                .withOfferer(address(offerer))
-                .withOrderType(OrderType.CONTRACT)
-                .withConsideration(consideration)
-                .withOffer(offer)
-                .withConduitKey(conduitKey)
-                .withStartTime(block.timestamp)
-                .withEndTime(block.timestamp + 1)
-                .withTotalOriginalConsiderationItems(consideration.length);
+            OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+                OrderType.CONTRACT
+            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
+                block.timestamp
+            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -1152,16 +1078,10 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             // Check that the redeemableToken has been burned
-            assertEq(
-                dynamicTraitsToken.ownerOf(redeemableTokenId0),
-                address(this)
-            );
+            assertEq(dynamicTraitsToken.ownerOf(redeemableTokenId0), address(this));
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(
-                redemptionToken.ownerOf(redemptionTokenId0),
-                address(this)
-            );
+            assertEq(redemptionToken.ownerOf(redemptionTokenId0), address(this));
         }
     }
 
@@ -1193,15 +1113,11 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             recipient: payable(_BURN_ADDRESS)
         });
 
-        OrderParameters memory parameters = OrderParametersLib
-            .empty()
-            .withOfferer(address(offerer))
-            .withOrderType(OrderType.CONTRACT)
-            .withConsideration(consideration)
-            .withOffer(offer)
-            .withStartTime(block.timestamp)
-            .withEndTime(block.timestamp + 1)
-            .withTotalOriginalConsiderationItems(1);
+        OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
+            OrderType.CONTRACT
+        ).withConsideration(consideration).withOffer(offer).withStartTime(block.timestamp).withEndTime(
+            block.timestamp + 1
+        ).withTotalOriginalConsiderationItems(1);
 
         for (uint256 i; i < 5; i++) {
             tokenId = i;
@@ -1240,8 +1156,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             endAmount: 1
         });
 
-        ConsiderationItem[]
-            memory considerationFromEvent = new ConsiderationItem[](1);
+        ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
         considerationFromEvent[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(redeemableToken),
