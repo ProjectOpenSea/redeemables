@@ -20,9 +20,8 @@ interface RedeemableErrorsAndEvents {
     error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
     error RedeemMismatchedLengths();
     error TraitValueUnchanged(bytes32 traitKey, bytes32 value);
-    error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
-    error InvalidOfferLength(uint256 got, uint256 want);
+    error InvalidOfferOrConsiderationLength(uint256 got, uint256 want);
     error InvalidNativeOfferItem();
     error InvalidOwner();
     error InvalidRequiredValue(bytes32 got, bytes32 want);

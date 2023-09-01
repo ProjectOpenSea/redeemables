@@ -2,31 +2,24 @@
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
-import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {IERC721Redeemable} from "../interfaces/IERC721Redeemable.sol";
+import {RedeemableErrorsAndEvents} from "./RedeemableErrorsAndEvents.sol";
 
-contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
+contract ERC721Redeemable is ERC721, IERC721Redeemable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
-    address internal immutable _REDEEM_TOKEN;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    /// @dev Revert if the redemption spent is not the required token.
-    error InvalidRedemption();
-
-    constructor(address redeemableContractOfferer, address redeemToken) {
+    constructor(address redeemableContractOfferer) {
         _REDEEMABLE_CONTRACT_OFFERER = redeemableContractOfferer;
-        _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, uint256 tokenId) external returns (uint256) {
+    function burn(uint256 tokenId) public {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        // Mint the same token ID redeemed.
-        _mint(to, tokenId);
-
-        return tokenId;
+        // Unchecked, does not check if msg.sender is owner or approved operator.
+        _burn(tokenId);
     }
 
     function name() public pure override returns (string memory) {

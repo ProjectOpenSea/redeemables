@@ -957,7 +957,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         }
     }
 
-    function xtestDynamicTraitRedemptionViaSeaport() public {
+    function testDynamicTraitRedemptionViaSeaport() public {
         // Set the tokenId to be redeemed
         uint256 redemptionTokenId0 = 2;
 
@@ -1021,6 +1021,23 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
 
             // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
+
+            // RedeemableData memory redeemableData = RedeemableData({
+            //     campaignId: 1,
+            //     redemptionHash: bytes32(0),
+            //     traitRedemption: TraitRedemption({
+            //         substandard: 0, // set value to traitValue
+            //         token: address(dynamicTraitsToken),
+            //         identifier: redeemableTokenId0,
+            //         traitKey: "isRedeemed",
+            //         traitValue: bytes32(abi.encode(1)),
+            //         substandardValue: bytes32(abi.encode(0))
+            //     }), // todo: set as array
+            //     salt: uint256(0),
+            //     signature: bytes(0)
+            // });
+
+            bytes memory extraData = abi.encode(redeemableData);
 
             TraitRedemption memory traitRedemption = TraitRedemption({
                 substandard: 0, // set value to traitValue

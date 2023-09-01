@@ -19,6 +19,7 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
+import {IERC721Redeemable} from "./interfaces/IERC721Redeemable.sol";
 import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
@@ -139,6 +140,51 @@ contract RedeemableContractOfferer is
         }
 
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
+    }
+
+    function burnToRedeem(uint256 campaignId, uint256 tokenId, address recipient) external {
+        // Get the campaign params from the campaign id.
+        CampaignParams storage params = _campaignParams[campaignId];
+
+        // Get the token owner and place on the stack.
+        address tokenOwner = ERC721(params.consideration[0].token).ownerOf(tokenId);
+
+        // Declare an error buffer; first check is that caller is owner or approved operator of token.
+        uint256 errorBuffer = _cast(
+            msg.sender != tokenOwner && !ERC721(params.consideration[0].token).isApprovedForAll(tokenOwner, msg.sender)
+        );
+
+        // Check the redemption is active.
+        errorBuffer |= _cast(_isInactive(params.startTime, params.endTime)) << 1;
+
+        // Check max total redemptions would not be exceeded.
+        errorBuffer |= _cast(_totalRedemptions[campaignId] + 1 > params.maxCampaignRedemptions) << 2;
+
+        // Check only one token is being redeemed.
+        errorBuffer |= _cast(params.offer.length != 1) << 3;
+
+        // Check only one token is being burned.
+        errorBuffer |= _cast(params.consideration.length != 1) << 4;
+
+        if (errorBuffer > 0) {
+            if (errorBuffer << 255 != 0) {
+                revert InvalidCaller(msg.sender);
+            } else if (errorBuffer << 254 != 0) {
+                revert NotActive(block.timestamp, params.startTime, params.endTime);
+            } else if (errorBuffer << 253 != 0) {
+                revert MaxCampaignRedemptionsReached(_totalRedemptions[campaignId] + 1, params.maxCampaignRedemptions);
+            } else if (errorBuffer << 252 != 0) {
+                revert InvalidOfferLength(params.offer.length, 1);
+            } else if (errorBuffer << 251 != 0) {
+                revert InvalidConsiderationLength(params.consideration.length, 1);
+            }
+        }
+
+        // Burn the NFT.
+        IERC721Redeemable(params.consideration[0].token).burn(tokenId);
+
+        // Mint redeemed NFT to recipient.
+        IERC721RedemptionMintable(params.offer[0].token).mintRedemption(recipient, tokenId);
     }
 
     function _setTokenApprovals(CampaignParams memory params) internal {
@@ -374,7 +420,8 @@ contract RedeemableContractOfferer is
         for (uint256 i = 0; i < params.offer.length;) {
             OfferItem memory offerItem = params.offer[i];
 
-            uint256 tokenId = IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent);
+            uint256 tokenId =
+                IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent[0].identifier);
 
             // Set the itemType without criteria.
             ItemType itemType = offerItem.itemType == ItemType.ERC721_WITH_CRITERIA
