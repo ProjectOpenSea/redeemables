@@ -66,9 +66,6 @@ contract RedeemableContractOfferer is
         external
         returns (uint256 campaignId)
     {
-        // Revert if there are no consideration items, since the redemption should require at least something.
-        if (params.consideration.length == 0) revert NoConsiderationItems();
-
         // Revert if startTime is past endTime.
         if (params.startTime > params.endTime) revert InvalidTime();
 
@@ -340,10 +337,13 @@ contract RedeemableContractOfferer is
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
 
-        // Check the signature is valid if required.
         if (params.signer != address(0)) {
-            uint256 salt = uint256(bytes32(context[64:96]));
-            bytes memory signature = context[96:];
+            // Decode the salt from extraData.
+            uint256 salt = uint256(bytes32(context[96:128]));
+
+            // Decode the signature from extraData.
+            bytes memory signature = context[128:];
+
             // _verifySignature will revert if the signature is invalid or digest is already used.
             _verifySignature(params.signer, fulfiller, maximumSpent, redemptionHash, salt, signature, withEffects);
         }
@@ -357,12 +357,6 @@ contract RedeemableContractOfferer is
                 revert MaxCampaignRedemptionsReached(
                     _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
                 );
-                // TODO: do we need this error?
-                // } else if (errorBuffer << 252 != 0) {
-                //     revert InvalidConsiderationLength(
-                //         maximumSpent.length,
-                //         params.consideration.length
-                //     );
             } else if (errorBuffer << 252 != 0) {
                 revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
             } else {
@@ -370,20 +364,20 @@ contract RedeemableContractOfferer is
             }
         }
 
-        TraitRedemption[] memory traitRedemptions;
-        if (params.signer != address(0)) {
-            traitRedemptions = abi.decode(context[159:], (TraitRedemption[]));
-        } else {
-            // The campaign has no signer, so traitRedemptions start at 64
-            traitRedemptions = abi.decode(context[64:], (TraitRedemption[]));
-        }
+        // {
+        //     // Declare a variable for trait redemptions.
+        //     TraitRedemption[] memory traitRedemptions = abi.decode(context[64:96], (TraitRedemption[]));
 
-        if (traitRedemptions.length != 0) {
-            bool success = _redeemTraits(traitRedemptions, fulfiller);
-            if (!success) {
-                revert InvalidTraitRedemption();
-            }
-        }
+        //     // If trait redemptions are included, redeem and set traits.
+        //     if (traitRedemptions.length != 0) {
+        //         bool success = _redeemTraits(traitRedemptions, fulfiller);
+
+        //         // Revert if trait redemption is unsuccessful.
+        //         if (!success) {
+        //             revert InvalidTraitRedemption();
+        //         }
+        //     }
+        // }
 
         // Set the offer from the params.
         offer = new SpentItem[](params.offer.length);
@@ -401,7 +395,7 @@ contract RedeemableContractOfferer is
                 itemType: itemType,
                 token: offerItem.token,
                 identifier: tokenId,
-                amount: offerItem.startAmount // TODO: do we need to calculate amount based on timestamp?
+                amount: offerItem.startAmount
             });
             unchecked {
                 ++i;
@@ -512,9 +506,9 @@ contract RedeemableContractOfferer is
             consideration: consideration,
             orderType: OrderType.CONTRACT,
             startTime: block.timestamp,
-            endTime: block.timestamp + 10, // TODO: fix
-            zoneHash: bytes32(0), // TODO: fix
-            salt: uint256(0), // TODO: fix
+            endTime: block.timestamp + 10,
+            zoneHash: bytes32(0),
+            salt: uint256(0),
             conduitKey: _CONDUIT_KEY,
             totalOriginalConsiderationItems: consideration.length
         });
