@@ -21,18 +21,15 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintabl
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
+    function mintRedemption(address to, uint256 identifier) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        SpentItem memory spentItem = spent[0];
-        if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
-
-        // Mint the token.
+        // Mint the same token ID redeemed.
         _mint(to, _tokenIdCounter);
 
-        tokenId = _tokenIdCounter;
-
         _tokenIdCounter++;
+
+        return _tokenIdCounter - 1;
     }
 
     function name() public pure override returns (string memory) {
