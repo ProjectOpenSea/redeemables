@@ -406,7 +406,7 @@ contract RedeemableContractOfferer is
             }
 
             // If the consideration item is a criteria item, set the itemType to non-criteria.
-            ItemType itemType = _getItemTypeWithoutCriteria(considerationItem.itemType);
+            ItemType itemType = _getItemTypeWithoutCriteria(considerationItem.itemType, identifier);
 
             consideration[i] = ReceivedItem({
                 itemType: itemType,
