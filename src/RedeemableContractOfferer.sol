@@ -375,7 +375,7 @@ contract RedeemableContractOfferer is
                 IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), params.consideration);
 
             // If the offer item is a criteria item, set the itemType to non-criteria.
-            ItemType itemType = _getItemTypeWithoutCriteria(offerItem.itemType, identifier);
+            ItemType itemType = _getItemTypeWithoutCriteria(offerItem.itemType);
 
             // Set the offer item.
             offer[i] = SpentItem({
@@ -406,7 +406,7 @@ contract RedeemableContractOfferer is
             }
 
             // If the consideration item is a criteria item, set the itemType to non-criteria.
-            ItemType itemType = _getItemTypeWithoutCriteria(considerationItem.itemType, identifier);
+            ItemType itemType = _getItemTypeWithoutCriteria(considerationItem.itemType);
 
             consideration[i] = ReceivedItem({
                 itemType: itemType,
@@ -443,15 +443,13 @@ contract RedeemableContractOfferer is
         }
     }
 
-    function _getItemTypeWithoutCriteria(ItemType itemType, uint256 identifier)
-        internal
-        pure
-        returns (ItemType newItemType)
-    {
+    function _getItemTypeWithoutCriteria(ItemType itemType) internal pure returns (ItemType) {
         // Return early if the item type is not a criteria item.
         if (uint256(itemType) < 3) {
             return itemType;
-        } else if (uint256(itemType) > 3 && identifier == 0) {
+        } else {
+            ItemType newItemType;
+
             assembly {
                 // Item type 4 becomes 2 and item type 5 becomes 3.
                 newItemType := sub(3, eq(itemType, 4))
@@ -459,6 +457,8 @@ contract RedeemableContractOfferer is
 
             // Cast the integer to an ItemType.
             newItemType = ItemType(newItemType);
+
+            return newItemType;
         }
     }
 
