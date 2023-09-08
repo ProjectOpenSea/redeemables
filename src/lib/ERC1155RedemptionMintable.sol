@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC1155RedemptionMintable} from "../interfaces/IERC1155RedemptionMintable.sol";
-import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 contract ERC1155RedemptionMintable is ERC1155, IERC1155RedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
@@ -20,16 +20,16 @@ contract ERC1155RedemptionMintable is ERC1155, IERC1155RedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
+    function mintRedemption(address to, ConsiderationItem[] calldata spent) external returns (uint256 tokenId) {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        SpentItem memory spentItem = spent[0];
+        ConsiderationItem memory spentItem = spent[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
         // Mint the same token ID redeemed and same amount redeemed.
-        _mint(to, spentItem.identifier, spentItem.amount, "");
+        _mint(to, spentItem.identifierOrCriteria, spentItem.startAmount, "");
 
-        return spentItem.identifier;
+        return spentItem.identifierOrCriteria;
     }
 
     function uri(uint256 id) public pure override returns (string memory) {
