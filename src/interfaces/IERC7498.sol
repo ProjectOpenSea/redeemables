@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
 interface IERC7498 {
     /* Events */
     event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string URI);
@@ -36,7 +39,7 @@ interface IERC7498 {
 
     function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external;
 
-    function redeem(uint256[] calldata tokenIds, bytes calldata extraData) external;
+    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData) external;
 }
 
 /* Seaport structs, for reference, used in offer/consideration above */
