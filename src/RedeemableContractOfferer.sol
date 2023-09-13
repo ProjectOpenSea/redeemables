@@ -432,7 +432,7 @@ contract RedeemableContractOfferer is
                 itemType: itemType,
                 token: offerItem.token,
                 identifier: tokenId,
-                amount: offerItem.startAmount // TODO: do we need to calculate amount based on timestamp?
+                amount: offerItem.startAmount
             });
             unchecked {
                 ++i;
