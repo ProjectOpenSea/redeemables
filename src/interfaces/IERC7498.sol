@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, TraitRedemption} from "../lib/RedeemableStructs.sol";
+import {CampaignParams, TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 interface IERC7498 {
     /* Events */
@@ -51,7 +51,7 @@ interface IERC7498 {
 
     function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external;
 
-    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData) external;
+    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData) external payable;
 }
 
 /* Seaport structs, for reference, used in offer/consideration above */

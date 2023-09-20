@@ -24,7 +24,7 @@ import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.
 import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
-import {CampaignParams} from "./lib/RedeemableStructs.sol";
+import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
 /**
  * @title  RedeemablesContractOfferer

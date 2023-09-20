@@ -8,7 +8,9 @@ remappings = [
   'solady/=lib/solady/',
   'seaport-core/=lib/seaport-core/',
   'seaport-sol/=lib/seaport-sol/',
-  'seaport-types/=lib/seaport-types/'
+  'seaport-types/=lib/seaport-types/',
+  'shipyard-core/=lib/shipyard-core/',
+  'seadrop/=lib/seadrop/',
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

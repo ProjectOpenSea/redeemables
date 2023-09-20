@@ -10,7 +10,7 @@ import {
     CriteriaResolver,
     FulfillmentComponent
 } from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, TraitRedemption} from "../lib/RedeemableStructs.sol";
+import {CampaignParams, TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 interface IRedeemableContractOfferer {
     /* Events */

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams} from "./RedeemableStructs.sol";
+import {CampaignParams} from "./RedeemablesStructs.sol";
 
 interface RedeemableErrorsAndEvents {
     /// Configuration errors
@@ -18,6 +18,7 @@ interface RedeemableErrorsAndEvents {
     error NotActive(uint256 currentTimestamp, uint256 startTime, uint256 endTime);
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
+    error NativeTransferFailed();
     error RedeemMismatchedLengths();
     error TraitValueUnchanged(bytes32 traitKey, bytes32 value);
     error InvalidConsiderationLength(uint256 got, uint256 want);

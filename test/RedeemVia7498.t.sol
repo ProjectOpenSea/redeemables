@@ -95,8 +95,6 @@ contract RedeemVia7498 is RedeemableErrorsAndEvents, Test {
             uint256[] memory tokenIds = new uint256[](1);
             tokenIds[0] = tokenId;
 
-            redeemableToken.ownerOf(2);
-
             redeemableToken.redeem(tokenIds, address(this), extraData);
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
