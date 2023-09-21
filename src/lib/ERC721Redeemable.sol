@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721Redeemable} from "../interfaces/IERC721Redeemable.sol";
-import {RedeemableErrorsAndEvents} from "./RedeemableErrorsAndEvents.sol";
+import {RedeemablesErrorsAndEvents} from "./RedeemablesErrorsAndEvents.sol";
 
 contract ERC721Redeemable is ERC721, IERC721Redeemable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;

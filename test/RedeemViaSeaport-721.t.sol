@@ -18,13 +18,13 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {MockERC721DynamicTraits} from "./utils/mocks/MockERC721DynamicTraits.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
-import {CampaignParams, TraitRedemption} from "../src/lib/RedeemableStructs.sol";
-import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
+import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {RedeemablesErrorsAndEvents} from "../src/lib/RedeemablesErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
+contract RedeemViaSeaport721 is BaseOrderTest, RedeemablesErrorsAndEvents {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);

@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams} from "./RedeemablesStructs.sol";
 
-interface RedeemableErrorsAndEvents {
+interface RedeemablesErrorsAndEvents {
     /// Configuration errors
     error NotManager();
     error InvalidTime();

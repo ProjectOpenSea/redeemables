@@ -3,9 +3,9 @@ pragma solidity ^0.8.19;
 
 import {ECDSA} from "solady/src/utils/ECDSA.sol";
 import {IERCDynamicTraits} from "../interfaces/IDynamicTraits.sol";
-import {RedeemableErrorsAndEvents} from "./RedeemableErrorsAndEvents.sol";
+import {RedeemablesErrorsAndEvents} from "./RedeemablesErrorsAndEvents.sol";
 
-contract DynamicTraits is IERCDynamicTraits, RedeemableErrorsAndEvents {
+contract DynamicTraits is IERCDynamicTraits, RedeemablesErrorsAndEvents {
     mapping(uint256 tokenId => mapping(bytes32 traitKey => bytes32 traitValue)) internal _traits;
 
     function getTrait(uint256 tokenId, bytes32 traitKey) public view virtual override returns (bytes32) {

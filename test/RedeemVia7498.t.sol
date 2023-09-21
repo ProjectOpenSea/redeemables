@@ -5,13 +5,13 @@ import {Solarray} from "solarray/Solarray.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
-import {CampaignParams, TraitRedemption} from "../src/lib/RedeemableStructs.sol";
-import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
+import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {RedeemablesErrorsAndEvents} from "../src/lib/RedeemablesErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {ERC7498NFTRedeemables} from "../src/lib/ERC7498NFTRedeemables.sol";
 import {Test} from "forge-std/Test.sol";
 
-contract RedeemVia7498 is RedeemableErrorsAndEvents, Test {
+contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
     error InvalidContractOrder(bytes32 orderHash);
 
     ERC7498NFTRedeemables redeemableToken;

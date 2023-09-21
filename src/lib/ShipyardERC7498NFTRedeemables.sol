@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {AbstractDynamicTraits} from "shipyard-core/src/dynamic-traits/AbstractDynamicTraits.sol";
+import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
 import {ERC20} from "solady/src/tokens/ERC20.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC721SeaDrop} from "seadrop/src/ERC721SeaDrop.sol";
@@ -12,12 +12,7 @@ import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {CampaignParams, TraitRedemption} from "./RedeemablesStructs.sol";
 import {RedeemablesErrorsAndEvents} from "./RedeemablesErrorsAndEvents.sol";
 
-contract ERC7498NFTRedeemables is
-    AbstractDynamicTraits,
-    ERC721SeaDrop,
-    IERC7498,
-    RedeemablesErrorsAndEvents
-{
+contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, RedeemablesErrorsAndEvents {
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
@@ -25,8 +20,7 @@ contract ERC7498NFTRedeemables is
     address internal _MANAGER;
 
     /// @dev The campaign parameters by campaign id.
-    mapping(uint256 campaignId => CampaignParams params)
-        private _campaignParams;
+    mapping(uint256 campaignId => CampaignParams params) private _campaignParams;
 
     /// @dev The campaign URIs by campaign id.
     mapping(uint256 campaignId => string campaignURI) private _campaignURIs;
@@ -41,21 +35,11 @@ contract ERC7498NFTRedeemables is
         address manager,
         string memory _name,
         string memory _symbol
-    )
-        ERC721SeaDrop(
-            allowedConfigurer,
-            allowedConduit,
-            allowedSeaport,
-            _name,
-            _symbol
-        )
-    {
+    ) ERC721SeaDrop(allowedConfigurer, allowedConduit, allowedSeaport, _name, _symbol) {
         _MANAGER = manager;
     }
 
-    function tokenURI(
-        uint256 tokenId
-    ) public view override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
         return "https://example.com/";
     }
 
@@ -66,11 +50,7 @@ contract ERC7498NFTRedeemables is
     // at 64 will be pointer to array
     // mload pointer, pointer points to length
     // next word is start of array
-    function redeem(
-        uint256[] calldata tokenIds,
-        address recipient,
-        bytes calldata extraData
-    ) public virtual override {
+    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData) public virtual override {
         // Get the campaign id from extraData.
         uint256 campaignId = uint256(bytes32(extraData[0:32]));
 
@@ -83,13 +63,9 @@ contract ERC7498NFTRedeemables is
         }
 
         // Revert if max total redemptions would be exceeded.
-        if (
-            _totalRedemptions[campaignId] + tokenIds.length >
-            params.maxCampaignRedemptions
-        ) {
+        if (_totalRedemptions[campaignId] + tokenIds.length > params.maxCampaignRedemptions) {
             revert MaxCampaignRedemptionsReached(
-                _totalRedemptions[campaignId] + tokenIds.length,
-                params.maxCampaignRedemptions
+                _totalRedemptions[campaignId] + tokenIds.length, params.maxCampaignRedemptions
             );
         }
 
@@ -101,9 +77,7 @@ contract ERC7498NFTRedeemables is
         // calldata array is two vars on stack (length, ptr to start of array)
         assembly {
             // Get the pointer to the length of the trait redemptions array by adding 0x40 to the extraData offset.
-            let traitRedemptionsLengthPtr := calldataload(
-                add(0x40, extraData.offset)
-            )
+            let traitRedemptionsLengthPtr := calldataload(add(0x40, extraData.offset))
 
             // Set the length of the trait redeptions array to the value at the array length pointer.
             traitRedemptions.length := calldataload(traitRedemptionsLengthPtr)
@@ -113,7 +87,7 @@ contract ERC7498NFTRedeemables is
         }
 
         // Iterate over the trait redemptions and set traits on the tokens.
-        for (uint256 i; i < traitRedemptions.length; ) {
+        for (uint256 i; i < traitRedemptions.length;) {
             // Get the trait redemption token address and place on the stack.
             address token = traitRedemptions[i].token;
 
@@ -149,55 +123,32 @@ contract ERC7498NFTRedeemables is
                 if (substandard == 1) {
                     // Revert if the current trait value does not match the substandard value.
                     if (currentTraitValue != substandardValue) {
-                        revert InvalidRequiredValue(
-                            currentTraitValue,
-                            substandardValue
-                        );
+                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
                     }
 
                     // Set the trait to the trait value.
-                    _setTrait(
-                        traitRedemptions[i].traitKey,
-                        identifier,
-                        traitValue
-                    );
+                    _setTrait(traitRedemptions[i].traitKey, identifier, traitValue);
                     // If substandard is 2, increment trait by traitValue.
                 } else if (substandard == 2) {
                     // Revert if the current trait value is greater than the substandard value.
                     if (currentTraitValue > substandardValue) {
-                        revert InvalidRequiredValue(
-                            currentTraitValue,
-                            substandardValue
-                        );
+                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
                     }
 
                     // Increment the trait by the trait value.
-                    uint256 newTraitValue = uint256(currentTraitValue) +
-                        uint256(traitValue);
+                    uint256 newTraitValue = uint256(currentTraitValue) + uint256(traitValue);
 
-                    _setTrait(
-                        traitRedemptions[i].traitKey,
-                        identifier,
-                        bytes32(newTraitValue)
-                    );
+                    _setTrait(traitRedemptions[i].traitKey, identifier, bytes32(newTraitValue));
                 } else if (substandard == 3) {
                     // Revert if the current trait value is less than the substandard value.
                     if (currentTraitValue < substandardValue) {
-                        revert InvalidRequiredValue(
-                            currentTraitValue,
-                            substandardValue
-                        );
+                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
                     }
 
-                    uint256 newTraitValue = uint256(currentTraitValue) -
-                        uint256(traitValue);
+                    uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
 
                     // Decrement the trait by the trait value.
-                    _setTrait(
-                        traitRedemptions[i].traitKey,
-                        traitRedemptions[i].identifier,
-                        bytes32(newTraitValue)
-                    );
+                    _setTrait(traitRedemptions[i].traitKey, traitRedemptions[i].identifier, bytes32(newTraitValue));
                 }
             }
             unchecked {
@@ -207,7 +158,7 @@ contract ERC7498NFTRedeemables is
 
         // Iterate over the token IDs and check if caller is the owner or approved operator.
         // Redeem the token if the caller is valid.
-        for (uint256 i; i < tokenIds.length; ) {
+        for (uint256 i; i < tokenIds.length;) {
             // Get the identifier.
             uint256 identifier = tokenIds[i];
 
@@ -220,25 +171,14 @@ contract ERC7498NFTRedeemables is
             }
 
             // Burn or transfer the token to the consideration recipient.
-            if (
-                consideration[0].recipient ==
-                payable(address(0x000000000000000000000000000000000000dEaD))
-            ) {
+            if (consideration[0].recipient == payable(address(0x000000000000000000000000000000000000dEaD))) {
                 _burn(identifier);
             } else {
-                ERC721(consideration[0].token).safeTransferFrom(
-                    owner,
-                    consideration[0].recipient,
-                    identifier
-                );
+                ERC721(consideration[0].token).safeTransferFrom(owner, consideration[0].recipient, identifier);
             }
 
             // Mint the redemption token.
-            IRedemptionMintable(params.offer[0].token).mintRedemption(
-                campaignId,
-                recipient,
-                consideration
-            );
+            IRedemptionMintable(params.offer[0].token).mintRedemption(campaignId, recipient, consideration);
 
             unchecked {
                 ++i;
@@ -246,17 +186,11 @@ contract ERC7498NFTRedeemables is
         }
     }
 
-    function getCampaign(
-        uint256 campaignId
-    )
+    function getCampaign(uint256 campaignId)
         external
         view
         override
-        returns (
-            CampaignParams memory params,
-            string memory uri,
-            uint256 totalRedemptions
-        )
+        returns (CampaignParams memory params, string memory uri, uint256 totalRedemptions)
     {
         // Revert if campaign id is invalid.
         if (campaignId >= _nextCampaignId) revert InvalidCampaignId();
@@ -271,10 +205,11 @@ contract ERC7498NFTRedeemables is
         totalRedemptions = _totalRedemptions[campaignId];
     }
 
-    function createCampaign(
-        CampaignParams calldata params,
-        string calldata uri
-    ) external override returns (uint256 campaignId) {
+    function createCampaign(CampaignParams calldata params, string calldata uri)
+        external
+        override
+        returns (uint256 campaignId)
+    {
         // Revert if msg.sender is not the manager.
         // @dev the manager can set any account as the campaign manager that can update the campaign.
         if (msg.sender != _MANAGER) revert NotManager();
@@ -285,13 +220,10 @@ contract ERC7498NFTRedeemables is
         // Revert if startTime is past endTime.
         if (params.startTime > params.endTime) revert InvalidTime();
 
-        for (uint256 i = 0; i < params.consideration.length; ) {
+        for (uint256 i = 0; i < params.consideration.length;) {
             // Revert if any of the consideration items is not this token contract.
             if (params.consideration[i].token != address(this)) {
-                revert InvalidConsiderationItem(
-                    params.consideration[i].token,
-                    address(this)
-                );
+                revert InvalidConsiderationItem(params.consideration[i].token, address(this));
             }
 
             // Revert if any of the consideration item recipients is the zero address.
@@ -320,11 +252,10 @@ contract ERC7498NFTRedeemables is
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
     }
 
-    function updateCampaign(
-        uint256 campaignId,
-        CampaignParams calldata params,
-        string calldata uri
-    ) external override {
+    function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri)
+        external
+        override
+    {
         // Revert if campaign id is invalid.
         if (campaignId == 0 || campaignId >= _nextCampaignId) {
             revert InvalidCampaignId();
@@ -338,15 +269,12 @@ contract ERC7498NFTRedeemables is
 
         // Revert if msg.sender is not the manager.
         address existingManager = _campaignParams[campaignId].manager;
-        if (
-            params.manager != msg.sender &&
-            (existingManager != address(0) && existingManager != params.manager)
-        ) {
+        if (params.manager != msg.sender && (existingManager != address(0) && existingManager != params.manager)) {
             revert NotManager();
         }
 
         // Revert if any of the consideration item recipients is the zero address. The 0xdead address should be used instead.
-        for (uint256 i = 0; i < params.consideration.length; ) {
+        for (uint256 i = 0; i < params.consideration.length;) {
             if (params.consideration[i].recipient == address(0)) {
                 revert ConsiderationItemRecipientCannotBeZeroAddress();
             }
@@ -366,25 +294,15 @@ contract ERC7498NFTRedeemables is
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
     }
 
-    function _isInactive(
-        uint256 startTime,
-        uint256 endTime
-    ) internal view returns (bool inactive) {
+    function _isInactive(uint256 startTime, uint256 endTime) internal view returns (bool inactive) {
         // Using the same check for time boundary from Seaport.
         // startTime <= block.timestamp < endTime
         assembly {
-            inactive := or(
-                iszero(gt(endTime, timestamp())),
-                gt(startTime, timestamp())
-            )
+            inactive := or(iszero(gt(endTime, timestamp())), gt(startTime, timestamp()))
         }
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override(AbstractDynamicTraits) returns (bool) {
-        return
-            interfaceId == type(IERC7498).interfaceId ||
-            super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AbstractDynamicTraits) returns (bool) {
+        return interfaceId == type(IERC7498).interfaceId || super.supportsInterface(interfaceId);
     }
 }

@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
-import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
+import {CampaignParams} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {ERC7498NFTRedeemables} from "../src/lib/ERC7498NFTRedeemables.sol";
 import {TestERC721} from "../test/utils/mocks/TestERC721.sol";

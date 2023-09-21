@@ -20,10 +20,9 @@ import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
 import {IERC721Redeemable} from "./interfaces/IERC721Redeemable.sol";
-import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
-import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
+import {IRedemptionMintable} from "./interfaces/IRedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
-import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
+import {RedeemablesErrorsAndEvents} from "./lib/RedeemablesErrorsAndEvents.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
 /**
@@ -33,7 +32,7 @@ import {CampaignParams} from "./lib/RedeemablesStructs.sol";
  */
 contract RedeemableContractOfferer is
     ContractOffererInterface,
-    RedeemableErrorsAndEvents,
+    RedeemablesErrorsAndEvents,
     SignedRedeemContractOfferer
 {
     /// @dev The Seaport address allowed to interact with this contract offerer.
