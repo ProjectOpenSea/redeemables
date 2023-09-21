@@ -2,10 +2,10 @@
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
+import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
+contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
     address internal immutable _REDEEM_TOKEN;
 
@@ -20,16 +20,18 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, ConsiderationItem[] calldata spent) external returns (uint256 tokenId) {
+    function mintRedemption(
+        uint256 campaignId,
+        address recipient,
+        ConsiderationItem[] memory consideration
+    ) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        ConsiderationItem memory spentItem = spent[0];
+        ConsiderationItem memory spentItem = consideration[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
         // Mint the same token ID redeemed.
-        _mint(to, spentItem.identifierOrCriteria);
-
-        return spentItem.identifierOrCriteria;
+        _mint(recipient, spentItem.identifierOrCriteria);
     }
 
     function name() public pure override returns (string memory) {
@@ -40,7 +42,9 @@ contract ERC721RedemptionMintable is ERC721, IERC721RedemptionMintable {
         return "721RM";
     }
 
-    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public pure override returns (string memory) {
         return string(abi.encodePacked("https://example.com/", tokenId));
     }
 }
