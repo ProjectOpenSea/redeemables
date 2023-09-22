@@ -371,70 +371,70 @@ contract RedeemableContractOfferer is
     {
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(context[0:32]));
-        CampaignParams storage params = _campaignParams[campaignId];
-
-        // Declare an error buffer; first check is that caller is Seaport or the token contract.
-        uint256 errorBuffer = _cast(
-            msg.sender != _SEAPORT &&
-                msg.sender != params.consideration[0].token
-        );
-
-        // Check the redemption is active.
-        errorBuffer |=
-            _cast(_isInactive(params.startTime, params.endTime)) <<
-            1;
-
-        // Check max total redemptions would not be exceeded.
-        errorBuffer |=
-            _cast(
-                _totalRedemptions[campaignId] + maximumSpent.length >
-                    params.maxCampaignRedemptions
-            ) <<
-            2;
 
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
 
-        // Check the signature is valid if required.
-        if (params.signer != address(0)) {
-            uint256 salt = uint256(bytes32(context[64:96]));
-            bytes memory signature = context[96:];
-            // _verifySignature will revert if the signature is invalid or digest is already used.
-            _verifySignature(
-                params.signer,
-                fulfiller,
-                maximumSpent,
-                redemptionHash,
-                salt,
-                signature,
-                withEffects
-            );
-        }
+        CampaignParams storage params = _campaignParams[campaignId];
 
-        if (errorBuffer > 0) {
-            if (errorBuffer << 255 != 0) {
-                revert InvalidCaller(msg.sender);
-            } else if (errorBuffer << 254 != 0) {
-                revert NotActive(
-                    block.timestamp,
-                    params.startTime,
-                    params.endTime
-                );
-            } else if (errorBuffer << 253 != 0) {
-                revert MaxCampaignRedemptionsReached(
-                    _totalRedemptions[campaignId] + maximumSpent.length,
-                    params.maxCampaignRedemptions
-                );
-            } else if (errorBuffer << 252 != 0) {
-                revert InvalidConsiderationItem(
-                    maximumSpent[0].token,
-                    params.consideration[0].token
+        {
+            // Declare an error buffer; first check is that caller is Seaport or the token contract.
+            uint256 errorBuffer = _cast(
+                msg.sender != _SEAPORT &&
+                    msg.sender != params.consideration[0].token
+            );
+
+            // Check the redemption is active.
+            errorBuffer |=
+                _cast(_isInactive(params.startTime, params.endTime)) <<
+                1;
+
+            // Check max total redemptions would not be exceeded.
+            errorBuffer |=
+                _cast(
+                    _totalRedemptions[campaignId] + maximumSpent.length >
+                        params.maxCampaignRedemptions
+                ) <<
+                2;
+
+            // Check the signature is valid if required.
+            if (params.signer != address(0)) {
+                uint256 salt = uint256(bytes32(context[64:96]));
+                bytes memory signature = context[96:];
+                // _verifySignature will revert if the signature is invalid or digest is already used.
+                _verifySignature(
+                    params.signer,
+                    fulfiller,
+                    maximumSpent,
+                    redemptionHash,
+                    salt,
+                    signature,
+                    withEffects
                 );
             }
-        }
 
-        // Set the offer as empty since tokens are minted directly to the user.
-        offer = new SpentItem[](0);
+            if (errorBuffer > 0) {
+                if (errorBuffer << 255 != 0) {
+                    revert InvalidCaller(msg.sender);
+                } else if (errorBuffer << 254 != 0) {
+                    revert NotActive(
+                        block.timestamp,
+                        params.startTime,
+                        params.endTime
+                    );
+                } else if (errorBuffer << 253 != 0) {
+                    revert MaxCampaignRedemptionsReached(
+                        _totalRedemptions[campaignId] + maximumSpent.length,
+                        params.maxCampaignRedemptions
+                    );
+                } else if (errorBuffer << 252 != 0) {
+                    revert InvalidConsiderationItem(
+                        maximumSpent[0].token,
+                        params.consideration[0].token
+                    );
+                }
+            }
+        }
 
         // Iterate over the campaign offer items
         for (uint256 i = 0; i < params.offer.length; ) {
@@ -444,7 +444,7 @@ contract RedeemableContractOfferer is
             // Pass in the campaign consideration to the redemption token contract.
             IRedemptionMintable(offerItem.token).mintRedemption(
                 campaignId,
-                msg.sender,
+                fulfiller,
                 params.consideration
             );
 
@@ -452,6 +452,9 @@ contract RedeemableContractOfferer is
                 ++i;
             }
         }
+
+        // Set the offer as empty since tokens are minted directly to the user.
+        offer = new SpentItem[](0);
 
         // Set the consideration from the params.
         consideration = new ReceivedItem[](params.consideration.length);
