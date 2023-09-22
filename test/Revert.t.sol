@@ -169,7 +169,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         }
     }
 
-    function testRevertmaxCampaignRedemptionsReached() public {
+    function testRevertMaxCampaignRedemptionsReached() public {
         redeemableToken.mint(address(this), 0);
         redeemableToken.mint(address(this), 1);
         redeemableToken.mint(address(this), 2);
@@ -252,9 +252,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
 
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
