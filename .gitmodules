@@ -26,3 +26,6 @@
 	path = lib/seadrop
 	url = https://github.com/ProjectOpenSea/seadrop
 	branch = v2
+[submodule "lib/ds-test"]
+	path = lib/ds-test
+	url = https://github.com/dapphub/ds-test

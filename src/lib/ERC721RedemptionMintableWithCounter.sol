@@ -24,7 +24,10 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IRedemptionMintable {
     function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        // Mint the same token ID redeemed.
+        ConsiderationItem memory spentItem = consideration[0];
+        if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
+
+        // Mint the token.
         _mint(recipient, _tokenIdCounter);
 
         _tokenIdCounter++;

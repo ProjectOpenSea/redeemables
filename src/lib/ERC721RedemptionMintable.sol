@@ -23,8 +23,11 @@ contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
+        ConsiderationItem memory spentItem = consideration[0];
+        if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
+
         // Mint the same token ID redeemed.
-        _mint(recipient, consideration[0].identifierOrCriteria);
+        _mint(recipient, spentItem.identifierOrCriteria);
     }
 
     function name() public pure override returns (string memory) {
