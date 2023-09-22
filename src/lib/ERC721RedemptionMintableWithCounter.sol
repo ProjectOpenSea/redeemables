@@ -2,10 +2,10 @@
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC721RedemptionMintable} from "../interfaces/IERC721RedemptionMintable.sol";
-import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
+import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
-contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintable {
+contract ERC721RedemptionMintableWithCounter is ERC721, IRedemptionMintable {
     address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
     address internal immutable _REDEEM_TOKEN;
     uint256 internal _tokenIdCounter;
@@ -21,16 +21,14 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IERC721RedemptionMintabl
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(address to, SpentItem[] calldata spent) external returns (uint256 tokenId) {
+    function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
-        SpentItem memory spentItem = spent[0];
+        ConsiderationItem memory spentItem = consideration[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
         // Mint the token.
-        _mint(to, _tokenIdCounter);
-
-        tokenId = _tokenIdCounter;
+        _mint(recipient, _tokenIdCounter);
 
         _tokenIdCounter++;
     }

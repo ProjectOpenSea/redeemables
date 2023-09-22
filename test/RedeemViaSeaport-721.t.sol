@@ -121,9 +121,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -146,7 +145,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -242,9 +241,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // TODO: validate OrderFulfilled event
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(campaignConsideration).withOffer(campaignOffer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(campaignConsideration.length);
+            ).withConsideration(campaignConsideration).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(campaignConsideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -263,7 +261,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             });
 
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
             assertEq(erc20BalanceBefore - erc20.balanceOf(address(this)), erc20Amount);
             assertEq(erc20.balanceOf(eve.addr), erc20Amount);
         }
@@ -350,9 +348,9 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
 
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(consideration).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(consideration.length);
+            ).withConsideration(consideration).withConduitKey(conduitKey).withStartTime(block.timestamp).withEndTime(
+                block.timestamp + 1
+            ).withTotalOriginalConsiderationItems(consideration.length);
             AdvancedOrder memory order = AdvancedOrder({
                 parameters: parameters,
                 numerator: 1,
@@ -380,7 +378,6 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
                 recipient: address(0)
             });
 
-            // TODO: failing because redemptionToken tokenId is merkle root
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(redemptionTokenWithCounter.ownerOf(0), address(this));
         }
@@ -503,9 +500,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -529,7 +525,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableToken.ownerOf(burnTokenId1), _BURN_ADDRESS);
 
             // Check that the redemption token has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -644,9 +640,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -784,9 +779,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -810,7 +804,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableTokenTwo.ownerOf(burnTokenId0), _BURN_ADDRESS);
 
             // Check that the redemption token has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 
@@ -927,9 +921,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             // Create the OrderParameters to be passed into fulfillAdvancedOrder
             OrderParameters memory parameters = OrderParametersLib.empty().withOfferer(address(offerer)).withOrderType(
                 OrderType.CONTRACT
-            ).withConsideration(considerationFromEvent).withOffer(offer).withConduitKey(conduitKey).withStartTime(
-                block.timestamp
-            ).withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
+            ).withConsideration(considerationFromEvent).withConduitKey(conduitKey).withStartTime(block.timestamp)
+                .withEndTime(block.timestamp + 1).withTotalOriginalConsiderationItems(considerationFromEvent.length);
 
             // Create the AdvancedOrder to be passed into fulfillAdvancedOrder
             AdvancedOrder memory order = AdvancedOrder({
@@ -952,8 +945,8 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
             assertEq(redeemableToken.ownerOf(redeemableTokenId), _BURN_ADDRESS);
 
             // Check that the two redemptionTokens has been minted to the test contract
-            assertEq(redemptionToken.ownerOf(redemptionTokenId), address(this));
-            assertEq(redemptionTokenTwo.ownerOf(redemptionTokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
+            assertEq(redemptionTokenTwo.ownerOf(0), address(this));
         }
     }
 
@@ -1167,7 +1160,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         for (uint256 i; i < 5; i++) {
             tokenId = i;
             assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redemptionToken.ownerOf(0), address(this));
         }
     }
 }

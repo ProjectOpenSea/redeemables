@@ -19,8 +19,7 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol";
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
-import {IERC721RedemptionMintable} from "./interfaces/IERC721RedemptionMintable.sol";
-import {IERC1155RedemptionMintable} from "./interfaces/IERC1155RedemptionMintable.sol";
+import {IRedemptionMintable} from "./interfaces/IRedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
 import {RedeemableErrorsAndEvents} from "./lib/RedeemableErrorsAndEvents.sol";
 import {CampaignParams} from "./lib/RedeemableStructs.sol";
@@ -28,7 +27,7 @@ import {CampaignParams} from "./lib/RedeemableStructs.sol";
 /**
  * @title  RedeemablesContractOfferer
  * @author ryanio, stephankmin
- * @notice A Seaport contract offerer that allows users to burn to redeem off chain redeemables.
+ * @notice A Seaport contract offerer that allows users to burn to redeem onchain redeemables.
  */
 contract RedeemableContractOfferer is
     ContractOffererInterface,
@@ -65,21 +64,8 @@ contract RedeemableContractOfferer is
         external
         returns (uint256 campaignId)
     {
-        // Revert if there are no consideration items, since the redemption should require at least something.
-        if (params.consideration.length == 0) revert NoConsiderationItems();
-
-        // Revert if startTime is past endTime.
-        if (params.startTime > params.endTime) revert InvalidTime();
-
-        // Revert if any of the consideration item recipients is the zero address. The 0xdead address should be used instead.
-        for (uint256 i = 0; i < params.consideration.length;) {
-            if (params.consideration[i].recipient == address(0)) {
-                revert ConsiderationItemRecipientCannotBeZeroAddress();
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        // Validate the campaign params.
+        _validateCampaignParams(params);
 
         // Check for and set token approvals for the campaign.
         _setTokenApprovals(params);
@@ -101,15 +87,10 @@ contract RedeemableContractOfferer is
     }
 
     function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external {
+        // Revert if the campaign id is invalid.
         if (campaignId == 0 || campaignId >= _nextCampaignId) {
             revert InvalidCampaignId();
         }
-
-        // Revert if there are no consideration items, since the redemption should require at least something.
-        if (params.consideration.length == 0) revert NoConsiderationItems();
-
-        // Revert if startTime is past endTime.
-        if (params.startTime > params.endTime) revert InvalidTime();
 
         // Revert if msg.sender is not the manager.
         address existingManager = _campaignParams[campaignId].manager;
@@ -117,15 +98,8 @@ contract RedeemableContractOfferer is
             revert NotManager();
         }
 
-        // Revert if any of the consideration item recipients is the zero address. The 0xdead address should be used instead.
-        for (uint256 i = 0; i < params.consideration.length;) {
-            if (params.consideration[i].recipient == address(0)) {
-                revert ConsiderationItemRecipientCannotBeZeroAddress();
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        // Validate the campaign params.
+        _validateCampaignParams(params);
 
         // Check for and set token approvals for the campaign.
         _setTokenApprovals(params);
@@ -139,6 +113,24 @@ contract RedeemableContractOfferer is
         }
 
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
+    }
+
+    function _validateCampaignParams(CampaignParams memory params) internal pure {
+        // Revert if there are no consideration items, since the redemption should require at least something.
+        if (params.consideration.length == 0) revert NoConsiderationItems();
+
+        // Revert if startTime is past endTime.
+        if (params.startTime > params.endTime) revert InvalidTime();
+
+        // Revert if any of the consideration item recipients is the zero address. The 0xdead address should be used instead.
+        for (uint256 i = 0; i < params.consideration.length;) {
+            if (params.consideration[i].recipient == address(0)) {
+                revert ConsiderationItemRecipientCannotBeZeroAddress();
+            }
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function _setTokenApprovals(CampaignParams memory params) internal {
@@ -170,7 +162,7 @@ contract RedeemableContractOfferer is
                     ERC721(params.consideration[i].token).setApprovalForAll(_CONDUIT, true);
                 }
                 // Set the maximum approval amount for ERC20 tokens.
-            } else {
+            } else if (params.consideration[i].itemType == ItemType.ERC20) {
                 ERC20(params.consideration[i].token).approve(_CONDUIT, type(uint256).max);
             }
             unchecked {
@@ -318,107 +310,87 @@ contract RedeemableContractOfferer is
 
     function _createOrder(
         address fulfiller,
-        SpentItem[] memory minimumReceived,
+        SpentItem[] memory,
         SpentItem[] memory maximumSpent,
         bytes calldata context,
         bool withEffects
     ) internal returns (SpentItem[] memory offer, ReceivedItem[] memory consideration) {
         // Get the campaign.
         uint256 campaignId = uint256(bytes32(context[0:32]));
-        CampaignParams storage params = _campaignParams[campaignId];
-
-        // Declare an error buffer; first check is that caller is Seaport or the token contract.
-        uint256 errorBuffer = _cast(msg.sender != _SEAPORT && msg.sender != params.consideration[0].token);
-
-        // Check the redemption is active.
-        errorBuffer |= _cast(_isInactive(params.startTime, params.endTime)) << 1;
-
-        // Check max total redemptions would not be exceeded.
-        errorBuffer |= _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxCampaignRedemptions) << 2;
 
         // Get the redemption hash.
         bytes32 redemptionHash = bytes32(context[32:64]);
 
-        // Check the signature is valid if required.
-        if (params.signer != address(0)) {
-            uint256 salt = uint256(bytes32(context[64:96]));
-            bytes memory signature = context[96:];
-            // _verifySignature will revert if the signature is invalid or digest is already used.
-            _verifySignature(params.signer, fulfiller, maximumSpent, redemptionHash, salt, signature, withEffects);
-        }
+        CampaignParams storage params = _campaignParams[campaignId];
 
-        if (errorBuffer > 0) {
-            if (errorBuffer << 255 != 0) {
-                revert InvalidCaller(msg.sender);
-            } else if (errorBuffer << 254 != 0) {
-                revert NotActive(block.timestamp, params.startTime, params.endTime);
-            } else if (errorBuffer << 253 != 0) {
-                revert MaxCampaignRedemptionsReached(
-                    _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
-                );
-                // TODO: do we need this error?
-                // } else if (errorBuffer << 252 != 0) {
-                //     revert InvalidConsiderationLength(
-                //         maximumSpent.length,
-                //         params.consideration.length
-                //     );
-            } else if (errorBuffer << 252 != 0) {
-                revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
-            } else {
-                // todo more validation errors
+        {
+            // Declare an error buffer; first check is that caller is Seaport or the token contract.
+            uint256 errorBuffer = _cast(msg.sender != _SEAPORT && msg.sender != params.consideration[0].token);
+
+            // Check the redemption is active.
+            errorBuffer |= _cast(_isInactive(params.startTime, params.endTime)) << 1;
+
+            // Check max total redemptions would not be exceeded.
+            errorBuffer |=
+                _cast(_totalRedemptions[campaignId] + maximumSpent.length > params.maxCampaignRedemptions) << 2;
+
+            // Check the signature is valid if required.
+            if (params.signer != address(0)) {
+                uint256 salt = uint256(bytes32(context[64:96]));
+                bytes memory signature = context[96:];
+                // _verifySignature will revert if the signature is invalid or digest is already used.
+                _verifySignature(params.signer, fulfiller, maximumSpent, redemptionHash, salt, signature, withEffects);
+            }
+
+            if (errorBuffer > 0) {
+                if (errorBuffer << 255 != 0) {
+                    revert InvalidCaller(msg.sender);
+                } else if (errorBuffer << 254 != 0) {
+                    revert NotActive(block.timestamp, params.startTime, params.endTime);
+                } else if (errorBuffer << 253 != 0) {
+                    revert MaxCampaignRedemptionsReached(
+                        _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
+                    );
+                } else if (errorBuffer << 252 != 0) {
+                    revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
+                }
             }
         }
 
-        // Set the offer from the params.
-        offer = new SpentItem[](params.offer.length);
+        // Iterate over the campaign offer items
         for (uint256 i = 0; i < params.offer.length;) {
             OfferItem memory offerItem = params.offer[i];
 
-            uint256 tokenId = IERC721RedemptionMintable(offerItem.token).mintRedemption(address(this), maximumSpent);
+            // Mint the redemption token.
+            // Pass in the campaign consideration to the redemption token contract.
+            IRedemptionMintable(offerItem.token).mintRedemption(campaignId, fulfiller, params.consideration);
 
-            // Set the itemType without criteria.
-            ItemType itemType = offerItem.itemType == ItemType.ERC721_WITH_CRITERIA
-                ? ItemType.ERC721
-                : offerItem.itemType == ItemType.ERC1155_WITH_CRITERIA ? ItemType.ERC1155 : offerItem.itemType;
-
-            offer[i] = SpentItem({
-                itemType: itemType,
-                token: offerItem.token,
-                identifier: tokenId,
-                amount: offerItem.startAmount // TODO: do we need to calculate amount based on timestamp?
-            });
             unchecked {
                 ++i;
             }
         }
+
+        // Set the offer as empty since tokens are minted directly to the user.
+        offer = new SpentItem[](0);
 
         // Set the consideration from the params.
         consideration = new ReceivedItem[](params.consideration.length);
         for (uint256 i = 0; i < params.consideration.length;) {
             ConsiderationItem memory considerationItem = params.consideration[i];
 
-            // TODO: make helper getItemTypeWithoutCriteria
-            ItemType itemType;
             uint256 identifier;
 
-            // If consideration item is wildcard criteria item, set itemType to ERC721
-            // and identifier to the maximumSpent item identifier.
-            if (
-                (considerationItem.itemType == ItemType.ERC721_WITH_CRITERIA)
-                    && (considerationItem.identifierOrCriteria == 0)
-            ) {
-                itemType = ItemType.ERC721;
-                identifier = maximumSpent[i].identifier;
-            } else if (
-                (considerationItem.itemType == ItemType.ERC1155_WITH_CRITERIA)
-                    && (considerationItem.identifierOrCriteria == 0)
-            ) {
-                itemType = ItemType.ERC1155;
+            // If consideration item is a wildcard criteria item, set the identifier
+            // to the maximumSpent item identifier.
+            if (uint256(considerationItem.itemType) > 3 && considerationItem.identifierOrCriteria == 0) {
                 identifier = maximumSpent[i].identifier;
             } else {
-                itemType = considerationItem.itemType;
+                // Otherwise, set the identifier to the consideration item identifier.
                 identifier = considerationItem.identifierOrCriteria;
             }
+
+            // If the consideration item is a criteria item, set the itemType to non-criteria.
+            ItemType itemType = _getItemTypeWithoutCriteria(maximumSpent[i].itemType, identifier);
 
             consideration[i] = ReceivedItem({
                 itemType: itemType,
@@ -455,6 +427,25 @@ contract RedeemableContractOfferer is
         }
     }
 
+    function _getItemTypeWithoutCriteria(ItemType itemType, uint256 identifier) internal pure returns (ItemType) {
+        // Return early if the item type is not a wildcard criteria item.
+        if (uint256(itemType) < 3 || (uint256(itemType) > 3 && identifier != 0)) {
+            return itemType;
+        } else {
+            ItemType newItemType;
+
+            assembly {
+                // Item type 4 becomes 2 and item type 5 becomes 3.
+                newItemType := sub(3, eq(itemType, 4))
+            }
+
+            // Cast the integer to an ItemType.
+            newItemType = ItemType(newItemType);
+
+            return newItemType;
+        }
+    }
+
     function onERC721Received(
         address,
         /* operator */
@@ -470,43 +461,30 @@ contract RedeemableContractOfferer is
         uint256 campaignId = uint256(bytes32(data[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
 
-        OfferItem[] memory offer = new OfferItem[](1);
-        offer[0] = OfferItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: params.offer[0].token,
-            identifierOrCriteria: 0,
-            startAmount: 1,
-            endAmount: 1
-        });
+        SpentItem[] memory minimumReceived = new SpentItem[](
+            params.offer.length
+        );
+        for (uint256 i; i < params.offer.length;) {
+            minimumReceived[i] = SpentItem({
+                itemType: ItemType.ERC721,
+                token: params.offer[0].token,
+                identifier: params.offer[0].identifierOrCriteria,
+                amount: params.offer[0].startAmount
+            });
+            unchecked {
+                ++i;
+            }
+        }
 
-        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = ConsiderationItem({
-            itemType: ItemType.ERC721,
-            token: msg.sender,
-            identifierOrCriteria: tokenId,
-            startAmount: 1,
-            endAmount: 1,
-            recipient: payable(address(0x000000000000000000000000000000000000dEaD))
-        });
+        SpentItem[] memory maximumSpent = new SpentItem[](1);
+        maximumSpent[0] = SpentItem({itemType: ItemType.ERC721, token: msg.sender, identifier: tokenId, amount: 1});
 
-        OrderParameters memory parameters = OrderParameters({
-            offerer: address(this),
-            zone: address(0),
-            offer: offer,
-            consideration: consideration,
-            orderType: OrderType.CONTRACT,
-            startTime: block.timestamp,
-            endTime: block.timestamp + 10, // TODO: fix
-            zoneHash: bytes32(0), // TODO: fix
-            salt: uint256(0), // TODO: fix
-            conduitKey: _CONDUIT_KEY,
-            totalOriginalConsiderationItems: consideration.length
-        });
+        // Transfer the token to the consideration item recipient.
+        address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
+        ERC721(msg.sender).safeTransferFrom(address(this), recipient, tokenId, "");
 
-        AdvancedOrder memory order =
-            AdvancedOrder({parameters: parameters, numerator: 1, denominator: 1, signature: "", extraData: data});
-
-        SeaportInterface(_SEAPORT).fulfillAdvancedOrder(order, new CriteriaResolver[](0), _CONDUIT_KEY, from);
+        // _createOrder will revert if any validations fail.
+        _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         return IERC721Receiver.onERC721Received.selector;
     }
@@ -527,26 +505,30 @@ contract RedeemableContractOfferer is
         uint256 campaignId = uint256(bytes32(data[0:32]));
         CampaignParams storage params = _campaignParams[campaignId];
 
-        SpentItem[] memory minimumReceived = new SpentItem[](1);
-        minimumReceived[0] = SpentItem({
-            itemType: ItemType.ERC721,
-            token: params.offer[0].token,
-            identifier: params.offer[0].identifierOrCriteria,
-            amount: params.offer[0].startAmount
-        });
+        SpentItem[] memory minimumReceived = new SpentItem[](
+            params.offer.length
+        );
+        for (uint256 i; i < params.offer.length;) {
+            minimumReceived[0] = SpentItem({
+                itemType: ItemType.ERC721,
+                token: params.offer[0].token,
+                identifier: params.offer[0].identifierOrCriteria,
+                amount: params.offer[0].startAmount
+            });
+            unchecked {
+                ++i;
+            }
+        }
 
         SpentItem[] memory maximumSpent = new SpentItem[](1);
         maximumSpent[0] = SpentItem({itemType: ItemType.ERC1155, token: msg.sender, identifier: id, amount: value});
-
-        // _createOrder will revert if any validations fail.
-        _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         // Transfer the token to the consideration item recipient.
         address recipient = _getConsiderationRecipient(params.consideration, msg.sender);
         ERC1155(msg.sender).safeTransferFrom(address(this), recipient, id, value, "");
 
-        // Transfer the newly minted token to the fulfiller.
-        ERC721(params.offer[0].token).safeTransferFrom(address(this), from, id, "");
+        // _createOrder will revert if any validations fail.
+        _createOrder(from, minimumReceived, maximumSpent, data, true);
 
         return IERC1155Receiver.onERC1155Received.selector;
     }
