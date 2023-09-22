@@ -21,6 +21,7 @@ import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
 import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
@@ -175,10 +176,15 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         redeemableToken.mint(address(this), 2);
         redeemableToken.setApprovalForAll(address(conduit), true);
 
+        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+                address(offerer),
+                address(redeemableToken)
+            );
+
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redemptionToken),
+            token: address(redemptionTokenWithCounter),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -313,8 +319,8 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
 
             assertEq(redeemableToken.ownerOf(0), _BURN_ADDRESS);
             assertEq(redeemableToken.ownerOf(1), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(0), address(this));
-            assertEq(redemptionToken.ownerOf(1), address(this));
+            assertEq(redemptionTokenWithCounter.ownerOf(0), address(this));
+            assertEq(redemptionTokenWithCounter.ownerOf(1), address(this));
         }
     }
 
