@@ -115,6 +115,6 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         redeemableToken.safeTransferFrom(address(this), address(offerer), tokenId, extraData);
 
         assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-        assertEq(redemptionToken.ownerOf(tokenId), address(this));
+        assertEq(redemptionToken.ownerOf(0), address(this));
     }
 }
