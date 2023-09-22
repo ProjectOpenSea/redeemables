@@ -21,11 +21,7 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IRedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(
-        uint256 campaignId,
-        address recipient,
-        ConsiderationItem[] memory consideration
-    ) external {
+    function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
         ConsiderationItem memory spentItem = consideration[0];
@@ -45,9 +41,7 @@ contract ERC721RedemptionMintableWithCounter is ERC721, IRedemptionMintable {
         return "721RM";
     }
 
-    function tokenURI(
-        uint256 tokenId
-    ) public pure override returns (string memory) {
+    function tokenURI(uint256 tokenId) public pure override returns (string memory) {
         return string(abi.encodePacked("https://example.com/", tokenId));
     }
 }

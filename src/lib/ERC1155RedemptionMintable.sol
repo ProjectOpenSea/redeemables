@@ -20,23 +20,14 @@ contract ERC1155RedemptionMintable is ERC1155, IRedemptionMintable {
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(
-        uint256 campaignId,
-        address recipient,
-        ConsiderationItem[] memory consideration
-    ) external {
+    function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
         if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
 
         ConsiderationItem memory spentItem = consideration[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
 
         // Mint the same token ID redeemed and same amount redeemed.
-        _mint(
-            recipient,
-            spentItem.identifierOrCriteria,
-            spentItem.startAmount,
-            ""
-        );
+        _mint(recipient, spentItem.identifierOrCriteria, spentItem.startAmount, "");
     }
 
     function uri(uint256 id) public pure override returns (string memory) {
