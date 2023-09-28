@@ -19,7 +19,6 @@ interface RedeemablesErrorsAndEvents {
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
     error NativeTransferFailed();
-    error RedeemMismatchedLengths();
     error InvalidConsiderationLength(uint256 got, uint256 want);
     error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);

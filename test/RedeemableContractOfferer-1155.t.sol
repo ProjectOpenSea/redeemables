@@ -26,7 +26,7 @@ import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol"
 import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract RedeemViaSeaport1155 is BaseOrderTest, RedeemablesErrorsAndEvents {
+contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrorsAndEvents {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);

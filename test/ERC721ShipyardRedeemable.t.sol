@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {Test} from "forge-std/Test.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
@@ -8,37 +9,44 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrorsAndEvents} from "../src/lib/RedeemablesErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC7498NFTRedeemables} from "../src/lib/ERC7498NFTRedeemables.sol";
-import {Test} from "forge-std/Test.sol";
+import {ERC721ShipyardRedeemable} from "../src/lib/ERC721ShipyardRedeemable.sol";
 
-contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
+contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable {
+    constructor() ERC721ShipyardRedeemable() {}
+
+    function mint(address to, uint256 tokenId) public {
+        _mint(to, tokenId);
+    }
+}
+
+contract TestERC721ShipyardRedeemable is RedeemablesErrorsAndEvents, Test {
     error InvalidContractOrder(bytes32 orderHash);
 
-    ERC7498NFTRedeemables redeemableToken;
-    ERC721RedemptionMintable redemptionToken;
+    ERC721ShipyardRedeemableMintable redeemToken;
+    ERC721RedemptionMintable receiveToken;
 
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function setUp() public {
-        redeemableToken = new ERC7498NFTRedeemables();
-        redemptionToken = new ERC721RedemptionMintable(
-            address(redeemableToken),
-            address(redeemableToken)
+        redeemToken = new ERC721ShipyardRedeemableMintable();
+        receiveToken = new ERC721RedemptionMintable(
+            address(redeemToken),
+            address(receiveToken)
         );
-        vm.label(address(redeemableToken), "redeemableToken");
-        vm.label(address(redemptionToken), "redemptionToken");
+        vm.label(address(redeemToken), "redeemToken");
+        vm.label(address(receiveToken), "receiveToken");
     }
 
     function testBurnInternalToken() public {
         uint256 tokenId = 2;
-        redeemableToken.mint(address(this), tokenId);
+        redeemToken.mint(address(this), tokenId);
 
-        redeemableToken.setApprovalForAll(address(redeemableToken), true);
+        redeemToken.setApprovalForAll(address(redeemToken), true);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redemptionToken),
+            token: address(receiveToken),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -47,7 +55,7 @@ contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redeemableToken),
+            token: address(redeemToken),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
@@ -65,14 +73,14 @@ contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
                 manager: address(this)
             });
 
-            redeemableToken.createCampaign(params, "");
+            redeemToken.createCampaign(params, "");
         }
 
         {
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
             offerFromEvent[0] = OfferItem({
                 itemType: ItemType.ERC721,
-                token: address(redemptionToken),
+                token: address(receiveToken),
                 identifierOrCriteria: tokenId,
                 startAmount: 1,
                 endAmount: 1
@@ -80,7 +88,7 @@ contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
             ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
-                token: address(redeemableToken),
+                token: address(redeemToken),
                 identifierOrCriteria: tokenId,
                 startAmount: 1,
                 endAmount: 1,
@@ -95,10 +103,10 @@ contract RedeemVia7498 is RedeemablesErrorsAndEvents, Test {
             uint256[] memory tokenIds = new uint256[](1);
             tokenIds[0] = tokenId;
 
-            redeemableToken.redeem(tokenIds, address(this), extraData);
+            redeemToken.redeem(tokenIds, address(this), extraData);
 
-            assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(redemptionToken.ownerOf(tokenId), address(this));
+            assertEq(redeemToken.ownerOf(tokenId), _BURN_ADDRESS);
+            assertEq(receiveToken.ownerOf(tokenId), address(this));
         }
     }
 }
