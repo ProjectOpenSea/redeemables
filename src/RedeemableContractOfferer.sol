@@ -346,7 +346,7 @@ contract RedeemableContractOfferer is
                 if (errorBuffer << 255 != 0) {
                     revert InvalidCaller(msg.sender);
                 } else if (errorBuffer << 254 != 0) {
-                    revert NotActive(block.timestamp, params.startTime, params.endTime);
+                    revert NotActive_(block.timestamp, params.startTime, params.endTime);
                 } else if (errorBuffer << 253 != 0) {
                     revert MaxCampaignRedemptionsReached(
                         _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions

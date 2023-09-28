@@ -5,6 +5,7 @@ import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol"
 import {ERC20} from "solady/src/tokens/ERC20.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {ERC721SeaDrop} from "seadrop/src/ERC721SeaDrop.sol";
+import {ERC721SeaDropContractOfferer} from "seadrop/src/lib/ERC721SeaDropContractOfferer.sol";
 import {IERC7498} from "../interfaces/IERC7498.sol";
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
@@ -16,9 +17,6 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
-    /// @dev The manager of the contract with permission to create campaigns.
-    address internal _MANAGER;
-
     /// @dev The campaign parameters by campaign id.
     mapping(uint256 campaignId => CampaignParams params) private _campaignParams;
 
@@ -28,18 +26,11 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
     /// @dev The total current redemptions by campaign id.
     mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
 
-    constructor(
-        address allowedConfigurer,
-        address allowedConduit,
-        address allowedSeaport,
-        address manager,
-        string memory _name,
-        string memory _symbol
-    ) ERC721SeaDrop(allowedConfigurer, allowedConduit, allowedSeaport, _name, _symbol) {
-        _MANAGER = manager;
-    }
+    constructor(address allowedConfigurer, address allowedSeaport, string memory _name, string memory _symbol)
+        ERC721SeaDrop(allowedConfigurer, allowedSeaport, _name, _symbol)
+    {}
 
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+    function tokenURI(uint256 /* tokenId */ ) public pure override returns (string memory) {
         return "https://example.com/";
     }
 
@@ -50,7 +41,12 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
     // at 64 will be pointer to array
     // mload pointer, pointer points to length
     // next word is start of array
-    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData) public virtual override {
+    function redeem(uint256[] calldata tokenIds, address recipient, bytes calldata extraData)
+        public
+        payable
+        virtual
+        override
+    {
         // Get the campaign id from extraData.
         uint256 campaignId = uint256(bytes32(extraData[0:32]));
 
@@ -59,7 +55,7 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
 
         // Revert if campaign is inactive.
         if (_isInactive(params.startTime, params.endTime)) {
-            revert NotActive(block.timestamp, params.startTime, params.endTime);
+            revert NotActive_(block.timestamp, params.startTime, params.endTime);
         }
 
         // Revert if max total redemptions would be exceeded.
@@ -95,7 +91,7 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
 
             // Revert if the trait redemption token is not this token contract.
             if (token != address(this)) {
-                revert InvalidToken(token);
+                revert InvalidCaller(token);
             }
 
             // Revert if the trait redemption identifier is not owned by the caller.
@@ -208,12 +204,9 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
     function createCampaign(CampaignParams calldata params, string calldata uri)
         external
         override
+        onlyOwner
         returns (uint256 campaignId)
     {
-        // Revert if msg.sender is not the manager.
-        // @dev the manager can set any account as the campaign manager that can update the campaign.
-        if (msg.sender != _MANAGER) revert NotManager();
-
         // Revert if there are no consideration items, since the redemption should require at least something.
         if (params.consideration.length == 0) revert NoConsiderationItems();
 
@@ -294,6 +287,10 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
     }
 
+    function deleteTrait(bytes32 traitKey, uint256 tokenId) external override {}
+
+    function setTrait(bytes32 traitKey, uint256 tokenId, bytes32 value) external override {}
+
     function _isInactive(uint256 startTime, uint256 endTime) internal view returns (bool inactive) {
         // Using the same check for time boundary from Seaport.
         // startTime <= block.timestamp < endTime
@@ -302,7 +299,14 @@ contract ERC7498NFTRedeemables is DynamicTraits, ERC721SeaDrop, IERC7498, Redeem
         }
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AbstractDynamicTraits) returns (bool) {
-        return interfaceId == type(IERC7498).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(DynamicTraits, ERC721SeaDropContractOfferer)
+        returns (bool)
+    {
+        return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId)
+            || ERC721SeaDropContractOfferer.supportsInterface(interfaceId);
     }
 }

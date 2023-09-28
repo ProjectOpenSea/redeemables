@@ -29,3 +29,6 @@
 [submodule "lib/ds-test"]
 	path = lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "lib/shipyard-core"]
+	path = lib/shipyard-core
+	url = https://github.com/ProjectOpenSea/shipyard-core.git
