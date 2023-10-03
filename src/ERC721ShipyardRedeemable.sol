@@ -17,7 +17,7 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
     }
 
     function symbol() public pure override returns (string memory) {
-        return "ShipyardRDM";
+        return "SY-RDM";
     }
 
     function tokenURI(uint256 /* tokenId */ ) public pure override returns (string memory) {
@@ -32,10 +32,6 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
     {
         campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
-
-    // function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
-    //     return operator == address(this) ? true : ERC721ConduitPreapproved_Solady.isApprovedForAll(owner, operator);
-    // }
 
     function _useInternalBurn() internal pure override returns (bool) {
         return true;

@@ -13,10 +13,6 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables, Dynami
         ERC721SeaDrop(allowedConfigurer, allowedSeaport, _name, _symbol)
     {}
 
-    function tokenURI(uint256 /* tokenId */ ) public pure override returns (string memory) {
-        return "https://example.com/";
-    }
-
     function deleteTrait(bytes32 traitKey, uint256 tokenId) external override {}
 
     function setTrait(bytes32 traitKey, uint256 tokenId, bytes32 value) external override {}

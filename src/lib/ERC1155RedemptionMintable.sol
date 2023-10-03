@@ -15,17 +15,18 @@ contract ERC1155RedemptionMintable is ERC1155, IRedemptionMintable {
         _ERC7498_REDEEMABLES_CONTRACT = redeemableContractOfferer;
     }
 
-    function mintRedemption(uint256, /* campaignId */ address recipient, ConsiderationItem[] memory consideration)
+    function mintRedemption(uint256, /* campaignId */ address recipient, ConsiderationItem[] calldata consideration)
         external
     {
         if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
             revert InvalidSender();
         }
 
-        ConsiderationItem memory spentItem = consideration[0];
-
-        // Mint the same token ID redeemed and same amount redeemed.
-        _mint(recipient, spentItem.identifierOrCriteria, spentItem.startAmount, "");
+        // Mint the same token IDs and amounts redeemed.
+        for (uint256 i = 0; i < consideration.length; ++i) {
+            ConsiderationItem memory considerationItem = consideration[i];
+            _mint(recipient, considerationItem.identifierOrCriteria, considerationItem.startAmount, "");
+        }
     }
 
     function uri(uint256 id) public pure override returns (string memory) {

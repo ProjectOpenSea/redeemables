@@ -16,9 +16,11 @@ contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
         _ERC7498_REDEEMABLES_CONTRACT = redeemablesContractAddress;
     }
 
-    function mintRedemption(uint256, /* campaignId */ address recipient, ConsiderationItem[] memory consideration)
-        external
-    {
+    function mintRedemption(
+        uint256, /* campaignId */
+        address recipient,
+        ConsiderationItem[] calldata /* consideration */
+    ) external {
         if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
             revert InvalidSender();
         }
