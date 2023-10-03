@@ -6,7 +6,7 @@ import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
 contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
-    address internal immutable _REDEEMABLE_CONTRACT_OFFERER;
+    address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
     address internal immutable _REDEEM_TOKEN;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
@@ -15,13 +15,15 @@ contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     /// @dev Revert if the redemption spent is not the required token.
     error InvalidRedemption();
 
-    constructor(address redeemableContractOfferer, address redeemToken) {
-        _REDEEMABLE_CONTRACT_OFFERER = redeemableContractOfferer;
+    constructor(address redeemablesContractAddress, address redeemToken) {
+        _ERC7498_REDEEMABLES_CONTRACT = redeemablesContractAddress;
         _REDEEM_TOKEN = redeemToken;
     }
 
-    function mintRedemption(uint256 campaignId, address recipient, ConsiderationItem[] memory consideration) external {
-        if (msg.sender != _REDEEMABLE_CONTRACT_OFFERER) revert InvalidSender();
+    function mintRedemption(uint256, /* campaignId */ address recipient, ConsiderationItem[] memory consideration)
+        external
+    {
+        if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) revert InvalidSender();
 
         ConsiderationItem memory spentItem = consideration[0];
         if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();

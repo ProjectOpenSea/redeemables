@@ -7,7 +7,7 @@ import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
-import {RedeemablesErrorsAndEvents} from "../src/lib/RedeemablesErrorsAndEvents.sol";
+import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemable} from "../src/ERC721ShipyardRedeemable.sol";
 
@@ -19,7 +19,7 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable {
     }
 }
 
-contract TestERC721ShipyardRedeemable is RedeemablesErrorsAndEvents, Test {
+contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     error InvalidContractOrder(bytes32 orderHash);
 
     ERC721ShipyardRedeemableMintable redeemToken;
@@ -100,10 +100,11 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrorsAndEvents, Test {
             bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
             consideration[0].identifierOrCriteria = tokenId;
 
-            uint256[] memory tokenIds = new uint256[](1);
-            tokenIds[0] = tokenId;
+            uint256[] memory tokenIds = Solarray.uint256s(tokenId);
+            uint256[][] memory redemptions = new uint256[][](1);
+            redemptions[0] = tokenIds;
 
-            redeemToken.redeem(tokenIds, address(this), extraData);
+            redeemToken.redeem(redemptions, address(this), extraData);
 
             assertEq(redeemToken.ownerOf(tokenId), _BURN_ADDRESS);
             assertEq(receiveToken.ownerOf(tokenId), address(this));

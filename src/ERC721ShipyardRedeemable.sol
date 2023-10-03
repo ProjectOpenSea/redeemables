@@ -2,16 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {ERC721ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc721/ERC721ConduitPreapproved_Solady.sol";
-import {ERC20} from "solady/src/tokens/ERC20.sol";
-import {ERC1155} from "solady/src/tokens/ERC1155.sol";
-import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
-import {IRedemptionMintable} from "./interfaces/IRedemptionMintable.sol";
-import {CampaignParams} from "./lib/RedeemablesStructs.sol";
-import {RedeemablesErrorsAndEvents} from "./lib/RedeemablesErrorsAndEvents.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {Ownable} from "solady/src/auth/Ownable.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
+import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
-contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFTRedeemables {
+contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFTRedeemables, Ownable {
     constructor() ERC721ConduitPreapproved_Solady() {}
 
     function name() public pure override returns (string memory) {
@@ -27,15 +23,29 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
     }
 
     function createCampaign(CampaignParams calldata params, string calldata uri)
-        external
+        public
         override
         onlyOwner
         returns (uint256 campaignId)
     {
-        ERC7498NFTRedeemables.createCampaign(params, uri);
+        campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
 
-    function _internalBurn(uint256 id) override {
+    function _useInternalBurn() internal pure override returns (bool) {
+        return true;
+    }
+
+    function _internalBurn(uint256 id, uint256 /* amount */ ) internal override {
         _burn(id);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC721, ERC7498NFTRedeemables)
+        returns (bool)
+    {
+        return ERC721.supportsInterface(interfaceId) || ERC7498NFTRedeemables.supportsInterface(interfaceId);
     }
 }

@@ -4,14 +4,13 @@ pragma solidity ^0.8.19;
 import {SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams} from "./RedeemablesStructs.sol";
 
-interface RedeemablesErrorsAndEvents {
+interface RedeemablesErrors {
     /// Configuration errors
     error NotManager();
     error InvalidTime();
+    error ConsiderationItemRecipientCannotBeZeroAddress();
+    error ConsiderationItemAmountCannotBeZero();
     error NonMatchingConsiderationItemAmounts(uint256 itemIndex, uint256 startAmount, uint256 endAmount);
-    error ConsiderationItemRecipientCannotBeZeroAddress(uint256 itemIndex);
-    error ConsiderationItemAmountCannotBeZero(uint256 itemIndex);
-    error ConsiderationItemAmountMustBeOneForERC721(uint256 itemIndex);
 
     /// Redemption errors
     error InvalidCampaignId();
@@ -33,8 +32,4 @@ interface RedeemablesErrorsAndEvents {
     error ConsiderationItemInsufficientBalance(address token, uint256 balance, uint256 amount);
     error EtherTransferFailed();
     error InvalidTxValue(uint256 got, uint256 want);
-
-    /// Events
-    event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string uri);
-    event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
 }

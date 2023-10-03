@@ -21,8 +21,9 @@ import {IERC721Receiver} from "seaport-types/src/interfaces/IERC721Receiver.sol"
 import {IERC1155Receiver} from "./interfaces/IERC1155Receiver.sol";
 import {IRedemptionMintable} from "./interfaces/IRedemptionMintable.sol";
 import {SignedRedeemContractOfferer} from "./lib/SignedRedeemContractOfferer.sol";
-import {RedeemablesErrorsAndEvents} from "./lib/RedeemablesErrorsAndEvents.sol";
+import {IERC7498} from "./interfaces/IERC7498.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
+import {RedeemablesErrors} from "./lib/RedeemablesErrors.sol";
 
 /**
  * @title  RedeemablesContractOfferer
@@ -31,7 +32,8 @@ import {CampaignParams} from "./lib/RedeemablesStructs.sol";
  */
 contract RedeemableContractOfferer is
     ContractOffererInterface,
-    RedeemablesErrorsAndEvents,
+    IERC7498,
+    RedeemablesErrors,
     SignedRedeemContractOfferer
 {
     /// @dev The Seaport address allowed to interact with this contract offerer.
@@ -116,9 +118,6 @@ contract RedeemableContractOfferer is
     }
 
     function _validateCampaignParams(CampaignParams memory params) internal pure {
-        // Revert if there are no consideration items, since the redemption should require at least something.
-        if (params.consideration.length == 0) revert NoConsiderationItems();
-
         // Revert if startTime is past endTime.
         if (params.startTime > params.endTime) revert InvalidTime();
 
@@ -352,7 +351,7 @@ contract RedeemableContractOfferer is
                         _totalRedemptions[campaignId] + maximumSpent.length, params.maxCampaignRedemptions
                     );
                 } else if (errorBuffer << 252 != 0) {
-                    revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
+                    //revert InvalidConsiderationItem(maximumSpent[0].token, params.consideration[0].token);
                 }
             }
         }
@@ -455,6 +454,13 @@ contract RedeemableContractOfferer is
         params = _campaignParams[campaignId];
         uri = _campaignURIs[campaignId];
         totalRedemptions = _totalRedemptions[campaignId];
+    }
+
+    function redeem(uint256[][] calldata, /* tokenIds */ address, /* recipient */ bytes calldata /* extraData */ )
+        external
+        payable
+    {
+        revert("RedeemableContractOfferer: Use Seaport CONTRACT order");
     }
 
     function _getConsiderationRecipient(ConsiderationItem[] storage consideration, address token)
