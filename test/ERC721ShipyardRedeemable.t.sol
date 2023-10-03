@@ -9,7 +9,7 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrorsAndEvents} from "../src/lib/RedeemablesErrorsAndEvents.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721ShipyardRedeemable} from "../src/lib/ERC721ShipyardRedeemable.sol";
+import {ERC721ShipyardRedeemable} from "../src/ERC721ShipyardRedeemable.sol";
 
 contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable {
     constructor() ERC721ShipyardRedeemable() {}

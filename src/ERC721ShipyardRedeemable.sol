@@ -25,4 +25,17 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
     function tokenURI(uint256 /* tokenId */ ) public pure override returns (string memory) {
         return "https://example.com/";
     }
+
+    function createCampaign(CampaignParams calldata params, string calldata uri)
+        external
+        override
+        onlyOwner
+        returns (uint256 campaignId)
+    {
+        ERC7498NFTRedeemables.createCampaign(params, uri);
+    }
+
+    function _internalBurn(uint256 id) override {
+        _burn(id);
+    }
 }

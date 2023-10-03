@@ -8,8 +8,10 @@ interface RedeemablesErrorsAndEvents {
     /// Configuration errors
     error NotManager();
     error InvalidTime();
-    error NoConsiderationItems();
-    error ConsiderationItemRecipientCannotBeZeroAddress();
+    error NonMatchingConsiderationItemAmounts(uint256 itemIndex, uint256 startAmount, uint256 endAmount);
+    error ConsiderationItemRecipientCannotBeZeroAddress(uint256 itemIndex);
+    error ConsiderationItemAmountCannotBeZero(uint256 itemIndex);
+    error ConsiderationItemAmountMustBeOneForERC721(uint256 itemIndex);
 
     /// Redemption errors
     error InvalidCampaignId();
@@ -19,8 +21,6 @@ interface RedeemablesErrorsAndEvents {
     error MaxRedemptionsReached(uint256 total, uint256 max);
     error MaxCampaignRedemptionsReached(uint256 total, uint256 max);
     error NativeTransferFailed();
-    error InvalidConsiderationLength(uint256 got, uint256 want);
-    error InvalidConsiderationItem(address got, address want);
     error InvalidOfferLength(uint256 got, uint256 want);
     error InvalidNativeOfferItem();
     error InvalidOwner();
@@ -30,6 +30,9 @@ interface RedeemablesErrorsAndEvents {
     error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);
     error RedemptionValuesAreImmutable();
+    error ConsiderationItemInsufficientBalance(address token, uint256 balance, uint256 amount);
+    error EtherTransferFailed();
+    error InvalidTxValue(uint256 got, uint256 want);
 
     /// Events
     event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string uri);

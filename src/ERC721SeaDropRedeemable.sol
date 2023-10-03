@@ -21,6 +21,15 @@ contract ERC721SeaDropRedeemable is DynamicTraits, ERC721SeaDrop, ERC7498NFTRede
 
     function setTrait(bytes32 traitKey, uint256 tokenId, bytes32 value) external override {}
 
+    function createCampaign(CampaignParams calldata params, string calldata uri)
+        external
+        override
+        onlyOwner
+        returns (uint256 campaignId)
+    {
+        ERC7498NFTRedeemables.createCampaign(params, uri);
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
