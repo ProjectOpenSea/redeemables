@@ -8,7 +8,9 @@ import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
 contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFTRedeemables, Ownable {
-    constructor() ERC721ConduitPreapproved_Solady() {}
+    constructor() ERC721ConduitPreapproved_Solady() {
+        _initializeOwner(msg.sender);
+    }
 
     function name() public pure override returns (string memory) {
         return "ERC721ShipyardRedeemable";
@@ -30,6 +32,10 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
     {
         campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
+
+    // function isApprovedForAll(address owner, address operator) public view virtual override returns (bool) {
+    //     return operator == address(this) ? true : ERC721ConduitPreapproved_Solady.isApprovedForAll(owner, operator);
+    // }
 
     function _useInternalBurn() internal pure override returns (bool) {
         return true;

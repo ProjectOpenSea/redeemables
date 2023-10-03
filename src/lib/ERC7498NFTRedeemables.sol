@@ -175,8 +175,18 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
 
         // Transfer the token to the consideration recipient.
         if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
+            // ERC721_WITH_CRITERIA with identifier 0 is wildcard: any id is valid.
+            // Criteria is not yet implemented, for that functionality use the contract offerer.
+            if (c.itemType == ItemType.ERC721 && id != c.identifierOrCriteria) {
+                revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
+            }
             IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
         } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
+            // ERC1155_WITH_CRITERIA with identifier 0 is wildcard: any id is valid.
+            // Criteria is not yet implemented, for that functionality use the contract offerer.
+            if (c.itemType == ItemType.ERC1155 && id != c.identifierOrCriteria) {
+                revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
+            }
             IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
         } else if (c.itemType == ItemType.ERC20) {
             IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);

@@ -7,29 +7,25 @@ import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol"
 
 contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
-    address internal immutable _REDEEM_TOKEN;
+    uint256 internal _nextTokenId = 1;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    /// @dev Revert if the redemption spent is not the required token.
-    error InvalidRedemption();
-
-    constructor(address redeemablesContractAddress, address redeemToken) {
+    constructor(address redeemablesContractAddress) {
         _ERC7498_REDEEMABLES_CONTRACT = redeemablesContractAddress;
-        _REDEEM_TOKEN = redeemToken;
     }
 
     function mintRedemption(uint256, /* campaignId */ address recipient, ConsiderationItem[] memory consideration)
         external
     {
-        if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) revert InvalidSender();
+        if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
+            revert InvalidSender();
+        }
 
-        ConsiderationItem memory spentItem = consideration[0];
-        if (spentItem.token != _REDEEM_TOKEN) revert InvalidRedemption();
+        _mint(recipient, _nextTokenId);
 
-        // Mint the same token ID redeemed.
-        _mint(recipient, spentItem.identifierOrCriteria);
+        ++_nextTokenId;
     }
 
     function name() public pure override returns (string memory) {

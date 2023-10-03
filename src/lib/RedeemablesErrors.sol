@@ -32,4 +32,5 @@ interface RedeemablesErrors {
     error ConsiderationItemInsufficientBalance(address token, uint256 balance, uint256 amount);
     error EtherTransferFailed();
     error InvalidTxValue(uint256 got, uint256 want);
+    error InvalidConsiderationTokenIdSupplied(address token, uint256 got, uint256 want);
 }

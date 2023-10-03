@@ -23,7 +23,7 @@ import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC1155RedemptionMintable} from "../src/lib/ERC1155RedemptionMintable.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
+import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors {
@@ -550,7 +550,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //     // Set the tokenId to be burned to the first tokenId to be redeemed
     //     uint256 redeemableTokenId0 = redemptionTokenId0;
 
-    //     ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+    //     ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
     //             address(offerer),
     //             address(redeemableToken)
     //         );

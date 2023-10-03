@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {Solarray} from "solarray/Solarray.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
@@ -30,8 +31,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     function setUp() public {
         redeemToken = new ERC721ShipyardRedeemableMintable();
         receiveToken = new ERC721RedemptionMintable(
-            address(redeemToken),
-            address(receiveToken)
+            address(redeemToken)
         );
         vm.label(address(redeemToken), "redeemToken");
         vm.label(address(receiveToken), "receiveToken");
@@ -40,8 +40,6 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     function testBurnInternalToken() public {
         uint256 tokenId = 2;
         redeemToken.mint(address(this), tokenId);
-
-        redeemToken.setApprovalForAll(address(redeemToken), true);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -106,8 +104,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
             redeemToken.redeem(redemptions, address(this), extraData);
 
-            assertEq(redeemToken.ownerOf(tokenId), _BURN_ADDRESS);
-            assertEq(receiveToken.ownerOf(tokenId), address(this));
+            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            redeemToken.ownerOf(tokenId);
+
+            assertEq(receiveToken.ownerOf(1), address(this));
         }
     }
 }

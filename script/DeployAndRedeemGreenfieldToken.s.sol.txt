@@ -11,7 +11,6 @@ import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol"
 import {ERC7498NFTRedeemables} from "../src/lib/ERC7498NFTRedeemables.sol";
 import {TestERC721} from "../test/utils/mocks/TestERC721.sol";
 
-/*
 contract DeployAndRedeemGreenfieldToken is Script, Test {
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -76,4 +75,3 @@ contract DeployAndRedeemGreenfieldToken is Script, Test {
         assertEq(redemptionToken.ownerOf(1), msg.sender);
     }
 }
-*/
