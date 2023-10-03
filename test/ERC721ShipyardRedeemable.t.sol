@@ -116,4 +116,12 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             assertEq(receiveToken.ownerOf(1), address(this));
         }
     }
+
+    // requirements size: 1
+    // testBurnWithoutConsiderationMet
+    // testBurnWithoutConsiderationFullyMet
+
+    // requirements size: 2
+    // testBurnWithRequirementsIndexNotMet
+    // testBurnWithSecondRequirementsIndex -> success case
 }
