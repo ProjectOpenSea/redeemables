@@ -9,8 +9,13 @@ struct CampaignParams {
     uint32 maxCampaignRedemptions;
     address manager;
     address signer;
+    CampaignRequirements[] requirements;
+}
+
+struct CampaignRequirements {
     OfferItem[] offer;
     ConsiderationItem[] consideration;
+    TraitRedemption[] traitRedemptions;
 }
 
 struct TraitRedemption {
@@ -23,5 +28,9 @@ struct TraitRedemption {
 }
 
 struct RedemptionContext {
-    SpentItem[] spent;
+    uint256 campaignId;
+    CampaignRequirements requirements;
+    address recipient;
+    uint256 numRedemptions;
+    uint256[] tokenIds;
 }

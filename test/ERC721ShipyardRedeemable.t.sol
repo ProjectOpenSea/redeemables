@@ -7,7 +7,7 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
-import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemable} from "../src/ERC721ShipyardRedeemable.sol";
@@ -60,10 +60,13 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             recipient: payable(_BURN_ADDRESS)
         });
 
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
+        requirements[0].offer = offer;
+        requirements[0].consideration = consideration;
+
         {
             CampaignParams memory params = CampaignParams({
-                offer: offer,
-                consideration: consideration,
+                requirements: requirements,
                 signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
@@ -95,7 +98,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
             assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
 
-            bytes memory extraData = abi.encode(1, bytes32(0)); // campaignId, redemptionHash
+            // campaignId: 1
+            // requirementsIndex: 0
+            // redemptionHash: bytes32(0)
+            bytes memory extraData = abi.encode(1, 0, bytes32(0));
             consideration[0].identifierOrCriteria = tokenId;
 
             uint256[] memory tokenIds = Solarray.uint256s(tokenId);

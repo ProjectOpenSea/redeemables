@@ -2,8 +2,9 @@
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
+import {TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
@@ -19,14 +20,13 @@ contract ERC721RedemptionMintable is ERC721, IRedemptionMintable {
     function mintRedemption(
         uint256, /* campaignId */
         address recipient,
-        ConsiderationItem[] calldata /* consideration */
+        ConsiderationItem[] calldata, /* consideration */
+        TraitRedemption[] calldata /* traitRedemptions */
     ) external {
         if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
             revert InvalidSender();
         }
-
         _mint(recipient, _nextTokenId);
-
         ++_nextTokenId;
     }
 

@@ -10,7 +10,7 @@ import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol"
 import {IERC7498} from "../interfaces/IERC7498.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
-import {CampaignParams, TraitRedemption} from "./RedeemablesStructs.sol";
+import {CampaignParams, CampaignRequirements, TraitRedemption, RedemptionContext} from "./RedeemablesStructs.sol";
 
 contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
     /// @dev Counter for next campaign id.
@@ -29,8 +29,9 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function redeem(uint256[][] calldata tokenIds, address recipient, bytes calldata extraData) public payable {
-        // Get the campaign id from extraData.
+        // Get the campaign id and requirementsIndex from extraData.
         uint256 campaignId = uint256(bytes32(extraData[0:32]));
+        uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
 
         // Get the campaign params.
         CampaignParams storage params = _campaignParams[campaignId];
@@ -44,9 +45,21 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         // Increment totalRedemptions.
         _totalRedemptions[campaignId] += numRedemptions;
 
-        for (uint256 i; i < numRedemptions;) {
-            _processRedemption(campaignId, params, tokenIds[i], numRedemptions, recipient);
+        // Get the campaign requirements.
+        CampaignRequirements storage requirements = params.requirements[requirementsIndex];
 
+        // Set a struct for the redemption context to avoid stack too deep.
+        RedemptionContext memory redemptionContext = RedemptionContext({
+            campaignId: campaignId,
+            requirements: requirements,
+            tokenIds: tokenIds[0],
+            numRedemptions: numRedemptions,
+            recipient: recipient
+        });
+
+        for (uint256 i; i < numRedemptions;) {
+            redemptionContext.tokenIds = tokenIds[i];
+            _processRedemption(redemptionContext);
             unchecked {
                 ++i;
             }
@@ -80,7 +93,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         // Validate the campaign params, reverts if invalid.
         _validateCampaignParams(params);
 
-        // Determine the campaignId and increment the next one.
+        // Set the campaignId and increment the next one.
         campaignId = _nextCampaignId;
         ++_nextCampaignId;
 
@@ -125,22 +138,33 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
             revert InvalidTime();
         }
 
-        for (uint256 i = 0; i < params.consideration.length;) {
-            // Revert if any of the consideration item recipients is the zero address.
-            // 0xdead address should be used instead.
-            if (params.consideration[i].recipient == address(0)) {
-                revert ConsiderationItemRecipientCannotBeZeroAddress();
-            }
+        // Iterate over the requirements.
+        for (uint256 i = 0; i < params.requirements.length;) {
+            CampaignRequirements memory requirements = params.requirements[i];
 
-            if (params.consideration[i].startAmount == 0) {
-                revert ConsiderationItemAmountCannotBeZero();
-            }
+            // Validate each consideration item.
+            for (uint256 j = 0; j < requirements.consideration.length;) {
+                ConsiderationItem memory c = requirements.consideration[j];
 
-            // Revert if startAmount != endAmount, as this requires more complex logic.
-            if (params.consideration[i].startAmount != params.consideration[i].endAmount) {
-                revert NonMatchingConsiderationItemAmounts(
-                    i, params.consideration[i].startAmount, params.consideration[i].endAmount
-                );
+                // Revert if any of the consideration item recipients is the zero address.
+                // 0xdead address should be used instead.
+                // For internal burn, override _internalBurn and set _useInternalBurn to true.
+                if (c.recipient == address(0)) {
+                    revert ConsiderationItemRecipientCannotBeZeroAddress();
+                }
+
+                if (c.startAmount == 0) {
+                    revert ConsiderationItemAmountCannotBeZero();
+                }
+
+                // Revert if startAmount != endAmount, as this requires more complex logic.
+                if (c.startAmount != c.endAmount) {
+                    revert NonMatchingConsiderationItemAmounts(i, c.startAmount, c.endAmount);
+                }
+
+                unchecked {
+                    ++j;
+                }
             }
 
             unchecked {
@@ -216,15 +240,9 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         }
     }
 
-    function _processRedemption(
-        uint256 campaignId,
-        CampaignParams memory params,
-        uint256[] calldata tokenIds,
-        uint256 numRedemptions,
-        address recipient
-    ) internal {
+    function _processRedemption(RedemptionContext memory context) internal {
         // Get the campaign consideration.
-        ConsiderationItem[] memory consideration = params.consideration;
+        ConsiderationItem[] memory consideration = context.requirements.consideration;
 
         // Keep track of the total native value to validate.
         uint256 totalNativeValue;
@@ -232,10 +250,10 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         // Iterate over the consideration items.
         for (uint256 j; j < consideration.length;) {
             // Get the consideration item.
-            ConsiderationItem memory c = params.consideration[j];
+            ConsiderationItem memory c = consideration[j];
 
             // Get the identifier.
-            uint256 id = tokenIds[j];
+            uint256 id = context.tokenIds[j];
 
             // Get the token balance.
             uint256 balance;
@@ -259,9 +277,17 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
             // Transfer the consideration item.
             _transferConsiderationItem(id, c);
 
+            // Get the campaign offer.
+            OfferItem[] memory offer = context.requirements.offer;
+
             // Mint the new tokens.
-            for (uint256 k; k < params.offer.length;) {
-                IRedemptionMintable(params.offer[k].token).mintRedemption(campaignId, recipient, consideration);
+            for (uint256 k; k < offer.length;) {
+                IRedemptionMintable(offer[k].token).mintRedemption(
+                    context.campaignId,
+                    context.recipient,
+                    context.requirements.consideration,
+                    context.requirements.traitRedemptions
+                );
 
                 unchecked {
                     ++k;
@@ -274,11 +300,12 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         }
 
         // Validate the correct native value is sent with the transaction.
-        if (msg.value != totalNativeValue * numRedemptions) {
-            revert InvalidTxValue(msg.value, totalNativeValue * numRedemptions);
+        if (msg.value != totalNativeValue * context.numRedemptions) {
+            revert InvalidTxValue(msg.value, totalNativeValue * context.numRedemptions);
         }
 
         // Process trait redemptions.
+        // TraitRedemption[] memory traitRedemptions = requirements.traitRedemptions;
         // _setTraits(traitRedemptions);
     }
 

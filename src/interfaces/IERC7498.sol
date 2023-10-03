@@ -21,36 +21,3 @@ interface IERC7498 {
 
     function redeem(uint256[][] calldata tokenIds, address recipient, bytes calldata extraData) external payable;
 }
-
-/* Seaport structs, for reference, used in offer/consideration above */
-
-// enum ItemType {
-//     NATIVE,
-//     ERC20,
-//     ERC721,
-//     ERC1155
-// }
-
-// struct OfferItem {
-//     ItemType itemType;
-//     address token;
-//     uint256 identifierOrCriteria;
-//     uint256 startAmount;
-//     uint256 endAmount;
-// }
-
-// struct ConsiderationItem {
-//     ItemType itemType;
-//     address token;
-//     uint256 identifierOrCriteria;
-//     uint256 startAmount;
-//     uint256 endAmount;
-//     address payable recipient;
-// }
-
-// struct SpentItem {
-//     ItemType itemType;
-//     address token;
-//     uint256 identifier;
-//     uint256 amount;
-// }
