@@ -10,15 +10,7 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721ShipyardRedeemable} from "../src/ERC721ShipyardRedeemable.sol";
-
-contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable {
-    constructor() ERC721ShipyardRedeemable() {}
-
-    function mint(address to, uint256 tokenId) public {
-        _mint(to, tokenId);
-    }
-}
+import {ERC721ShipyardRedeemableMintable} from "../src/lib/ERC721ShipyardRedeemableMintable.sol";
 
 contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     error InvalidContractOrder(bytes32 orderHash);
