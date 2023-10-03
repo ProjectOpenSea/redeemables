@@ -13,7 +13,13 @@ import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol"
 import {ERC721ShipyardRedeemableMintable} from "../src/lib/ERC721ShipyardRedeemableMintable.sol";
 
 contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
-    error InvalidContractOrder(bytes32 orderHash);
+    event Redemption(
+        uint256 indexed campaignId,
+        uint256 requirementsIndex,
+        uint256[][] tokenIds,
+        bytes32 redemptionHash,
+        address redeemedBy
+    );
 
     ERC721ShipyardRedeemableMintable redeemToken;
     ERC721RedemptionMintable receiveToken;
@@ -100,6 +106,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             uint256[][] memory redemptions = new uint256[][](1);
             redemptions[0] = tokenIds;
 
+            vm.expectEmit(true, true, true, true);
+            emit Redemption(1, 0, redemptions, bytes32(0), address(this));
             redeemToken.redeem(redemptions, address(this), extraData);
 
             vm.expectRevert(ERC721.TokenDoesNotExist.selector);

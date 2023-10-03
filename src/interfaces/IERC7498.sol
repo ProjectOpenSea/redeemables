@@ -6,7 +6,13 @@ import {CampaignParams, TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 interface IERC7498 {
     event CampaignUpdated(uint256 indexed campaignId, CampaignParams params, string uri);
-    event Redemption(uint256 indexed campaignId, bytes32 redemptionHash);
+    event Redemption(
+        uint256 indexed campaignId,
+        uint256 requirementsIndex,
+        uint256[][] tokenIds,
+        bytes32 redemptionHash,
+        address redeemedBy
+    );
 
     function createCampaign(CampaignParams calldata params, string calldata uri)
         external
