@@ -29,8 +29,10 @@ interface RedeemablesErrors {
     error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);
     error RedemptionValuesAreImmutable();
+    error RequirementsIndexOutOfBounds();
     error ConsiderationItemInsufficientBalance(address token, uint256 balance, uint256 amount);
     error EtherTransferFailed();
     error InvalidTxValue(uint256 got, uint256 want);
     error InvalidConsiderationTokenIdSupplied(address token, uint256 got, uint256 want);
+    error TokenIdsDontMatchConsiderationLength(uint256 considerationLength, uint256 tokenIdsLength);
 }

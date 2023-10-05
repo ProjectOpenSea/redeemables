@@ -9,7 +9,7 @@ interface IERC7498 {
     event Redemption(
         uint256 indexed campaignId,
         uint256 requirementsIndex,
-        uint256[][] tokenIds,
+        uint256[] considerationTokenIds,
         bytes32 redemptionHash,
         address redeemedBy
     );
@@ -25,5 +25,7 @@ interface IERC7498 {
         view
         returns (CampaignParams memory params, string memory uri, uint256 totalRedemptions);
 
-    function redeem(uint256[][] calldata tokenIds, address recipient, bytes calldata extraData) external payable;
+    function redeem(uint256[] calldata considerationTokenIds, address recipient, bytes calldata extraData)
+        external
+        payable;
 }

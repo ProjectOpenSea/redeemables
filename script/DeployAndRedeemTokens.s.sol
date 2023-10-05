@@ -41,7 +41,9 @@ contract DeployAndRedeemTokens is Script, Test {
             recipient: payable(_BURN_ADDRESS)
         });
 
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
 
@@ -66,10 +68,8 @@ contract DeployAndRedeemTokens is Script, Test {
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;
-        uint256[][] memory redemptions = new uint256[][](1);
-        redemptions[0] = tokenIds;
 
-        redeemToken.redeem(redemptions, msg.sender, data);
+        redeemToken.redeem(tokenIds, msg.sender, data);
 
         // Assert redeemable token is burned and redemption token is minted.
         assertEq(redeemToken.balanceOf(msg.sender), 0);

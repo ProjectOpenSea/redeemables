@@ -26,11 +26,3 @@ struct TraitRedemption {
     bytes32 traitValue;
     bytes32 substandardValue;
 }
-
-struct RedemptionContext {
-    uint256 campaignId;
-    CampaignRequirements requirements;
-    address recipient;
-    uint256 numRedemptions;
-    uint256[] tokenIds;
-}
