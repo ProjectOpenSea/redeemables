@@ -33,11 +33,11 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
         campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
 
-    function _useInternalBurn() internal pure override returns (bool) {
+    function _useInternalBurn() internal pure virtual override returns (bool) {
         return true;
     }
 
-    function _internalBurn(uint256 id, uint256 /* amount */ ) internal override {
+    function _internalBurn(uint256 id, uint256 /* amount */ ) internal virtual override {
         _burn(id);
     }
 

@@ -9,8 +9,8 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
-import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721ShipyardRedeemableMintable} from "../src/lib/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     event Redemption(
@@ -21,14 +21,14 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         address redeemedBy
     );
 
-    ERC721ShipyardRedeemableMintable redeemToken;
+    ERC721ShipyardRedeemableOwnerMintable redeemToken;
     ERC721RedemptionMintable receiveToken;
     address alice;
 
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function setUp() public {
-        redeemToken = new ERC721ShipyardRedeemableMintable();
+        redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         receiveToken = new ERC721RedemptionMintable(address(redeemToken));
         alice = makeAddr("alice");
 
@@ -210,7 +210,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     }
 
     function xtestRevertConsiderationIndexNotMet() public {
-        ERC721ShipyardRedeemableMintable secondRedeemToken = new ERC721ShipyardRedeemableMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
 
         uint256 tokenId = 2;
         redeemToken.mint(address(this), tokenId);
@@ -305,7 +305,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     }
 
     function testBurnWithSecondConsiderationItem() public {
-        ERC721ShipyardRedeemableMintable secondRedeemToken = new ERC721ShipyardRedeemableMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);
 
@@ -400,7 +400,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     }
 
     function testBurnWithSecondRequirementsIndex() public {
-        ERC721ShipyardRedeemableMintable secondRedeemToken = new ERC721ShipyardRedeemableMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);
 

@@ -7,18 +7,17 @@ import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
+import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 
-contract DeployAndRedeemTokens is Script, Test {
+contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function run() external {
         vm.startBroadcast();
 
-        ERC721ShipyardRedeemableOwnerMintable redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
-        ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
-            address(redeemToken)
-        );
+        ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
+        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable();
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -54,7 +53,7 @@ contract DeployAndRedeemTokens is Script, Test {
             maxCampaignRedemptions: 1_000,
             manager: msg.sender
         });
-        redeemToken.createCampaign(params, "");
+        receiveToken.createCampaign(params, "");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
@@ -68,7 +67,9 @@ contract DeployAndRedeemTokens is Script, Test {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;
 
-        redeemToken.redeem(tokenIds, msg.sender, data);
+        redeemToken.setApprovalForAll(address(receiveToken), true);
+
+        receiveToken.redeem(tokenIds, msg.sender, data);
 
         // Assert redeemable token is burned and redemption token is minted.
         assertEq(redeemToken.balanceOf(msg.sender), 0);

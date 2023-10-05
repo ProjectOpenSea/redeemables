@@ -26,11 +26,11 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables, Dynami
         campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
 
-    function _useInternalBurn() internal pure override returns (bool) {
+    function _useInternalBurn() internal pure virtual override returns (bool) {
         return true;
     }
 
-    function _internalBurn(uint256 id, uint256 /* amount */ ) internal override {
+    function _internalBurn(uint256 id, uint256 /* amount */ ) internal virtual override {
         _burn(id);
     }
 

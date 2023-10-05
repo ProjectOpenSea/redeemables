@@ -22,8 +22,8 @@ import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC1155RedemptionMintable} from "../src/lib/ERC1155RedemptionMintable.sol";
-import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors {
