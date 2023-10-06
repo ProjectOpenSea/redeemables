@@ -9,8 +9,9 @@ interface IERC7498 {
     event Redemption(
         uint256 indexed campaignId,
         uint256 requirementsIndex,
-        uint256[] considerationTokenIds,
         bytes32 redemptionHash,
+        uint256[] considerationTokenIds,
+        uint256[] traitRedemptionTokenIds,
         address redeemedBy
     );
 

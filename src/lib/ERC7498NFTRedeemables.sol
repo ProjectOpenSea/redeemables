@@ -54,8 +54,13 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         // Process the redemption.
         _processRedemption(campaignId, requirements, considerationTokenIds, recipient);
 
+        // TODO: decode traitRedemptionTokenIds from extraData.
+        uint256[] memory traitRedemptionTokenIds;
+
         // Emit the Redemption event.
-        emit Redemption(campaignId, requirementsIndex, considerationTokenIds, bytes32(0), msg.sender);
+        emit Redemption(
+            campaignId, requirementsIndex, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, msg.sender
+        );
     }
 
     function getCampaign(uint256 campaignId)
