@@ -19,6 +19,16 @@
 [submodule "lib/murky"]
 	path = lib/murky
 	url = https://github.com/dmfxyz/murky.git
+[submodule "shipyard-core"]
+	path = shipyard-core
+	url = https://github.com/ProjectOpenSea/shipyard-core.git
+[submodule "lib/seadrop"]
+	path = lib/seadrop
+	url = https://github.com/ProjectOpenSea/seadrop
+	branch = v2
 [submodule "lib/ds-test"]
 	path = lib/ds-test
 	url = https://github.com/dapphub/ds-test
+[submodule "lib/shipyard-core"]
+	path = lib/shipyard-core
+	url = https://github.com/ProjectOpenSea/shipyard-core.git

@@ -18,13 +18,13 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {MockERC721DynamicTraits} from "./utils/mocks/MockERC721DynamicTraits.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
-import {CampaignParams, TraitRedemption} from "../src/lib/RedeemableStructs.sol";
-import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
-import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
+import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
+contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -274,7 +274,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         redeemableToken.mint(address(this), tokenId);
         redeemableToken.setApprovalForAll(address(conduit), true);
 
-        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+        ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
                 address(offerer),
                 address(redeemableToken)
             );
@@ -537,7 +537,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         // Set the tokenId to be burned to the first tokenId to be redeemed
         uint256 redeemableTokenId0 = redemptionTokenId0;
 
-        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+        ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
                 address(offerer),
                 address(redeemableToken)
             );
@@ -950,7 +950,7 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
         }
     }
 
-    function xtestDynamicTraitRedemptionViaSeaport() public {
+    function testDynamicTraitRedemptionViaSeaport() public {
         // Set the tokenId to be redeemed
         uint256 redemptionTokenId0 = 2;
 
@@ -1014,6 +1014,23 @@ contract RedeemViaSeaport721 is BaseOrderTest, RedeemableErrorsAndEvents {
 
             // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
             assertEq(uint256(consideration[0].itemType), 4);
+
+            // RedeemableData memory redeemableData = RedeemableData({
+            //     campaignId: 1,
+            //     redemptionHash: bytes32(0),
+            //     traitRedemption: TraitRedemption({
+            //         substandard: 0, // set value to traitValue
+            //         token: address(dynamicTraitsToken),
+            //         identifier: redeemableTokenId0,
+            //         traitKey: "isRedeemed",
+            //         traitValue: bytes32(abi.encode(1)),
+            //         substandardValue: bytes32(abi.encode(0))
+            //     }), // todo: set as array
+            //     salt: uint256(0),
+            //     signature: bytes(0)
+            // });
+
+            // bytes memory extraData = abi.encode(redeemableData);
 
             TraitRedemption memory traitRedemption = TraitRedemption({
                 substandard: 0, // set value to traitValue

@@ -18,13 +18,13 @@ import {
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
-import {CampaignParams} from "../src/lib/RedeemableStructs.sol";
-import {RedeemableErrorsAndEvents} from "../src/lib/RedeemableErrorsAndEvents.sol";
-import {ERC721RedemptionMintable} from "../src/lib/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintableWithCounter} from "../src/lib/ERC721RedemptionMintableWithCounter.sol";
+import {CampaignParams} from "../src/lib/RedeemablesStructs.sol";
+import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
-contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEvents {
+contract TestRedeemableContractOfferer_Revert is BaseOrderTest, RedeemablesErrors {
     using OrderParametersLib for OrderParameters;
 
     error InvalidContractOrder(bytes32 orderHash);
@@ -176,7 +176,7 @@ contract TestRedeemableContractOfferer is BaseOrderTest, RedeemableErrorsAndEven
         redeemableToken.mint(address(this), 2);
         redeemableToken.setApprovalForAll(address(conduit), true);
 
-        ERC721RedemptionMintableWithCounter redemptionTokenWithCounter = new ERC721RedemptionMintableWithCounter(
+        ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
                 address(offerer),
                 address(redeemableToken)
             );

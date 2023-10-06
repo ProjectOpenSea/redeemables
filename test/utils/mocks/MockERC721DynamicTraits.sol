@@ -2,9 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC7XXX} from "../../../src/interfaces/IERC7XXX.sol";
 
-contract MockERC721DynamicTraits is ERC721, IERC7XXX {
+contract MockERC721DynamicTraits is ERC721 {
     error InvalidCaller();
 
     // The manager account that can set traits
@@ -51,9 +50,5 @@ contract MockERC721DynamicTraits is ERC721, IERC7XXX {
             revert InvalidCaller();
         }
         traits[traitKey][tokenId] = value;
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC7XXX) returns (bool) {
-        return interfaceId == type(IERC7XXX).interfaceId || super.supportsInterface(interfaceId);
     }
 }
