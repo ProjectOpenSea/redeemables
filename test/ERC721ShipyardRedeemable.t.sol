@@ -88,7 +88,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemToken),
@@ -98,7 +99,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -172,7 +176,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemToken),
@@ -182,7 +187,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -209,7 +217,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         }
     }
 
-    function xtestRevertConsiderationIndexNotMet() public {
+    function testRevertConsiderationLengthNotMet() public {
         ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
 
         uint256 tokenId = 2;
@@ -270,7 +278,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemToken),
@@ -280,7 +289,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -290,11 +302,14 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
             uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
-            vm.expectRevert(bytes("Index out of bounds"));
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    TokenIdsDontMatchConsiderationLength.selector,
+                    2,
+                    1
+                )
+            );
 
-            // weird foundry bug
-            // [FAIL. Reason: Error != expected error: NH{q2 != Index out of bounds]
-            // https://github.com/foundry-rs/foundry/issues/3424
             redeemToken.redeem(tokenIds, address(this), extraData);
 
             assertEq(redeemToken.ownerOf(tokenId), address(this));
@@ -368,7 +383,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemToken),
@@ -378,7 +394,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -427,7 +446,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             recipient: payable(_BURN_ADDRESS)
         });
 
-        ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
+        ConsiderationItem[]
+            memory secondRequirementConsideration = new ConsiderationItem[](1);
         secondRequirementConsideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
             token: address(secondRedeemToken),
@@ -468,7 +488,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 startAmount: 1,
                 endAmount: 1
             });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            ConsiderationItem[]
+                memory considerationFromEvent = new ConsiderationItem[](1);
             considerationFromEvent[0] = ConsiderationItem({
                 itemType: ItemType.ERC721,
                 token: address(redeemToken),
@@ -478,7 +499,10 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
                 recipient: payable(_BURN_ADDRESS)
             });
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            assertGt(
+                uint256(consideration[0].itemType),
+                uint256(considerationFromEvent[0].itemType)
+            );
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -498,7 +522,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         }
     }
 
+    // function testRevert
+
     // requirements size: 2
     // testBurnWithRequirementsIndexNotMet
-    // testBurnWithSecondRequirementsIndex -> success case
 }
