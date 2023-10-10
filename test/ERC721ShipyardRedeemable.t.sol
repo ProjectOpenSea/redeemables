@@ -862,6 +862,18 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         }
     }
 
+    // ERC721: specific id ONLY
+    // ERC721_WITH_CRITERIA id=0: wildcard
+    // ERC721_WITH_CRITERIA id=!0: revert
+    // ^ add this validation to create/update campaign
+    // ERC1155: specific ID ONLY
+    // ERC1155_WITH_CRITERIA id=0: wildcard
+    // ERC1155_WITH_CRITERIA id=!0: revert
+    // ERC20
+    // NATIVE
+
+    // RedeemablesTestHelper.sol, with CampaignParams in storage
+
     function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
         return bytes4(0xf23a6e61);
     }
