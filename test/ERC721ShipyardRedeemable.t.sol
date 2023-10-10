@@ -6,6 +6,7 @@ import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
+import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
@@ -684,5 +685,99 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
             assertEq(redeemToken.ownerOf(tokenId), address(this));
         }
+    }
+
+    function testRevertErc1155InvalidConsiderationTokenIdSupplied() public {
+        TestERC1155 redeemErc1155 = new TestERC1155();
+        uint256 tokenId = 2;
+        uint256 requirementTokenId = 1;
+        redeemErc1155.mint(address(this), tokenId, 1 ether);
+        redeemErc1155.mint(address(this), requirementTokenId, 1 ether);
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(receiveToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC1155,
+            token: address(redeemErc1155),
+            identifierOrCriteria: requirementTokenId,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        requirements[0].offer = offer;
+        requirements[0].consideration = consideration;
+
+        {
+            CampaignParams memory params = CampaignParams({
+                requirements: requirements,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxCampaignRedemptions: 5,
+                manager: address(this)
+            });
+
+            redeemToken.createCampaign(params, "");
+        }
+
+        {
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(receiveToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1
+            });
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+
+            // campaignId: 1
+            // requirementsIndex: 0
+            // redemptionHash: bytes32(0)
+            bytes memory extraData = abi.encode(1, 0, bytes32(0));
+            consideration[0].identifierOrCriteria = tokenId;
+
+            uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+            uint256[] memory traitRedemptionTokenIds;
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    InvalidConsiderationTokenIdSupplied.selector, address(redeemErc1155), tokenId, requirementTokenId
+                )
+            );
+            redeemToken.redeem(considerationTokenIds, address(this), extraData);
+
+            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            receiveToken.ownerOf(1);
+
+            assertEq(redeemErc1155.balanceOf(address(this), tokenId), 1 ether);
+            assertEq(redeemErc1155.balanceOf(address(this), requirementTokenId), 1 ether);
+        }
+    }
+
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
+        return bytes4(0xf23a6e61);
     }
 }
