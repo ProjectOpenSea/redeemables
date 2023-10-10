@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Test} from "forge-std/Test.sol";
+import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
@@ -9,12 +9,14 @@ import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
+import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
+import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
-contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
+contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
     event Redemption(
         uint256 indexed campaignId,
         uint256 requirementsIndex,
@@ -30,7 +32,8 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
-    function setUp() public {
+    function setUp() public virtual override {
+        super.setUp();
         redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         receiveToken = new ERC721RedemptionMintable(address(redeemToken));
         alice = makeAddr("alice");
@@ -107,7 +110,6 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             // requirementsIndex: 0
             // redemptionHash: bytes32(0)
             bytes memory extraData = abi.encode(1, 0, bytes32(0));
-            consideration[0].identifierOrCriteria = tokenId;
 
             uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
             uint256[] memory traitRedemptionTokenIds;
@@ -873,8 +875,4 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
     // NATIVE
 
     // RedeemablesTestHelper.sol, with CampaignParams in storage
-
-    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns (bytes4) {
-        return bytes4(0xf23a6e61);
-    }
 }
