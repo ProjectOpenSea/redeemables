@@ -59,32 +59,22 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         redeemToken.createCampaign(params, "");
 
-        {
-            OfferItem[] memory offerFromEvent = new OfferItem[](1);
-            offerFromEvent[0] = OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER).withItemType(ItemType.ERC721)
-                .withIdentifierOrCriteria(1);
+        // campaignId: 1
+        // requirementsIndex: 0
+        // redemptionHash: bytes32(0)
+        bytes memory extraData = abi.encode(1, 0, bytes32(0));
 
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
-            considerationFromEvent[0] = ConsiderationItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION)
-                .withItemType(ItemType.ERC721).withIdentifierOrCriteria(tokenId);
+        uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+        uint256[] memory traitRedemptionTokenIds;
 
-            // campaignId: 1
-            // requirementsIndex: 0
-            // redemptionHash: bytes32(0)
-            bytes memory extraData = abi.encode(1, 0, bytes32(0));
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
+        redeemToken.redeem(considerationTokenIds, address(this), extraData);
 
-            uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
-            uint256[] memory traitRedemptionTokenIds;
+        vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+        redeemToken.ownerOf(tokenId);
 
-            vm.expectEmit(true, true, true, true);
-            emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
-            redeemToken.redeem(considerationTokenIds, address(this), extraData);
-
-            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-            redeemToken.ownerOf(tokenId);
-
-            assertEq(receiveToken.ownerOf(1), address(this));
-        }
+        assertEq(receiveToken.ownerOf(1), address(this));
     }
 
     function testRevert721ConsiderationItemInsufficientBalance() public {
