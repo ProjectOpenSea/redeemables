@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {BaseOrderTest} from "./utils/BaseOrderTest.sol";
+import {BaseRedeemablesTest} from "./utils/BaseRedeemablesTest.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
@@ -12,11 +12,15 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
-import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
-contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
+contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
+    using OfferItemLib for OfferItem;
+    using OfferItemLib for OfferItem[];
+    using ConsiderationItemLib for ConsiderationItem;
+    using ConsiderationItemLib for ConsiderationItem[];
+
     event Redemption(
         uint256 indexed campaignId,
         uint256 requirementsIndex,
@@ -26,85 +30,43 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
         address redeemedBy
     );
 
-    ERC721ShipyardRedeemableOwnerMintable redeemToken;
-    ERC721RedemptionMintable receiveToken;
-    address alice;
-
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function setUp() public virtual override {
         super.setUp();
-        redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
-        receiveToken = new ERC721RedemptionMintable(address(redeemToken));
-        alice = makeAddr("alice");
-
-        vm.label(address(redeemToken), "redeemToken");
-        vm.label(address(receiveToken), "receiveToken");
-        vm.label(alice, "alice");
     }
 
     function testBurnInternalToken() public {
         uint256 tokenId = 2;
         redeemToken.mint(address(this), tokenId);
 
-        OfferItem[] memory offer = new OfferItem[](1);
-        offer[0] = OfferItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(receiveToken),
-            identifierOrCriteria: 0,
-            startAmount: 1,
-            endAmount: 1
-        });
-
-        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = ConsiderationItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redeemToken),
-            identifierOrCriteria: 0,
-            startAmount: 1,
-            endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
-        });
-
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
         );
-        requirements[0].offer = offer;
-        requirements[0].consideration = consideration;
 
-        {
-            CampaignParams memory params = CampaignParams({
-                requirements: requirements,
-                signer: address(0),
-                startTime: uint32(block.timestamp),
-                endTime: uint32(block.timestamp + 1000),
-                maxCampaignRedemptions: 5,
-                manager: address(this)
-            });
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: defaultCampaignConsideration,
+            traitRedemptions: new TraitRedemption[](0)
+        });
 
-            redeemToken.createCampaign(params, "");
-        }
+        CampaignParams memory params = CampaignParams({
+            requirements: requirements,
+            signer: address(0),
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this)
+        });
+
+        redeemToken.createCampaign(params, "");
 
         {
             OfferItem[] memory offerFromEvent = new OfferItem[](1);
-            offerFromEvent[0] = OfferItem({
-                itemType: ItemType.ERC721,
-                token: address(receiveToken),
-                identifierOrCriteria: tokenId,
-                startAmount: 1,
-                endAmount: 1
-            });
-            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
-            considerationFromEvent[0] = ConsiderationItem({
-                itemType: ItemType.ERC721,
-                token: address(redeemToken),
-                identifierOrCriteria: tokenId,
-                startAmount: 1,
-                endAmount: 1,
-                recipient: payable(_BURN_ADDRESS)
-            });
+            offerFromEvent[0] = OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER).withItemType(ItemType.ERC721)
+                .withIdentifierOrCriteria(1);
 
-            assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION)
+                .withItemType(ItemType.ERC721).withIdentifierOrCriteria(tokenId);
 
             // campaignId: 1
             // requirementsIndex: 0
@@ -129,7 +91,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
         uint256 tokenId = 2;
         uint256 invalidTokenId = tokenId + 1;
         redeemToken.mint(address(this), tokenId);
-        redeemToken.mint(alice, invalidTokenId);
+        redeemToken.mint(dillon.addr, invalidTokenId);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -529,7 +491,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
             identifierOrCriteria: 0,
             startAmount: 0.1 ether,
             endAmount: 0.1 ether,
-            recipient: payable(alice)
+            recipient: payable(dillon.addr)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -623,7 +585,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, BaseOrderTest {
             identifierOrCriteria: 0,
             startAmount: 0.1 ether,
             endAmount: 0.1 ether,
-            recipient: payable(alice)
+            recipient: payable(dillon.addr)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
