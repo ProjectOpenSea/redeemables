@@ -687,12 +687,97 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         }
     }
 
+    function testRevertErc721InvalidConsiderationTokenIdSupplied() public {
+        uint256 tokenId = 2;
+        uint256 considerationTokenId = 1;
+        redeemToken.mint(address(this), tokenId);
+        redeemToken.mint(address(this), considerationTokenId);
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = OfferItem({
+            itemType: ItemType.ERC721_WITH_CRITERIA,
+            token: address(receiveToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = ConsiderationItem({
+            itemType: ItemType.ERC721,
+            token: address(redeemToken),
+            identifierOrCriteria: considerationTokenId,
+            startAmount: 1,
+            endAmount: 1,
+            recipient: payable(_BURN_ADDRESS)
+        });
+
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        requirements[0].offer = offer;
+        requirements[0].consideration = consideration;
+
+        {
+            CampaignParams memory params = CampaignParams({
+                requirements: requirements,
+                signer: address(0),
+                startTime: uint32(block.timestamp),
+                endTime: uint32(block.timestamp + 1000),
+                maxCampaignRedemptions: 5,
+                manager: address(this)
+            });
+
+            redeemToken.createCampaign(params, "");
+        }
+
+        {
+            OfferItem[] memory offerFromEvent = new OfferItem[](1);
+            offerFromEvent[0] = OfferItem({
+                itemType: ItemType.ERC721,
+                token: address(receiveToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1
+            });
+            ConsiderationItem[] memory considerationFromEvent = new ConsiderationItem[](1);
+            considerationFromEvent[0] = ConsiderationItem({
+                itemType: ItemType.ERC721,
+                token: address(redeemToken),
+                identifierOrCriteria: tokenId,
+                startAmount: 1,
+                endAmount: 1,
+                recipient: payable(_BURN_ADDRESS)
+            });
+
+            // campaignId: 1
+            // requirementsIndex: 0
+            // redemptionHash: bytes32(0)
+            bytes memory extraData = abi.encode(1, 0, bytes32(0));
+
+            uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    InvalidConsiderationTokenIdSupplied.selector, address(redeemToken), tokenId, considerationTokenId
+                )
+            );
+            redeemToken.redeem(considerationTokenIds, address(this), extraData);
+
+            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            receiveToken.ownerOf(1);
+
+            assertEq(redeemToken.ownerOf(tokenId), address(this));
+            assertEq(redeemToken.ownerOf(considerationTokenId), address(this));
+        }
+    }
+
     function testRevertErc1155InvalidConsiderationTokenIdSupplied() public {
         TestERC1155 redeemErc1155 = new TestERC1155();
         uint256 tokenId = 2;
-        uint256 requirementTokenId = 1;
+        uint256 considerationTokenId = 1;
         redeemErc1155.mint(address(this), tokenId, 1 ether);
-        redeemErc1155.mint(address(this), requirementTokenId, 1 ether);
+        redeemErc1155.mint(address(this), considerationTokenId, 1 ether);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -707,7 +792,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC1155,
             token: address(redeemErc1155),
-            identifierOrCriteria: requirementTokenId,
+            identifierOrCriteria: considerationTokenId,
             startAmount: 1,
             endAmount: 1,
             recipient: payable(_BURN_ADDRESS)
@@ -764,7 +849,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
 
             vm.expectRevert(
                 abi.encodeWithSelector(
-                    InvalidConsiderationTokenIdSupplied.selector, address(redeemErc1155), tokenId, requirementTokenId
+                    InvalidConsiderationTokenIdSupplied.selector, address(redeemErc1155), tokenId, considerationTokenId
                 )
             );
             redeemToken.redeem(considerationTokenIds, address(this), extraData);
@@ -773,7 +858,7 @@ contract TestERC721ShipyardRedeemable is RedeemablesErrors, Test {
             receiveToken.ownerOf(1);
 
             assertEq(redeemErc1155.balanceOf(address(this), tokenId), 1 ether);
-            assertEq(redeemErc1155.balanceOf(address(this), requirementTokenId), 1 ether);
+            assertEq(redeemErc1155.balanceOf(address(this), considerationTokenId), 1 ether);
         }
     }
 
