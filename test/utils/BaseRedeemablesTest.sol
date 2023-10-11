@@ -15,11 +15,14 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     using ConsiderationItemLib for ConsiderationItem;
     using ConsiderationItemLib for ConsiderationItem[];
 
+    bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
+
     ERC721ShipyardRedeemableOwnerMintable redeemToken;
     ERC721RedemptionMintable receiveToken;
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
+    uint256[] defaultTraitRedemptionTokenIds = new uint256[](0);
 
     CampaignRequirements[] defaultCampaignRequirements;
     // CampaignParams defaultCampaignParams;
@@ -49,5 +52,12 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 
         defaultCampaignConsideration.push(ConsiderationItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION));
+    }
+
+    function _campaignParamsMap() private pure returns (mapping(string => CampaignParams) storage campaignParamsMap) {
+        bytes32 position = CAMPAIGN_PARAMS_MAP_POSITION;
+        assembly {
+            campaignParamsMap.slot := position
+        }
     }
 }
