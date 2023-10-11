@@ -21,6 +21,9 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
 
+    CampaignRequirements[] defaultCampaignRequirements;
+    // CampaignParams defaultCampaignParams;
+
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     string constant DEFAULT_ERC721_CAMPAIGN_OFFER = "default erc721 campaign offer";
