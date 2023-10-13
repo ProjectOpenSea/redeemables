@@ -46,7 +46,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: defaultCampaignConsideration,
-            traitRedemptions: new TraitRedemption[](0)
+            traitRedemptions: defaultTraitRedemptions
         });
 
         CampaignParams memory params = CampaignParams({
@@ -90,7 +90,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: defaultCampaignConsideration,
-            traitRedemptions: new TraitRedemption[](0)
+            traitRedemptions: defaultTraitRedemptions
         });
 
         CampaignParams memory params = CampaignParams({
@@ -576,7 +576,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: consideration,
-            traitRedemptions: new TraitRedemption[](0)
+            traitRedemptions: defaultTraitRedemptions
         });
 
         CampaignParams memory params = CampaignParams({
@@ -629,7 +629,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: consideration,
-            traitRedemptions: new TraitRedemption[](0)
+            traitRedemptions: defaultTraitRedemptions
         });
 
         CampaignParams memory params = CampaignParams({

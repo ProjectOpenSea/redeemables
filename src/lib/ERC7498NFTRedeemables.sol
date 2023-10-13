@@ -190,6 +190,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         ) {
             revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
         }
+
         // If consideration item is this contract, recipient is burn address, and _useInternalBurn() fn returns true,
         // call the internal burn function and return.
         if (c.token == address(this) && c.recipient == payable(_BURN_ADDRESS) && _useInternalBurn()) {

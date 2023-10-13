@@ -22,6 +22,7 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
+    TraitRedemption[] defaultTraitRedemptions;
     uint256[] defaultTraitRedemptionTokenIds = new uint256[](0);
 
     CampaignRequirements[] defaultCampaignRequirements;
