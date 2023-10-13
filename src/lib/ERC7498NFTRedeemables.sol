@@ -182,34 +182,32 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
     }
 
     function _transferConsiderationItem(uint256 id, ConsiderationItem memory c) internal {
+        // WITH_CRITERIA with identifier 0 is wildcard: any id is valid.
+        // Criteria is not yet implemented, for that functionality use the contract offerer.
+        if (
+            id != c.identifierOrCriteria && c.identifierOrCriteria != 0
+                && (c.itemType != ItemType.ERC721_WITH_CRITERIA || c.itemType != ItemType.ERC1155_WITH_CRITERIA)
+        ) {
+            revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
+        }
+
         // If consideration item is this contract, recipient is burn address, and _useInternalBurn() fn returns true,
         // call the internal burn function and return.
         if (c.token == address(this) && c.recipient == payable(_BURN_ADDRESS) && _useInternalBurn()) {
             _internalBurn(id, c.startAmount);
-            return;
-        }
-
-        // Transfer the token to the consideration recipient.
-        if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
-            // ERC721_WITH_CRITERIA with identifier 0 is wildcard: any id is valid.
-            // Criteria is not yet implemented, for that functionality use the contract offerer.
-            if (c.itemType == ItemType.ERC721 && id != c.identifierOrCriteria) {
-                revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
-            }
-            IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
-        } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
-            // ERC1155_WITH_CRITERIA with identifier 0 is wildcard: any id is valid.
-            // Criteria is not yet implemented, for that functionality use the contract offerer.
-            if (c.itemType == ItemType.ERC1155 && id != c.identifierOrCriteria) {
-                revert InvalidConsiderationTokenIdSupplied(c.token, id, c.identifierOrCriteria);
-            }
-            IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
-        } else if (c.itemType == ItemType.ERC20) {
-            IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
         } else {
-            // ItemType.NATIVE
-            (bool success,) = c.recipient.call{value: msg.value}("");
-            if (!success) revert EtherTransferFailed();
+            // Transfer the token to the consideration recipient.
+            if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
+                IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+            } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
+                IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+            } else if (c.itemType == ItemType.ERC20) {
+                IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+            } else {
+                // ItemType.NATIVE
+                (bool success,) = c.recipient.call{value: msg.value}("");
+                if (!success) revert EtherTransferFailed();
+            }
         }
     }
 
@@ -272,7 +270,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
             }
 
             // Ensure the balance is sufficient.
-            if (balance < c.startAmount) {
+            if (c.itemType != ItemType.NATIVE && balance < c.startAmount) {
                 revert ConsiderationItemInsufficientBalance(c.token, balance, c.startAmount);
             }
 
