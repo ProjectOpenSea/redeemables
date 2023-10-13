@@ -67,7 +67,9 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;
 
-        redeemToken.setApprovalForAll(address(receiveToken), true);
+        // Individual user approvals not needed when setting the burn address.
+        // redeemToken.setApprovalForAll(address(receiveToken), true);
+        redeemToken.setBurnAddress(address(receiveToken));
 
         receiveToken.redeem(tokenIds, msg.sender, data);
 
