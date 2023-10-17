@@ -36,8 +36,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     function setUp() public virtual override {
         super.setUp();
 
-        redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
-        receiveToken = new ERC721RedemptionMintable(address(redeemToken));
+        redeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
+        receiveToken = new ERC721RedemptionMintable("", "", address(redeemToken));
 
         vm.label(address(redeemToken), "redeemToken");
         vm.label(address(receiveToken), "receiveToken");

@@ -17,7 +17,8 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         vm.startBroadcast();
 
         ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
-        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable();
+        ERC721ShipyardRedeemableMintable receiveToken =
+            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST");
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -53,7 +54,7 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
             maxCampaignRedemptions: 1_000,
             manager: msg.sender
         });
-        receiveToken.createCampaign(params, "");
+        receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
@@ -68,8 +69,8 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         tokenIds[0] = 1;
 
         // Individual user approvals not needed when setting the burn address.
-        // redeemToken.setApprovalForAll(address(receiveToken), true);
-        redeemToken.setBurnAddress(address(receiveToken));
+        redeemToken.setApprovalForAll(address(receiveToken), true);
+        // redeemToken.setBurnAddress(address(receiveToken));
 
         receiveToken.redeem(tokenIds, msg.sender, data);
 

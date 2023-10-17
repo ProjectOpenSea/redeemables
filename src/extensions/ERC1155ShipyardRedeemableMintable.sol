@@ -7,13 +7,16 @@ import {Ownable} from "solady/src/auth/Ownable.sol";
 import {ERC7498NFTRedeemables} from "../lib/ERC7498NFTRedeemables.sol";
 import {CampaignParams} from "../lib/RedeemablesStructs.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
-import {ERC721ShipyardRedeemable} from "../ERC721ShipyardRedeemable.sol";
+import {ERC1155ShipyardRedeemable} from "../ERC1155ShipyardRedeemable.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
-contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedemptionMintable {
+contract ERC1155ShipyardRedeemableMintable is ERC1155ShipyardRedeemable, IRedemptionMintable {
     /// @dev Revert if the sender of mintRedemption is not this contract.
     error InvalidSender();
+
+    /// @dev The next token id to mint. Each token will have a supply of 1.
+    uint256 _nextTokenId = 1;
 
     function mintRedemption(
         uint256, /* campaignId */
@@ -24,8 +27,12 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
         if (msg.sender != address(this)) {
             revert InvalidSender();
         }
-        _mint(recipient, 1);
+
+        // Increment nextTokenId first so more of the same token id cannot be minted through reentrancy.
+        ++_nextTokenId;
+
+        _mint(recipient, _nextTokenId - 1, 1, "");
     }
 
-    constructor(string memory name_, string memory symbol_) ERC721ShipyardRedeemable(name_, symbol_) {}
+    constructor(string memory name_, string memory symbol_) ERC1155ShipyardRedeemable(name_, symbol_) {}
 }
