@@ -152,19 +152,63 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function testBurnErc20RedeemErc721() public {
-        redeemErc20.mint(address(this), 0.5 ether);
+        erc20s[0].mint(address(this), 0.5 ether);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
         );
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = defaultCampaignConsideration[0].withToken(address(redeemErc20)).withItemType(ItemType.ERC20)
+        consideration[0] = defaultCampaignConsideration[0].withToken(address(erc20s[0])).withItemType(ItemType.ERC20)
             .withStartAmount(0.5 ether).withEndAmount(0.5 ether);
 
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: consideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
+
+        CampaignParams memory params = CampaignParams({
+            requirements: requirements,
+            signer: address(0),
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this)
+        });
+
+        redeemToken.createCampaign(params, "");
+
+        // campaignId: 1
+        // requirementsIndex: 0
+        // redemptionHash: bytes32(0)
+        bytes memory extraData = abi.encode(1, 0, bytes32(0));
+
+        uint256[] memory considerationTokenIds = Solarray.uint256s(0);
+
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
+        redeemToken.redeem(considerationTokenIds, address(this), extraData);
+
+        vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+        redeemToken.ownerOf(tokenId);
+
+        assertEq(receiveToken.ownerOf(1), address(this));
+    }
+
+    function testBurnErc721RedeemErc1155() public {
+        redeemToken.mint(address(this), tokenId);
+
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = defaultCampaignOffer[0].withItemType(ItemType.ERC1155).withToken(address(receiveToken));
+
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: defaultCampaignConsideration,
             traitRedemptions: defaultTraitRedemptions
         });
 
