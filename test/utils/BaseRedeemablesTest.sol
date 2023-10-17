@@ -45,6 +45,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         vm.label(address(redeemToken), "redeemToken");
         vm.label(address(receiveToken), "receiveToken");
 
+        _setApprovals(address(this));
+
         // Save the default campaign offer and consideration
         OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken)).saveDefault(
             DEFAULT_ERC721_CAMPAIGN_OFFER
@@ -63,5 +65,20 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         assembly {
             campaignParamsMap.slot := position
         }
+    }
+
+    function _setApprovals(address _owner) internal virtual override {
+        vm.startPrank(_owner);
+        for (uint256 i = 0; i < erc20s.length; ++i) {
+            erc20s[i].approve(address(redeemToken), type(uint256).max);
+        }
+        for (uint256 i = 0; i < erc721s.length; ++i) {
+            erc721s[i].setApprovalForAll(address(redeemToken), true);
+        }
+        for (uint256 i = 0; i < erc1155s.length; ++i) {
+            erc1155s[i].setApprovalForAll(address(redeemToken), true);
+        }
+
+        vm.stopPrank();
     }
 }

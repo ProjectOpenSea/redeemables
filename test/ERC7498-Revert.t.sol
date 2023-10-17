@@ -209,8 +209,9 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
     function testRevertErc20ConsiderationItemInsufficientBalance() public {
         redeemToken.mint(address(this), tokenId);
-        erc20s[0].mint(address(this), 0.05 ether);
-        erc20s[0].approve(address(redeemToken), 1 ether);
+
+        TestERC20 redeemErc20 = new TestERC20();
+        redeemErc20.mint(address(this), 0.05 ether);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
@@ -232,7 +233,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         });
         consideration[1] = ConsiderationItem({
             itemType: ItemType.ERC20,
-            token: address(erc20s[0]),
+            token: address(redeemErc20),
             identifierOrCriteria: 0,
             startAmount: 0.1 ether,
             endAmount: 0.1 ether,
@@ -265,11 +266,10 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId, 0);
-        uint256[] memory traitRedemptionTokenIds;
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ConsiderationItemInsufficientBalance.selector, address(erc20s[0]), 0.05 ether, 0.1 ether
+                ConsiderationItemInsufficientBalance.selector, address(redeemErc20), 0.05 ether, 0.1 ether
             )
         );
         redeemToken.redeem(considerationTokenIds, address(this), extraData);

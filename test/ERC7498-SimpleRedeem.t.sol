@@ -228,7 +228,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0));
 
-        uint256[] memory considerationTokenIds = Solarray.uint256s(0);
+        uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
 
         vm.expectEmit(true, true, true, true);
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
