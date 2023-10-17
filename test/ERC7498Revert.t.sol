@@ -209,8 +209,6 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
     function testRevertErc20ConsiderationItemInsufficientBalance() public {
         redeemToken.mint(address(this), tokenId);
-
-        TestERC20 redeemErc20 = new TestERC20();
         redeemErc20.mint(address(this), 0.05 ether);
         redeemErc20.approve(address(redeemToken), 1 ether);
 
@@ -333,7 +331,6 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function testRevertErc1155InvalidConsiderationTokenIdSupplied() public {
-        TestERC1155 redeemErc1155 = new TestERC1155();
         uint256 considerationTokenId = 1;
         redeemErc1155.mint(address(this), tokenId, 1 ether);
         redeemErc1155.mint(address(this), considerationTokenId, 1 ether);

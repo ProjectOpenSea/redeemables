@@ -2,6 +2,9 @@
 pragma solidity ^0.8.19;
 
 import {BaseOrderTest} from "./BaseOrderTest.sol";
+import {TestERC20} from "../utils/mocks/TestERC20.sol";
+import {TestERC721} from "../utils/mocks/TestERC721.sol";
+import {TestERC1155} from "../utils/mocks/TestERC1155.sol";
 import {OfferItemLib, ConsiderationItemLib} from "seaport-sol/src/SeaportSol.sol";
 import {OfferItem, ConsiderationItem} from "seaport-sol/src/SeaportStructs.sol";
 import {ERC721RedemptionMintable} from "../../src/extensions/ERC721RedemptionMintable.sol";
@@ -19,6 +22,9 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     ERC721ShipyardRedeemableOwnerMintable redeemToken;
     ERC721RedemptionMintable receiveToken;
+
+    TestERC20 redeemErc20;
+    TestERC1155 redeemErc1155;
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
@@ -39,8 +45,16 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         redeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         receiveToken = new ERC721RedemptionMintable(address(redeemToken));
 
+        redeemErc20 = new TestERC20();
+        redeemErc1155 = new TestERC1155();
+
+        redeemErc20.approve(address(redeemToken), type(uint256).max);
+        redeemErc1155.setApprovalForAll(address(redeemToken), true);
+
         vm.label(address(redeemToken), "redeemToken");
         vm.label(address(receiveToken), "receiveToken");
+        vm.label(address(redeemErc20), "redeemErc20");
+        vm.label(address(redeemErc1155), "redeemErc1155");
 
         // Save the default campaign offer and consideration
         OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken)).saveDefault(

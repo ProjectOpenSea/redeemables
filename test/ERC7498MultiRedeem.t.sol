@@ -36,7 +36,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         super.setUp();
     }
 
-    function testBurnWithSecondConsiderationItem() public {
+    function testBurnMultiErc721RedeemSingleErc721() public {
         ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);

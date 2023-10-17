@@ -36,7 +36,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         super.setUp();
     }
 
-    function testBurnInternalToken() public {
+    function testBurnErc721RedeemErc721() public {
         redeemToken.mint(address(this), tokenId);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -77,7 +77,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         assertEq(receiveToken.ownerOf(1), address(this));
     }
 
-    function testBurnWithSecondRequirementsIndex() public {
+    function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {
         ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);
@@ -147,6 +147,51 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         assertEq(redeemToken.ownerOf(tokenId), address(this));
 
         assertEq(secondRedeemToken.ownerOf(tokenId), _BURN_ADDRESS);
+
+        assertEq(receiveToken.ownerOf(1), address(this));
+    }
+
+    function testBurnErc20RedeemErc721() public {
+        redeemErc20.mint(address(this), 0.5 ether);
+
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = defaultCampaignConsideration[0].withToken(address(redeemErc20)).withItemType(ItemType.ERC20)
+            .withStartAmount(0.5 ether).withEndAmount(0.5 ether);
+
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
+
+        CampaignParams memory params = CampaignParams({
+            requirements: requirements,
+            signer: address(0),
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this)
+        });
+
+        redeemToken.createCampaign(params, "");
+
+        // campaignId: 1
+        // requirementsIndex: 0
+        // redemptionHash: bytes32(0)
+        bytes memory extraData = abi.encode(1, 0, bytes32(0));
+
+        uint256[] memory considerationTokenIds = Solarray.uint256s(0);
+
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
+        redeemToken.redeem(considerationTokenIds, address(this), extraData);
+
+        vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+        redeemToken.ownerOf(tokenId);
 
         assertEq(receiveToken.ownerOf(1), address(this));
     }
