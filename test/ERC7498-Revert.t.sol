@@ -135,13 +135,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TokenIdsDontMatchConsiderationLength.selector,
-                2,
-                1
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(TokenIdsDontMatchConsiderationLength.selector, 2, 1));
 
         redeemToken.redeem(tokenIds, address(this), extraData);
 
@@ -207,18 +201,8 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId, 0);
         uint256[] memory traitRedemptionTokenIds;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                InvalidTxValue.selector,
-                0.05 ether,
-                0.1 ether
-            )
-        );
-        redeemToken.redeem{value: 0.05 ether}(
-            considerationTokenIds,
-            address(this),
-            extraData
-        );
+        vm.expectRevert(abi.encodeWithSelector(InvalidTxValue.selector, 0.05 ether, 0.1 ether));
+        redeemToken.redeem{value: 0.05 ether}(considerationTokenIds, address(this), extraData);
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
         receiveToken.ownerOf(1);
@@ -288,10 +272,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                ConsiderationItemInsufficientBalance.selector,
-                address(redeemErc20),
-                0.05 ether,
-                0.1 ether
+                ConsiderationItemInsufficientBalance.selector, address(redeemErc20), 0.05 ether, 0.1 ether
             )
         );
         redeemToken.redeem(considerationTokenIds, address(this), extraData);
@@ -312,8 +293,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         );
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = defaultCampaignConsideration[0]
-            .withIdentifierOrCriteria(considerationTokenId);
+        consideration[0] = defaultCampaignConsideration[0].withIdentifierOrCriteria(considerationTokenId);
 
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
@@ -341,10 +321,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                InvalidConsiderationTokenIdSupplied.selector,
-                address(redeemToken),
-                tokenId,
-                considerationTokenId
+                InvalidConsiderationTokenIdSupplied.selector, address(redeemToken), tokenId, considerationTokenId
             )
         );
         redeemToken.redeem(considerationTokenIds, address(this), extraData);
@@ -366,10 +343,9 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         );
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = defaultCampaignConsideration[0]
-            .withToken(address(erc1155s[0]))
-            .withItemType(ItemType.ERC1155)
-            .withIdentifierOrCriteria(considerationTokenId);
+        consideration[0] = defaultCampaignConsideration[0].withToken(address(erc1155s[0])).withItemType(
+            ItemType.ERC1155
+        ).withIdentifierOrCriteria(considerationTokenId);
 
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
@@ -397,10 +373,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                InvalidConsiderationTokenIdSupplied.selector,
-                address(erc1155s[0]),
-                tokenId,
-                considerationTokenId
+                InvalidConsiderationTokenIdSupplied.selector, address(erc1155s[0]), tokenId, considerationTokenId
             )
         );
         redeemToken.redeem(considerationTokenIds, address(this), extraData);
@@ -409,9 +382,6 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         receiveToken.ownerOf(1);
 
         assertEq(erc1155s[0].balanceOf(address(this), tokenId), 1 ether);
-        assertEq(
-            erc1155s[0].balanceOf(address(this), considerationTokenId),
-            1 ether
-        );
+        assertEq(erc1155s[0].balanceOf(address(this), considerationTokenId), 1 ether);
     }
 }
