@@ -194,7 +194,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         // If consideration item is this contract, recipient is burn address, and _useInternalBurn() fn returns true,
         // call the internal burn function and return.
         if (c.token == address(this) && c.recipient == payable(_BURN_ADDRESS) && _useInternalBurn()) {
-            _internalBurn(id, c.startAmount);
+            _internalBurn(msg.sender, id, c.startAmount);
         } else {
             // Transfer the token to the consideration recipient.
             if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
@@ -218,7 +218,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
 
     /// @dev Function that is called to burn amounts of a token internal to this inherited contract.
     ///      Override with token implementation calling internal burn.
-    function _internalBurn(uint256 id, uint256 amount) internal virtual {
+    function _internalBurn(address from, uint256 id, uint256 amount) internal virtual {
         // Override with your token implementation calling internal burn.
     }
 

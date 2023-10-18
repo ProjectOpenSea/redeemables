@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {ERC1155ShipyardContractMetadata} from "../lib/ERC1155ShipyardContractMetadata.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
-contract ERC1155RedemptionMintable is ERC1155, IRedemptionMintable {
+contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedemptionMintable {
+    /// @dev The ERC-7498 redeemables contract.
     address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    constructor(address redeemableContractOfferer) {
+    constructor(string memory name_, string memory symbol_, address redeemableContractOfferer)
+        ERC1155ShipyardContractMetadata(name_, symbol_)
+    {
+        // Set the redeemables contract address.
         _ERC7498_REDEEMABLES_CONTRACT = redeemableContractOfferer;
     }
 
@@ -36,7 +40,14 @@ contract ERC1155RedemptionMintable is ERC1155, IRedemptionMintable {
         }
     }
 
-    function uri(uint256 id) public pure override returns (string memory) {
-        return string(abi.encodePacked("https://example.com/", id));
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155ShipyardContractMetadata)
+        returns (bool)
+    {
+        return ERC1155ShipyardContractMetadata.supportsInterface(interfaceId)
+            || interfaceId == type(IRedemptionMintable).interfaceId;
     }
 }
