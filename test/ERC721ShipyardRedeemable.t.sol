@@ -128,7 +128,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     function testRevertConsiderationLengthNotMet() public {
         redeemToken.mint(address(this), tokenId);
 
-        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
@@ -184,7 +184,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function testBurnWithSecondConsiderationItem() public {
-        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);
 
@@ -278,7 +278,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function testBurnWithSecondRequirementsIndex() public {
-        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable();
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
         vm.label(address(secondRedeemToken), "secondRedeemToken");
         secondRedeemToken.setApprovalForAll(address(redeemToken), true);
 

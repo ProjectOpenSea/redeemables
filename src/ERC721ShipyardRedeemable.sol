@@ -1,28 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {ERC721ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc721/ERC721ConduitPreapproved_Solady.sol";
-import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {Ownable} from "solady/src/auth/Ownable.sol";
+import {ERC721ShipyardContractMetadata} from "./lib/ERC721ShipyardContractMetadata.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
-contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFTRedeemables, Ownable {
-    constructor() ERC721ConduitPreapproved_Solady() {
-        _initializeOwner(msg.sender);
-    }
-
-    function name() public pure override returns (string memory) {
-        return "ERC721ShipyardRedeemable";
-    }
-
-    function symbol() public pure override returns (string memory) {
-        return "SY-RDM";
-    }
-
-    function tokenURI(uint256 /* tokenId */ ) public pure override returns (string memory) {
-        return "https://example.com/";
-    }
+contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTRedeemables {
+    constructor(string memory name_, string memory symbol_) ERC721ShipyardContractMetadata(name_, symbol_) {}
 
     function createCampaign(CampaignParams calldata params, string calldata uri)
         public
@@ -37,7 +21,7 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
         return true;
     }
 
-    function _internalBurn(uint256 id, uint256 /* amount */ ) internal virtual override {
+    function _internalBurn(address, /* from */ uint256 id, uint256 /* amount */ ) internal virtual override {
         _burn(id);
     }
 
@@ -45,9 +29,10 @@ contract ERC721ShipyardRedeemable is ERC721ConduitPreapproved_Solady, ERC7498NFT
         public
         view
         virtual
-        override(ERC721, ERC7498NFTRedeemables)
+        override(ERC721ShipyardContractMetadata, ERC7498NFTRedeemables)
         returns (bool)
     {
-        return ERC721.supportsInterface(interfaceId) || ERC7498NFTRedeemables.supportsInterface(interfaceId);
+        return ERC721ShipyardContractMetadata.supportsInterface(interfaceId)
+            || ERC7498NFTRedeemables.supportsInterface(interfaceId);
     }
 }
