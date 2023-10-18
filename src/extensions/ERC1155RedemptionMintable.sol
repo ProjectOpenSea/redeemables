@@ -8,16 +8,16 @@ import {TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedemptionMintable {
     /// @dev The ERC-7498 redeemables contract.
-    address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
+    address[] internal _ERC7498_REDEEMABLES_CONTRACTS;
 
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    constructor(string memory name_, string memory symbol_, address redeemableContractOfferer)
+    constructor(string memory name_, string memory symbol_, address[] memory redeemableContractAddresses)
         ERC1155ShipyardContractMetadata(name_, symbol_)
     {
-        // Set the redeemables contract address.
-        _ERC7498_REDEEMABLES_CONTRACT = redeemableContractOfferer;
+        // Set the redeemables contract addresses.
+        _ERC7498_REDEEMABLES_CONTRACTS = redeemableContractAddresses;
     }
 
     function mintRedemption(
@@ -26,7 +26,13 @@ contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedempti
         ConsiderationItem[] calldata consideration,
         TraitRedemption[] calldata /* traitRedemptions */
     ) external {
-        if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
+        bool validSender;
+        for (uint256 i; i < _ERC7498_REDEEMABLES_CONTRACTS.length; i++) {
+            if (msg.sender == _ERC7498_REDEEMABLES_CONTRACTS[i]) {
+                validSender = true;
+            }
+        }
+        if (!validSender) {
             revert InvalidSender();
         }
 

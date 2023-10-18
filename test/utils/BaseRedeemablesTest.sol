@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {Solarray} from "solarray/Solarray.sol";
 import {BaseOrderTest} from "./BaseOrderTest.sol";
+import {IERC7498} from "../../src/interfaces/IERC7498.sol";
 import {TestERC20} from "../utils/mocks/TestERC20.sol";
 import {TestERC721} from "../utils/mocks/TestERC721.sol";
 import {TestERC1155} from "../utils/mocks/TestERC1155.sol";
 import {OfferItemLib, ConsiderationItemLib} from "seaport-sol/src/SeaportSol.sol";
 import {OfferItem, ConsiderationItem} from "seaport-sol/src/SeaportStructs.sol";
 import {ERC721RedemptionMintable} from "../../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC1155RedemptionMintable} from "../../src/extensions/ERC1155RedemptionMintable.sol";
+import {ERC721SeaDropRedeemableOwnerMintable} from "../../src/test/ERC721SeaDropRedeemableOwnerMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
+import {ERC1155ShipyardRedeemableOwnerMintable} from "../../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
+import {ERC1155SeaDropRedeemableOwnerMintable} from "../../src/test/ERC1155SeaDropRedeemableOwnerMintable.sol";
 import {RedeemablesErrors} from "../../src/lib/RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../../src/lib/RedeemablesStructs.sol";
 
@@ -18,10 +24,24 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     using ConsiderationItemLib for ConsiderationItem;
     using ConsiderationItemLib for ConsiderationItem[];
 
+    struct RedeemablesContext {
+        IERC7498 erc7498Token;
+    }
+
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
 
     ERC721ShipyardRedeemableOwnerMintable redeemToken;
     ERC721RedemptionMintable receiveToken;
+
+    address[] erc7498Tokens;
+
+    ERC721ShipyardRedeemableOwnerMintable erc721ShipyardRedeemable;
+    ERC721SeaDropRedeemableOwnerMintable erc721SeaDropRedeemable;
+    ERC1155ShipyardRedeemableOwnerMintable erc1155ShipyardRedeemable;
+    ERC1155SeaDropRedeemableOwnerMintable erc1155SeaDropRedeemable;
+
+    ERC721RedemptionMintable receiveToken721;
+    ERC1155RedemptionMintable receiveToken1155;
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
@@ -39,8 +59,42 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     function setUp() public virtual override {
         super.setUp();
 
+        erc721ShipyardRedeemable = new ERC721ShipyardRedeemableOwnerMintable(
+            "",
+            ""
+        );
+        erc721SeaDropRedeemable = new ERC721SeaDropRedeemableOwnerMintable(
+            address(1),
+            address(1),
+            "",
+            ""
+        );
+        erc1155ShipyardRedeemable = new ERC1155ShipyardRedeemableOwnerMintable(
+            "",
+            ""
+        );
+        erc1155SeaDropRedeemable = new ERC1155SeaDropRedeemableOwnerMintable(
+            address(1),
+            address(1),
+            "",
+            ""
+        );
+
+        erc721SeaDropRedeemable.setMaxSupply(10);
+        erc1155SeaDropRedeemable.setMaxSupply(1, 10);
+        erc1155SeaDropRedeemable.setMaxSupply(2, 10);
+
+        erc7498Tokens = new address[](4);
+        erc7498Tokens[0] = address(erc721ShipyardRedeemable);
+        erc7498Tokens[1] = address(erc721SeaDropRedeemable);
+        erc7498Tokens[2] = address(erc1155ShipyardRedeemable);
+        erc7498Tokens[3] = address(erc1155SeaDropRedeemable);
+
+        receiveToken721 = new ERC721RedemptionMintable("", "", erc7498Tokens);
+        receiveToken1155 = new ERC1155RedemptionMintable("", "", erc7498Tokens);
+
         redeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
-        receiveToken = new ERC721RedemptionMintable("", "", address(redeemToken));
+        receiveToken = new ERC721RedemptionMintable("", "", erc7498Tokens);
 
         vm.label(address(redeemToken), "redeemToken");
         vm.label(address(receiveToken), "receiveToken");
@@ -58,6 +112,15 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 
         defaultCampaignConsideration.push(ConsiderationItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION));
+    }
+
+    function testRedeemable(function(RedeemablesContext memory) external fn, RedeemablesContext memory context)
+        internal
+    {
+        try fn(context) {}
+        catch (bytes memory reason) {
+            assertPass(reason);
+        }
     }
 
     function _campaignParamsMap() private pure returns (mapping(string => CampaignParams) storage campaignParamsMap) {
