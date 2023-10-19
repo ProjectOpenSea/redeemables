@@ -100,21 +100,16 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         receiveToken721 = new ERC721RedemptionMintable("", "", erc7498Tokens);
         receiveToken1155 = new ERC1155RedemptionMintable("", "", erc7498Tokens);
 
-        redeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
-        receiveToken = new ERC721RedemptionMintable("", "", erc7498Tokens);
-
-        vm.label(address(redeemToken), "redeemToken");
-        vm.label(address(receiveToken), "receiveToken");
-
         _setApprovals(address(this));
 
         // Save the default campaign offer and consideration
-        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken)).saveDefault(
+        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).saveDefault(
             DEFAULT_ERC721_CAMPAIGN_OFFER
         );
 
-        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(redeemToken)).withRecipient(_BURN_ADDRESS)
-            .saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
+        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(
+            _BURN_ADDRESS
+        ).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
 
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 
@@ -140,13 +135,19 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     function _setApprovals(address _owner) internal virtual override {
         vm.startPrank(_owner);
         for (uint256 i = 0; i < erc20s.length; ++i) {
-            erc20s[i].approve(address(redeemToken), type(uint256).max);
+            for (uint256 j = 0; j < erc7498Tokens.length; ++j) {
+                erc20s[i].approve(address(erc7498Tokens[j]), type(uint256).max);
+            }
         }
         for (uint256 i = 0; i < erc721s.length; ++i) {
-            erc721s[i].setApprovalForAll(address(redeemToken), true);
+            for (uint256 j = 0; j < erc7498Tokens.length; ++j) {
+                erc721s[i].setApprovalForAll(address(erc7498Tokens[j]), true);
+            }
         }
         for (uint256 i = 0; i < erc1155s.length; ++i) {
-            erc1155s[i].setApprovalForAll(address(redeemToken), true);
+            for (uint256 j = 0; j < erc7498Tokens.length; ++j) {
+                erc1155s[i].setApprovalForAll(address(erc7498Tokens[j]), true);
+            }
         }
 
         vm.stopPrank();
