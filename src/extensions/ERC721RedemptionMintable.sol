@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ERC721ShipyardContractMetadata} from "../lib/ERC721ShipyardContractMetadata.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
@@ -49,10 +50,10 @@ contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemption
         public
         view
         virtual
-        override(ERC721ShipyardContractMetadata)
+        override(ERC721ShipyardContractMetadata, IERC165)
         returns (bool)
     {
-        return ERC721ShipyardContractMetadata.supportsInterface(interfaceId)
-            || interfaceId == type(IRedemptionMintable).interfaceId;
+        return interfaceId == type(IRedemptionMintable).interfaceId
+            || ERC721ShipyardContractMetadata.supportsInterface(interfaceId);
     }
 }

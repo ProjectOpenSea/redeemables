@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
@@ -399,7 +400,13 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         */
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(DynamicTraits) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(DynamicTraits, IERC165)
+        returns (bool)
+    {
         return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId);
     }
 }
