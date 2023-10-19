@@ -21,7 +21,7 @@ import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardR
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
 import {IERC7498} from "../src/interfaces/IERC7498.sol";
 
-contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
+contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
     using OfferItemLib for OfferItem;
     using OfferItemLib for OfferItem[];
     using ConsiderationItemLib for ConsiderationItem;

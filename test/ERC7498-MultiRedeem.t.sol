@@ -15,7 +15,7 @@ import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
-contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
+contract ERC7498_MultiRedeem is BaseRedeemablesTest {
     using OfferItemLib for OfferItem;
     using OfferItemLib for OfferItem[];
     using ConsiderationItemLib for ConsiderationItem;
