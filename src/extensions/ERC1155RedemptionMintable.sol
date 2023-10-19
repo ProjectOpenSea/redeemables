@@ -14,9 +14,6 @@ contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedempti
     /// @dev The next token id to mint.
     uint256 internal _nextTokenId = 1;
 
-    /// @dev The number of mints per valid redemption.
-    uint256 immutable _mintsPerRedemption = 3;
-
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
@@ -43,12 +40,10 @@ contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedempti
             revert InvalidSender();
         }
 
-        for (uint256 i; i < _mintsPerRedemption; i++) {
-            // Increment nextTokenId first so more of the same token id cannot be minted through reentrancy.
-            ++_nextTokenId;
+        // Increment nextTokenId first so more of the same token id cannot be minted through reentrancy.
+        ++_nextTokenId;
 
-            _mint(recipient, _nextTokenId - 1, 1, "");
-        }
+        _mint(recipient, _nextTokenId - 1, 1, "");
     }
 
     function supportsInterface(bytes4 interfaceId)
