@@ -2,6 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {Solarray} from "solarray/Solarray.sol";
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
+import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
+import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
+import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
+import {IERC721SeaDrop} from "seadrop/src/interfaces/IERC721SeaDrop.sol";
+import {IERC1155SeaDrop} from "seadrop/src/interfaces/IERC1155SeaDrop.sol";
 import {BaseOrderTest} from "./BaseOrderTest.sol";
 import {IERC7498} from "../../src/interfaces/IERC7498.sol";
 import {TestERC20} from "../utils/mocks/TestERC20.sol";
@@ -9,6 +15,7 @@ import {TestERC721} from "../utils/mocks/TestERC721.sol";
 import {TestERC1155} from "../utils/mocks/TestERC1155.sol";
 import {OfferItemLib, ConsiderationItemLib} from "seaport-sol/src/SeaportSol.sol";
 import {OfferItem, ConsiderationItem} from "seaport-sol/src/SeaportStructs.sol";
+import {ItemType} from "seaport-sol/src/SeaportEnums.sol";
 import {ERC721RedemptionMintable} from "../../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC1155RedemptionMintable} from "../../src/extensions/ERC1155RedemptionMintable.sol";
 import {ERC721SeaDropRedeemableOwnerMintable} from "../../src/test/ERC721SeaDropRedeemableOwnerMintable.sol";
@@ -143,5 +150,37 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         }
 
         vm.stopPrank();
+    }
+
+    function _isErc7498Token721(address token) internal view returns (bool) {
+        bool isErc7498Token721;
+        if (IERC165(token).supportsInterface(type(IERC721).interfaceId)) {
+            isErc7498Token721 = true;
+        }
+
+        return isErc7498Token721;
+    }
+
+    function _isErc7498TokenSeaDrop(address token) internal view returns (bool) {
+        bool isErc7498TokenSeaDrop;
+        if (
+            IERC165(token).supportsInterface(type(IERC721SeaDrop).interfaceId)
+                || IERC165(token).supportsInterface(type(IERC1155SeaDrop).interfaceId)
+        ) {
+            isErc7498TokenSeaDrop = true;
+        }
+
+        return isErc7498TokenSeaDrop;
+    }
+
+    function _getCampaignConsideration(address token, bool isToken721)
+        internal
+        view
+        returns (ConsiderationItem[] memory consideration)
+    {
+        consideration = new ConsiderationItem[](1);
+        consideration[0] = defaultCampaignConsideration[0].withToken(token).withItemType(
+            isToken721 ? ItemType.ERC721 : ItemType.ERC1155
+        );
     }
 }

@@ -5,11 +5,8 @@ import {BaseRedeemablesTest} from "./utils/BaseRedeemablesTest.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
-import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
-import {IERC721SeaDrop} from "seadrop/src/interfaces/IERC721SeaDrop.sol";
-import {IERC1155SeaDrop} from "seadrop/src/interfaces/IERC1155SeaDrop.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
@@ -51,18 +48,9 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function burnErc721RedeemErc721(RedeemablesContext memory context) external {
-        bool isErc7498Token721;
-        if (IERC165(address(context.erc7498Token)).supportsInterface(type(IERC721).interfaceId)) {
-            isErc7498Token721 = true;
-        }
+        bool isErc7498Token721 = _isErc7498Token721(address(context.erc7498Token));
 
-        bool isErc7498TokenSeaDrop;
-        if (
-            IERC165(address(context.erc7498Token)).supportsInterface(type(IERC721SeaDrop).interfaceId)
-                || IERC165(address(context.erc7498Token)).supportsInterface(type(IERC1155SeaDrop).interfaceId)
-        ) {
-            isErc7498TokenSeaDrop = true;
-        }
+        bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(context.erc7498Token));
 
         if (isErc7498Token721) {
             ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
@@ -70,11 +58,8 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
         }
 
-        // TODO: make helper
-        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = defaultCampaignConsideration[0].withToken(address(context.erc7498Token)).withItemType(
-            isErc7498Token721 ? ItemType.ERC721 : ItemType.ERC1155
-        );
+        ConsiderationItem[] memory consideration =
+            _getCampaignConsideration(address(context.erc7498Token), isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
