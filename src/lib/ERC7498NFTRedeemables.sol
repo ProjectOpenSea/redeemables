@@ -5,6 +5,9 @@ import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
+import {ERC20Burnable} from "openzeppelin-contracts/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {ERC721Burnable} from "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import {ERC1155Burnable} from "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
@@ -210,11 +213,44 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         } else {
             // Transfer the token to the consideration recipient.
             if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
-                IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    try ERC721Burnable(c.token).burn(id) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                    }
+                } else {
+                    IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                }
             } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
-                IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                    try ERC1155Burnable(c.token).burn(msg.sender, id, c.startAmount) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                    }
+                } else {
+                    IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                }
             } else if (c.itemType == ItemType.ERC20) {
-                IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                    try ERC20Burnable(c.token).burnFrom(msg.sender, c.startAmount) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                    }
+                } else {
+                    IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                }
             } else {
                 // ItemType.NATIVE
                 (bool success,) = c.recipient.call{value: msg.value}("");
