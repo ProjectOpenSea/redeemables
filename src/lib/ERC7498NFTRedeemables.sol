@@ -36,6 +36,11 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         public
         payable
     {
+        // If the recipient is the null address, set to msg.sender.
+        if (recipient == address(0)) {
+            recipient = msg.sender;
+        }
+
         // Get the values from extraData.
         uint256 campaignId = uint256(bytes32(extraData[0:32]));
         uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
