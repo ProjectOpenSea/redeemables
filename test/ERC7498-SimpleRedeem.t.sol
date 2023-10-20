@@ -44,25 +44,29 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
     function testBurnErc721OrErc1155RedeemErc721() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
             testRedeemable(
-                this.burnErc721OrErc1155RedeemErc721, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+                this.burnErc721OrErc1155RedeemErc721,
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
             );
         }
     }
 
     function burnErc721OrErc1155RedeemErc721(RedeemablesContext memory context) external {
-        bool isErc7498Token721 = _isErc7498Token721(address(context.erc7498Token));
-
-        bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(context.erc7498Token));
-
-        if (isErc7498Token721) {
+        if (context.isErc7498Token721) {
             ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
         } else {
             ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
         }
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), isErc7498Token721);
+        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), context.isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -96,26 +100,25 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
         context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
 
-        if (isErc7498Token721) {
-            if (isErc7498TokenSeaDrop) {
-                vm.expectRevert(IERC721A.OwnerQueryForNonexistentToken.selector);
-            } else {
-                vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-            }
-            IERC721(address(context.erc7498Token)).ownerOf(tokenId);
-        } else {
-            // context.erc7498Token is ERC1155
-            assertEq(IERC1155(address(context.erc7498Token)).balanceOf(address(this), tokenId), 0);
-        }
+        _checkTokenDoesNotExist(
+            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
+        );
 
         assertEq(receiveToken721.ownerOf(1), address(this));
     }
 
     function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
             testRedeemable(
                 this.burnErc721OrErc1155RedeemErc721WithSecondRequirementsIndex,
-                RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
             );
         }
     }
@@ -128,11 +131,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         vm.label(address(firstRequirementRedeemToken), "firstRequirementRedeemToken");
         firstRequirementRedeemToken.setApprovalForAll(address(context.erc7498Token), true);
 
-        bool isErc7498Token721 = _isErc7498Token721(address(context.erc7498Token));
-
-        bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(context.erc7498Token));
-
-        if (isErc7498Token721) {
+        if (context.isErc7498Token721) {
             ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
         } else {
             ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
@@ -152,7 +151,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
         secondRequirementConsideration[0] =
-            _getCampaignConsiderationItem(address(context.erc7498Token), isErc7498Token721);
+            _getCampaignConsiderationItem(address(context.erc7498Token), context.isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             2
@@ -189,17 +188,9 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        if (isErc7498Token721) {
-            if (isErc7498TokenSeaDrop) {
-                vm.expectRevert(IERC721A.OwnerQueryForNonexistentToken.selector);
-            } else {
-                vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-            }
-            IERC721(address(context.erc7498Token)).ownerOf(tokenId);
-        } else {
-            // context.erc7498Token is ERC1155
-            assertEq(IERC1155(address(context.erc7498Token)).balanceOf(address(this), tokenId), 0);
-        }
+        _checkTokenDoesNotExist(
+            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
+        );
 
         assertEq(firstRequirementRedeemToken.ownerOf(tokenId), address(this));
 
@@ -208,7 +199,17 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
     function testBurnErc20RedeemErc721() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
-            testRedeemable(this.burnErc20RedeemErc721, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])}));
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
+            testRedeemable(
+                this.burnErc20RedeemErc721,
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
+            );
         }
     }
 

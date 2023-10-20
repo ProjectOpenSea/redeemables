@@ -19,7 +19,17 @@ contract TestERC7498 is BaseRedeemablesTest {
 
     function testSupportsInterfaceId() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
-            testRedeemable(this.supportsInterfaceId, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])}));
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
+            testRedeemable(
+                this.supportsInterfaceId,
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
+            );
         }
     }
 

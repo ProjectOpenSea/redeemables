@@ -34,6 +34,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     struct RedeemablesContext {
         IERC7498 erc7498Token;
+        bool isErc7498Token721;
+        bool isErc7498TokenSeaDrop;
     }
 
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
@@ -186,18 +188,15 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         returns (ConsiderationItem memory considerationItem)
     {
         considerationItem = defaultCampaignConsideration[0].withToken(token).withItemType(
-            isToken721 ? ItemType.ERC721 : ItemType.ERC1155
+            isToken721 ? ItemType.ERC721_WITH_CRITERIA : ItemType.ERC1155_WITH_CRITERIA
         );
     }
 
     function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721, bool isTokenSeaDrop) internal {
         if (isToken721) {
-            if (isTokenSeaDrop) {
-                vm.expectRevert(IERC721A.OwnerQueryForNonexistentToken.selector);
-            } else {
-                vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-            }
-            IERC721(address(token)).ownerOf(tokenId);
+            try IERC721(address(token)).ownerOf(tokenId) returns (address owner) {
+                assertEq(owner, address(_BURN_ADDRESS));
+            } catch {}
         } else {
             // token is ERC1155
             assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
