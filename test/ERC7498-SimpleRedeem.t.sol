@@ -61,8 +61,8 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
         }
 
-        ConsiderationItem[] memory consideration =
-            _getCampaignConsideration(address(context.erc7498Token), isErc7498Token721);
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -114,13 +114,13 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
     function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
             testRedeemable(
-                this.burnErc721RedeemErc721WithSecondRequirementsIndex,
+                this.burnErc721OrErc1155RedeemErc721WithSecondRequirementsIndex,
                 RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
             );
         }
     }
 
-    function burnErc721RedeemErc721WithSecondRequirementsIndex(RedeemablesContext memory context) public {
+    function burnErc721OrErc1155RedeemErc721WithSecondRequirementsIndex(RedeemablesContext memory context) public {
         ERC721ShipyardRedeemableOwnerMintable firstRequirementRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
                 "",
                 ""
@@ -150,8 +150,9 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             recipient: payable(_BURN_ADDRESS)
         });
 
-        ConsiderationItem[] memory secondRequirementConsideration =
-            _getCampaignConsideration(address(context.erc7498Token), isErc7498Token721);
+        ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
+        secondRequirementConsideration[0] =
+            _getCampaignConsiderationItem(address(context.erc7498Token), isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             2
@@ -206,6 +207,12 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
     }
 
     function testBurnErc20RedeemErc721() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(this.burnErc20RedeemErc721, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])}));
+        }
+    }
+
+    function burnErc20RedeemErc721(RedeemablesContext memory context) public {
         erc20s[0].mint(address(this), 0.5 ether);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](

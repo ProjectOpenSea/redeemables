@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Solarray} from "solarray/Solarray.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
@@ -179,14 +180,36 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         return isErc7498TokenSeaDrop;
     }
 
-    function _getCampaignConsideration(address token, bool isToken721)
+    function _getCampaignConsiderationItem(address token, bool isToken721)
         internal
         view
-        returns (ConsiderationItem[] memory consideration)
+        returns (ConsiderationItem memory considerationItem)
     {
-        consideration = new ConsiderationItem[](1);
-        consideration[0] = defaultCampaignConsideration[0].withToken(token).withItemType(
+        considerationItem = defaultCampaignConsideration[0].withToken(token).withItemType(
             isToken721 ? ItemType.ERC721 : ItemType.ERC1155
         );
+    }
+
+    function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721, bool isTokenSeaDrop) internal {
+        if (isToken721) {
+            if (isTokenSeaDrop) {
+                vm.expectRevert(IERC721A.OwnerQueryForNonexistentToken.selector);
+            } else {
+                vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            }
+            IERC721(address(token)).ownerOf(tokenId);
+        } else {
+            // token is ERC1155
+            assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
+        }
+    }
+
+    function _checkTokenSentToBurnAddress(address token, uint256 tokenId, bool isToken721) internal {
+        if (isToken721) {
+            assertEq(IERC721(address(token)).ownerOf(tokenId), _BURN_ADDRESS);
+        } else {
+            // token is ERC1155
+            assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
+        }
     }
 }
