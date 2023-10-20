@@ -108,58 +108,65 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             assertEq(IERC1155(address(context.erc7498Token)).balanceOf(address(this), tokenId), 0);
         }
 
-        // TODO: update to receiveToken721
         assertEq(receiveToken721.ownerOf(1), address(this));
     }
 
     function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {
-        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(
+                this.burnErc721RedeemErc721WithSecondRequirementsIndex,
+                RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+            );
+        }
+    }
+
+    function burnErc721RedeemErc721WithSecondRequirementsIndex(RedeemablesContext memory context) public {
+        ERC721ShipyardRedeemableOwnerMintable firstRequirementRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
                 "",
                 ""
             );
-        vm.label(address(secondRedeemToken), "secondRedeemToken");
-        secondRedeemToken.setApprovalForAll(address(erc7498Tokens[0]), true);
+        vm.label(address(firstRequirementRedeemToken), "firstRequirementRedeemToken");
+        firstRequirementRedeemToken.setApprovalForAll(address(context.erc7498Token), true);
 
-        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
-        secondRedeemToken.mint(address(this), tokenId);
+        bool isErc7498Token721 = _isErc7498Token721(address(context.erc7498Token));
 
-        OfferItem[] memory offer = new OfferItem[](1);
-        offer[0] = OfferItem({
+        bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(context.erc7498Token));
+
+        if (isErc7498Token721) {
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
+        } else {
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
+        }
+
+        firstRequirementRedeemToken.mint(address(this), tokenId);
+
+        ConsiderationItem[] memory firstRequirementConsideration = new ConsiderationItem[](1);
+        firstRequirementConsideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(receiveToken),
-            identifierOrCriteria: 0,
-            startAmount: 1,
-            endAmount: 1
-        });
-
-        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = ConsiderationItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(erc7498Tokens[0]),
-            identifierOrCriteria: 0,
-            startAmount: 1,
-            endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
-        });
-
-        ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
-        secondRequirementConsideration[0] = ConsiderationItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(secondRedeemToken),
+            token: address(firstRequirementRedeemToken),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
             recipient: payable(_BURN_ADDRESS)
         });
+
+        ConsiderationItem[] memory secondRequirementConsideration =
+            _getCampaignConsideration(address(context.erc7498Token), isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             2
         );
-        requirements[0].offer = offer;
-        requirements[0].consideration = consideration;
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: firstRequirementConsideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
 
-        requirements[1].offer = offer;
-        requirements[1].consideration = secondRequirementConsideration;
+        requirements[1] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: secondRequirementConsideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
 
         CampaignParams memory params = CampaignParams({
             requirements: requirements,
@@ -170,23 +177,32 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
+        IERC7498(context.erc7498Token).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 1, bytes32(0));
-        consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
-        IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
+        IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        assertEq(IERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
+        if (isErc7498Token721) {
+            if (isErc7498TokenSeaDrop) {
+                vm.expectRevert(IERC721A.OwnerQueryForNonexistentToken.selector);
+            } else {
+                vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            }
+            IERC721(address(context.erc7498Token)).ownerOf(tokenId);
+        } else {
+            // context.erc7498Token is ERC1155
+            assertEq(IERC1155(address(context.erc7498Token)).balanceOf(address(this), tokenId), 0);
+        }
 
-        assertEq(secondRedeemToken.ownerOf(tokenId), _BURN_ADDRESS);
+        assertEq(firstRequirementRedeemToken.ownerOf(tokenId), address(this));
 
-        assertEq(receiveToken.ownerOf(1), address(this));
+        assertEq(receiveToken721.ownerOf(1), address(this));
     }
 
     function testBurnErc20RedeemErc721() public {
@@ -275,6 +291,6 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
         IERC721(erc7498Tokens[0]).ownerOf(tokenId);
 
-        assertEq(receiveToken1155.balanceOf(address(this), 0), 1);
+        assertEq(receiveToken1155.balanceOf(address(this), 1), 1);
     }
 }
