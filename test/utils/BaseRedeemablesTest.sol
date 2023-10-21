@@ -40,9 +40,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
 
-    ERC721ShipyardRedeemableOwnerMintable redeemToken;
-    ERC721RedemptionMintable receiveToken;
-
     address[] erc7498Tokens;
 
     ERC721ShipyardRedeemableOwnerMintable erc721ShipyardRedeemable;
