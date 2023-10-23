@@ -15,6 +15,7 @@ import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
+import {ERC1155ShipyardRedeemableOwnerMintable} from "../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
 
 contract ERC7498_Revert is BaseRedeemablesTest {
     using OfferItemLib for OfferItem;
@@ -38,10 +39,35 @@ contract ERC7498_Revert is BaseRedeemablesTest {
     }
 
     function testRevert721ConsiderationItemInsufficientBalance() public {
-        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
+            testRedeemable(
+                this.revert721ConsiderationItemInsufficientBalance,
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
+            );
+        }
+    }
+
+    function revert721ConsiderationItemInsufficientBalance(RedeemablesContext memory context) public {
+        if (context.isErc7498Token721) {
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
+        } else {
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
+        }
 
         uint256 invalidTokenId = tokenId + 1;
-        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(dillon.addr, invalidTokenId);
+
+        if (context.isErc7498Token721) {
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(dillon.addr, invalidTokenId);
+        } else {
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(dillon.addr, invalidTokenId, 1);
+        }
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -62,7 +88,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
+        IERC7498(context.erc7498Token).createCampaign(params, "");
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
@@ -77,16 +103,38 @@ contract ERC7498_Revert is BaseRedeemablesTest {
                 requirements[0].consideration[0].startAmount
             )
         );
-        IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
+        IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
+        _checkOwnerOfOrBalanceOfEqualsOne(
+            address(context.erc7498Token), address(this), tokenId, context.isErc7498Token721
+        );
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
         receiveToken721.ownerOf(1);
     }
 
     function testRevertConsiderationLengthNotMet() public {
-        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            bool isErc7498Token721 = _isErc7498Token721(address(erc7498Tokens[i]));
+
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
+            testRedeemable(
+                this.revertConsiderationLengthNotMet,
+                RedeemablesContext({
+                    erc7498Token: IERC7498(erc7498Tokens[i]),
+                    isErc7498Token721: isErc7498Token721,
+                    isErc7498TokenSeaDrop: isErc7498TokenSeaDrop
+                })
+            );
+        }
+    }
+
+    function revertConsiderationLengthNotMet(RedeemablesContext memory context) public {
+        if (context.isErc7498Token721) {
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
+        } else {
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
+        }
 
         ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
                 "",
@@ -96,7 +144,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(erc7498Tokens[0]),
+            token: address(context.erc7498Token),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
@@ -126,7 +174,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
+        IERC7498(context.erc7498Token).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
@@ -138,9 +186,11 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         vm.expectRevert(abi.encodeWithSelector(TokenIdsDontMatchConsiderationLength.selector, 2, 1));
 
-        IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
+        IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
+        _checkOwnerOfOrBalanceOfEqualsOne(
+            address(context.erc7498Token), address(this), tokenId, context.isErc7498Token721
+        );
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
         receiveToken721.ownerOf(1);

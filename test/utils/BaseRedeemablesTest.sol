@@ -90,6 +90,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         erc721SeaDropRedeemable.setMaxSupply(10);
         erc1155SeaDropRedeemable.setMaxSupply(1, 10);
         erc1155SeaDropRedeemable.setMaxSupply(2, 10);
+        erc1155SeaDropRedeemable.setMaxSupply(3, 10);
+        erc1155SeaDropRedeemable.setMaxSupply(4, 10);
 
         erc7498Tokens = new address[](4);
         erc7498Tokens[0] = address(erc721ShipyardRedeemable);
@@ -206,6 +208,17 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         } else {
             // token is ERC1155
             assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
+        }
+    }
+
+    function _checkOwnerOfOrBalanceOfEqualsOne(address token, address expectedOwner, uint256 tokenId, bool isToken721)
+        internal
+    {
+        if (isToken721) {
+            assertEq(IERC721(address(token)).ownerOf(tokenId), expectedOwner);
+        } else {
+            // token is ERC1155
+            assertEq(IERC1155(address(token)).balanceOf(expectedOwner, tokenId), 1);
         }
     }
 }
