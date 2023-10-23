@@ -41,7 +41,7 @@ contract ERC1155ShipyardRedeemableMintable is ERC1155ShipyardRedeemable, IRedemp
         public
         view
         virtual
-        override(ERC1155ShipyardRedeemable, IERC165)
+        override(ERC1155ShipyardRedeemable)
         returns (bool)
     {
         return interfaceId == type(IRedemptionMintable).interfaceId

@@ -441,13 +441,7 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         */
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(DynamicTraits, IERC165)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(DynamicTraits) returns (bool) {
         return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId);
     }
 }

@@ -50,7 +50,7 @@ contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemption
         public
         view
         virtual
-        override(ERC721ShipyardContractMetadata, IERC165)
+        override(ERC721ShipyardContractMetadata)
         returns (bool)
     {
         return interfaceId == type(IRedemptionMintable).interfaceId

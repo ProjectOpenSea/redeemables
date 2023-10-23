@@ -50,7 +50,7 @@ contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedempti
         public
         view
         virtual
-        override(ERC1155ShipyardContractMetadata, IERC165)
+        override(ERC1155ShipyardContractMetadata)
         returns (bool)
     {
         return ERC1155ShipyardContractMetadata.supportsInterface(interfaceId)

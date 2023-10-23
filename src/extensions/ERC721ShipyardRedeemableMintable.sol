@@ -16,6 +16,9 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
     /// @dev Revert if the sender of mintRedemption is not this contract.
     error InvalidSender();
 
+    /// @dev The next token id to mint.
+    uint256 _nextTokenId = 1;
+
     constructor(string memory name_, string memory symbol_) ERC721ShipyardRedeemable(name_, symbol_) {}
 
     function mintRedemption(
@@ -27,14 +30,17 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
         if (msg.sender != address(this)) {
             revert InvalidSender();
         }
-        _mint(recipient, 1);
+        // Increment nextTokenId first so more of the same token id cannot be minted through reentrancy.
+        ++_nextTokenId;
+
+        _mint(recipient, _nextTokenId - 1);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
         virtual
-        override(ERC721ShipyardRedeemable, IERC165)
+        override(ERC721ShipyardRedeemable)
         returns (bool)
     {
         return interfaceId == type(IRedemptionMintable).interfaceId
