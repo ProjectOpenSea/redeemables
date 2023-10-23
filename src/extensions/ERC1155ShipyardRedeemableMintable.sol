@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {ERC721ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc721/ERC721ConduitPreapproved_Solady.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
@@ -18,6 +19,8 @@ contract ERC1155ShipyardRedeemableMintable is ERC1155ShipyardRedeemable, IRedemp
     /// @dev The next token id to mint. Each token will have a supply of 1.
     uint256 _nextTokenId = 1;
 
+    constructor(string memory name_, string memory symbol_) ERC1155ShipyardRedeemable(name_, symbol_) {}
+
     function mintRedemption(
         uint256, /* campaignId */
         address recipient,
@@ -34,5 +37,14 @@ contract ERC1155ShipyardRedeemableMintable is ERC1155ShipyardRedeemable, IRedemp
         _mint(recipient, _nextTokenId - 1, 1, "");
     }
 
-    constructor(string memory name_, string memory symbol_) ERC1155ShipyardRedeemable(name_, symbol_) {}
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155ShipyardRedeemable, IERC165)
+        returns (bool)
+    {
+        return interfaceId == type(IRedemptionMintable).interfaceId
+            || ERC1155ShipyardRedeemable.supportsInterface(interfaceId);
+    }
 }

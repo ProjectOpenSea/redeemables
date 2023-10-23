@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import {Script} from "forge-std/Script.sol";
+import {Test} from "forge-std/Test.sol";
+import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
+import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
+import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
+
+contract RedeemTokens is Script, Test {
+    function run() external {
+        vm.startBroadcast();
+
+        address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
+        ERC1155ShipyardRedeemableMintable receiveToken =
+            ERC1155ShipyardRedeemableMintable(0x3D0fa2a8D07dfe357905a4cB4ed51b0Aea8385B9);
+
+        // Let's redeem them!
+        uint256 campaignId = 1;
+        uint256 requirementsIndex = 0;
+        bytes32 redemptionHash = bytes32(0);
+        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
+
+        uint256[] memory redeemTokenIds = new uint256[](1);
+        redeemTokenIds[0] = 1;
+
+        // Individual user approvals not needed if preapproved.
+        // redeemToken.setApprovalForAll(address(receiveToken), true);
+
+        receiveToken.redeem(redeemTokenIds, msg.sender, data);
+    }
+}

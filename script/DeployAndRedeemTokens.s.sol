@@ -15,11 +15,16 @@ contract DeployAndRedeemTokens is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        ERC721ShipyardRedeemableOwnerMintable redeemToken =
-            new ERC721ShipyardRedeemableOwnerMintable("TestRedeemablesRedeemToken", "TEST");
+        ERC721ShipyardRedeemableOwnerMintable redeemToken = new ERC721ShipyardRedeemableOwnerMintable(
+                "TestRedeemablesRedeemToken",
+                "TEST"
+            );
+        address[] memory redeemTokens = new address[](1);
+        redeemTokens[0] = address(redeemToken);
         ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
-            "TestRedeemablesRecieveToken", "TEST",
-            address(redeemToken)
+            "TestRedeemablesRecieveToken",
+            "TEST",
+            redeemTokens
         );
 
         // Configure the campaign.

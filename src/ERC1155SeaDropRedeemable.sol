@@ -1,22 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {ERC1155ShipyardContractMetadata} from "./lib/ERC1155ShipyardContractMetadata.sol";
-import {Ownable} from "solady/src/auth/Ownable.sol";
+import {ERC1155SeaDrop} from "seadrop/src/ERC1155SeaDrop.sol";
+import {ERC1155SeaDropContractOfferer} from "seadrop/src/lib/ERC1155SeaDropContractOfferer.sol";
+import {IERC7498} from "./interfaces/IERC7498.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
-contract ERC1155ShipyardRedeemable is ERC1155ShipyardContractMetadata, ERC7498NFTRedeemables {
-    constructor(string memory name_, string memory symbol_) ERC1155ShipyardContractMetadata(name_, symbol_) {}
+contract ERC1155SeaDropRedeemable is ERC1155SeaDrop, ERC7498NFTRedeemables {
+    constructor(address allowedConfigurer, address allowedSeaport, string memory _name, string memory _symbol)
+        ERC1155SeaDrop(allowedConfigurer, allowedSeaport, _name, _symbol)
+    {}
 
-    function createCampaign(CampaignParams calldata params, string calldata uri_)
+    function createCampaign(CampaignParams calldata params, string calldata uri)
         public
         override
         onlyOwner
         returns (uint256 campaignId)
     {
-        campaignId = ERC7498NFTRedeemables.createCampaign(params, uri_);
+        campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
     }
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
@@ -45,10 +48,10 @@ contract ERC1155ShipyardRedeemable is ERC1155ShipyardContractMetadata, ERC7498NF
         public
         view
         virtual
-        override(ERC1155ShipyardContractMetadata, ERC7498NFTRedeemables)
+        override(ERC1155SeaDropContractOfferer, ERC7498NFTRedeemables)
         returns (bool)
     {
-        return ERC1155ShipyardContractMetadata.supportsInterface(interfaceId)
+        return ERC1155SeaDropContractOfferer.supportsInterface(interfaceId)
             || ERC7498NFTRedeemables.supportsInterface(interfaceId);
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {BaseRedeemablesTest} from "./utils/BaseRedeemablesTest.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {IERC7498} from "../../src/interfaces/IERC7498.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
@@ -15,7 +16,7 @@ import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
-contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
+contract ERC7498_Revert is BaseRedeemablesTest {
     using OfferItemLib for OfferItem;
     using OfferItemLib for OfferItem[];
     using ConsiderationItemLib for ConsiderationItem;
@@ -37,10 +38,10 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
     }
 
     function testRevert721ConsiderationItemInsufficientBalance() public {
-        redeemToken.mint(address(this), tokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
 
         uint256 invalidTokenId = tokenId + 1;
-        redeemToken.mint(dillon.addr, invalidTokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(dillon.addr, invalidTokenId);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -61,7 +62,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        redeemToken.createCampaign(params, "");
+        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
@@ -76,16 +77,16 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
                 requirements[0].consideration[0].startAmount
             )
         );
-        redeemToken.redeem(tokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
 
-        assertEq(redeemToken.ownerOf(tokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
     }
 
     function testRevertConsiderationLengthNotMet() public {
-        redeemToken.mint(address(this), tokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
 
         ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
                 "",
@@ -95,7 +96,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redeemToken),
+            token: address(erc7498Tokens[0]),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
@@ -125,7 +126,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        redeemToken.createCampaign(params, "");
+        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
@@ -137,21 +138,21 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         vm.expectRevert(abi.encodeWithSelector(TokenIdsDontMatchConsiderationLength.selector, 2, 1));
 
-        redeemToken.redeem(tokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
 
-        assertEq(redeemToken.ownerOf(tokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
     }
 
     function testRevertInvalidTxValue() public {
-        redeemToken.mint(address(this), tokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
 
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(receiveToken),
+            token: address(receiveToken721),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -160,7 +161,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redeemToken),
+            token: address(erc7498Tokens[0]),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
@@ -190,7 +191,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        redeemToken.createCampaign(params, "");
+        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
@@ -202,16 +203,16 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         uint256[] memory traitRedemptionTokenIds;
 
         vm.expectRevert(abi.encodeWithSelector(InvalidTxValue.selector, 0.05 ether, 0.1 ether));
-        redeemToken.redeem{value: 0.05 ether}(considerationTokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem{value: 0.05 ether}(considerationTokenIds, address(this), extraData);
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
 
-        assertEq(redeemToken.ownerOf(tokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
     }
 
     function testRevertErc20ConsiderationItemInsufficientBalance() public {
-        redeemToken.mint(address(this), tokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
 
         TestERC20 redeemErc20 = new TestERC20();
         redeemErc20.mint(address(this), 0.05 ether);
@@ -219,7 +220,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = OfferItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(receiveToken),
+            token: address(receiveToken721),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1
@@ -228,7 +229,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
-            token: address(redeemToken),
+            token: address(erc7498Tokens[0]),
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
@@ -259,7 +260,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
                 manager: address(this)
             });
 
-            redeemToken.createCampaign(params, "");
+            IERC7498(erc7498Tokens[0]).createCampaign(params, "");
         }
 
         // campaignId: 1
@@ -275,18 +276,18 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
                 ConsiderationItemInsufficientBalance.selector, address(redeemErc20), 0.05 ether, 0.1 ether
             )
         );
-        redeemToken.redeem(considerationTokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem(considerationTokenIds, address(this), extraData);
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
 
-        assertEq(redeemToken.ownerOf(tokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
     }
 
     function testRevertErc721InvalidConsiderationTokenIdSupplied() public {
         uint256 considerationTokenId = 1;
-        redeemToken.mint(address(this), tokenId);
-        redeemToken.mint(address(this), considerationTokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), tokenId);
+        ERC721ShipyardRedeemableOwnerMintable(erc7498Tokens[0]).mint(address(this), considerationTokenId);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -310,7 +311,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        redeemToken.createCampaign(params, "");
+        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
@@ -321,16 +322,16 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                InvalidConsiderationTokenIdSupplied.selector, address(redeemToken), tokenId, considerationTokenId
+                InvalidConsiderationTokenIdSupplied.selector, address(erc7498Tokens[0]), tokenId, considerationTokenId
             )
         );
-        redeemToken.redeem(considerationTokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem(considerationTokenIds, address(this), extraData);
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
 
-        assertEq(redeemToken.ownerOf(tokenId), address(this));
-        assertEq(redeemToken.ownerOf(considerationTokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(tokenId), address(this));
+        assertEq(ERC721(erc7498Tokens[0]).ownerOf(considerationTokenId), address(this));
     }
 
     function testRevertErc1155InvalidConsiderationTokenIdSupplied() public {
@@ -362,7 +363,7 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
             manager: address(this)
         });
 
-        redeemToken.createCampaign(params, "");
+        IERC7498(erc7498Tokens[0]).createCampaign(params, "");
 
         // campaignId: 1
         // requirementsIndex: 0
@@ -376,10 +377,10 @@ contract TestERC721ShipyardRedeemable is BaseRedeemablesTest {
                 InvalidConsiderationTokenIdSupplied.selector, address(erc1155s[0]), tokenId, considerationTokenId
             )
         );
-        redeemToken.redeem(considerationTokenIds, address(this), extraData);
+        IERC7498(erc7498Tokens[0]).redeem(considerationTokenIds, address(this), extraData);
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
-        receiveToken.ownerOf(1);
+        receiveToken721.ownerOf(1);
 
         assertEq(erc1155s[0].balanceOf(address(this), tokenId), 1 ether);
         assertEq(erc1155s[0].balanceOf(address(this), considerationTokenId), 1 ether);

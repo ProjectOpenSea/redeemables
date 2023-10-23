@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
 import {ERC721SeaDrop} from "seadrop/src/ERC721SeaDrop.sol";
 import {ERC721SeaDropContractOfferer} from "seadrop/src/lib/ERC721SeaDropContractOfferer.sol";
 import {IERC7498} from "./interfaces/IERC7498.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
+import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
 import {CampaignParams} from "./lib/RedeemablesStructs.sol";
 
-contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables, DynamicTraits {
+contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables {
+    /// @dev Revert if the token does not exist.
+    error TokenDoesNotExist();
+
     constructor(address allowedConfigurer, address allowedSeaport, string memory _name, string memory _symbol)
         ERC721SeaDrop(allowedConfigurer, allowedSeaport, _name, _symbol)
     {}
-
-    function deleteTrait(bytes32 traitKey, uint256 tokenId) external override {}
-
-    function setTrait(bytes32 traitKey, uint256 tokenId, bytes32 value) external override {}
 
     function createCampaign(CampaignParams calldata params, string calldata uri)
         public
@@ -24,6 +23,28 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables, Dynami
         returns (uint256 campaignId)
     {
         campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
+    }
+
+    function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
+        if (!_exists(tokenId)) {
+            revert TokenDoesNotExist();
+        }
+
+        DynamicTraits.setTrait(tokenId, traitKey, value);
+    }
+
+    function getTraitValue(uint256 tokenId, bytes32 traitKey)
+        public
+        view
+        virtual
+        override
+        returns (bytes32 traitValue)
+    {
+        if (!_exists(tokenId)) {
+            revert TokenDoesNotExist();
+        }
+
+        traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
     }
 
     function _useInternalBurn() internal pure virtual override returns (bool) {
@@ -38,10 +59,10 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables, Dynami
         public
         view
         virtual
-        override(ERC721SeaDropContractOfferer, ERC7498NFTRedeemables, DynamicTraits)
+        override(ERC721SeaDropContractOfferer, ERC7498NFTRedeemables)
         returns (bool)
     {
-        return ERC721SeaDropContractOfferer.supportsInterface(interfaceId) || interfaceId == type(IERC7498).interfaceId
-            || DynamicTraits.supportsInterface(interfaceId);
+        return ERC721SeaDropContractOfferer.supportsInterface(interfaceId)
+            || ERC7498NFTRedeemables.supportsInterface(interfaceId);
     }
 }

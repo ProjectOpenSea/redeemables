@@ -8,22 +8,36 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
-import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 
-contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
+contract DeployAndConfigure1155Receive is Script, Test {
     address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function run() external {
         vm.startBroadcast();
 
-        ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
-        ERC721ShipyardRedeemableMintable receiveToken =
-            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST");
+        address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
+        ERC1155ShipyardRedeemableMintable receiveToken =
+            new ERC1155ShipyardRedeemableMintable("TestRedeemablesReceive1155SequentialIds", "TEST");
 
         // Configure the campaign.
-        OfferItem[] memory offer = new OfferItem[](1);
+        OfferItem[] memory offer = new OfferItem[](3);
         offer[0] = OfferItem({
-            itemType: ItemType.ERC721_WITH_CRITERIA,
+            itemType: ItemType.ERC1155_WITH_CRITERIA,
+            token: address(receiveToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+        offer[1] = OfferItem({
+            itemType: ItemType.ERC1155_WITH_CRITERIA,
+            token: address(receiveToken),
+            identifierOrCriteria: 0,
+            startAmount: 1,
+            endAmount: 1
+        });
+        offer[2] = OfferItem({
+            itemType: ItemType.ERC1155_WITH_CRITERIA,
             token: address(receiveToken),
             identifierOrCriteria: 0,
             startAmount: 1,
@@ -49,33 +63,17 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         CampaignParams memory params = CampaignParams({
             requirements: requirements,
             signer: address(0),
-            startTime: uint32(block.timestamp),
-            endTime: uint32(block.timestamp + 1_000_000),
+            startTime: 0,
+            endTime: 0,
             maxCampaignRedemptions: 1_000,
             manager: msg.sender
         });
         uint256 campaignId =
-            receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
+            receiveToken.createCampaign(params, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
 
-        // Mint token 1 to redeem for token 1.
-        redeemToken.mint(msg.sender, 1);
-
-        // Let's redeem them!
-        uint256 requirementsIndex = 0;
-        bytes32 redemptionHash = bytes32(0);
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
-
-        uint256[] memory tokenIds = new uint256[](1);
-        tokenIds[0] = 1;
-
-        // Individual user approvals not needed when setting the burn address.
-        redeemToken.setApprovalForAll(address(receiveToken), true);
-        // redeemToken.setBurnAddress(address(receiveToken));
-
-        receiveToken.redeem(tokenIds, msg.sender, data);
-
-        // Assert redeemable token is burned and redemption token is minted.
-        assertEq(redeemToken.balanceOf(msg.sender), 0);
-        assertEq(receiveToken.ownerOf(1), msg.sender);
+        // To test updateCampaign, update to proper start/end times.
+        params.startTime = uint32(block.timestamp);
+        params.endTime = uint32(block.timestamp + 1_000_000);
+        receiveToken.updateCampaign(1, params, "");
     }
 }

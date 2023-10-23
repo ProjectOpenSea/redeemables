@@ -2,8 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
+import {ERC20Burnable} from "openzeppelin-contracts/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import {ERC721Burnable} from "openzeppelin-contracts/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import {ERC1155Burnable} from "openzeppelin-contracts/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
@@ -12,7 +16,7 @@ import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
 
-contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
+contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
@@ -32,9 +36,22 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         public
         payable
     {
-        // Get the campaign id and requirementsIndex from extraData.
+        // If the recipient is the null address, set to msg.sender.
+        if (recipient == address(0)) {
+            recipient = msg.sender;
+        }
+
+        // Get the values from extraData.
         uint256 campaignId = uint256(bytes32(extraData[0:32]));
         uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
+        uint256[] memory traitRedemptionTokenIds;
+        // (
+        //     uint256 campaignId,
+        //     uint256 requirementsIndex,
+        //     uint256[] memory traitRedemptionTokenIds,
+        //     uint256 salt,
+        //     bytes memory signature
+        // ) = abi.decode(extraData, (uint256, uint256, uint256[], uint256, bytes));
 
         // Get the campaign params.
         CampaignParams storage params = _campaignParams[campaignId];
@@ -52,10 +69,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         CampaignRequirements storage requirements = params.requirements[requirementsIndex];
 
         // Process the redemption.
-        _processRedemption(campaignId, requirements, considerationTokenIds, recipient);
-
-        // TODO: decode traitRedemptionTokenIds from extraData.
-        uint256[] memory traitRedemptionTokenIds;
+        _processRedemption(campaignId, requirements, considerationTokenIds, traitRedemptionTokenIds, recipient);
 
         // Emit the Redemption event.
         emit Redemption(
@@ -82,6 +96,12 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         totalRedemptions = _totalRedemptions[campaignId];
     }
 
+    /**
+     * @notice Create a new redeemable campaign.
+     * @dev    IMPORTANT: Override this method with access role restriction.
+     * @param params The campaign parameters.
+     * @param uri    The campaign metadata URI.
+     */
     function createCampaign(CampaignParams calldata params, string calldata uri)
         public
         virtual
@@ -198,11 +218,44 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         } else {
             // Transfer the token to the consideration recipient.
             if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
-                IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    try ERC721Burnable(c.token).burn(id) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                    }
+                } else {
+                    IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
+                }
             } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
-                IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                    try ERC1155Burnable(c.token).burn(msg.sender, id, c.startAmount) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                    }
+                } else {
+                    IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
+                }
             } else if (c.itemType == ItemType.ERC20) {
-                IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                if (c.recipient == payable(_BURN_ADDRESS)) {
+                    // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
+                    try ERC20Burnable(c.token).burnFrom(msg.sender, c.startAmount) {
+                        // If the burn worked, return.
+                        return;
+                    } catch {
+                        // If the burn failed, transfer the token.
+                        IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                    }
+                } else {
+                    IERC20(c.token).transferFrom(msg.sender, c.recipient, c.startAmount);
+                }
             } else {
                 // ItemType.NATIVE
                 (bool success,) = c.recipient.call{value: msg.value}("");
@@ -233,15 +286,35 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
     function _processRedemption(
         uint256 campaignId,
         CampaignRequirements memory requirements,
-        uint256[] memory tokenIds,
+        uint256[] memory considerationTokenIds,
+        uint256[] memory traitRedemptionTokenIds,
         address recipient
     ) internal {
-        // Get the campaign consideration.
-        ConsiderationItem[] memory consideration = requirements.consideration;
+        // Process the consideration items.
+        _processConsiderationItems(
+            campaignId,
+            requirements.consideration,
+            considerationTokenIds,
+            requirements.offer,
+            requirements.traitRedemptions,
+            recipient
+        );
 
+        // Process the trait redemptions.
+        _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
+    }
+
+    function _processConsiderationItems(
+        uint256 campaignId,
+        ConsiderationItem[] memory consideration,
+        uint256[] memory considerationTokenIds,
+        OfferItem[] memory offer,
+        TraitRedemption[] memory traitRedemptions,
+        address recipient
+    ) internal {
         // Revert if the tokenIds length does not match the consideration length.
-        if (consideration.length != tokenIds.length) {
-            revert TokenIdsDontMatchConsiderationLength(consideration.length, tokenIds.length);
+        if (consideration.length != considerationTokenIds.length) {
+            revert TokenIdsDontMatchConsiderationLength(consideration.length, considerationTokenIds.length);
         }
 
         // Keep track of the total native value to validate.
@@ -253,7 +326,7 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
             ConsiderationItem memory c = consideration[j];
 
             // Get the identifier.
-            uint256 id = tokenIds[j];
+            uint256 id = considerationTokenIds[j];
 
             // Get the token balance.
             uint256 balance;
@@ -277,15 +350,11 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
             // Transfer the consideration item.
             _transferConsiderationItem(id, c);
 
-            // Get the campaign offer.
-            OfferItem[] memory offer = requirements.offer;
-
             // Mint the new tokens.
             for (uint256 k; k < offer.length;) {
                 IRedemptionMintable(offer[k].token).mintRedemption(
-                    campaignId, recipient, requirements.consideration, requirements.traitRedemptions
+                    campaignId, recipient, consideration, traitRedemptions
                 );
-
                 unchecked {
                     ++k;
                 }
@@ -300,11 +369,12 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         if (msg.value != totalNativeValue) {
             revert InvalidTxValue(msg.value, totalNativeValue);
         }
-
-        // Process trait redemptions.
-        // TraitRedemption[] memory traitRedemptions = requirements.traitRedemptions;
-        // _setTraits(traitRedemptions);
     }
+
+    function _processTraitRedemptions(
+        TraitRedemption[] memory traitRedemptions,
+        uint256[] memory traitRedemptionTokenIds
+    ) internal {}
 
     function _setTraits(TraitRedemption[] calldata traitRedemptions) internal {
         /*
@@ -371,7 +441,13 @@ contract ERC7498NFTRedeemables is IERC7498, RedeemablesErrors {
         */
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
-        return interfaceId == type(IERC7498).interfaceId;
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(DynamicTraits, IERC165)
+        returns (bool)
+    {
+        return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId);
     }
 }

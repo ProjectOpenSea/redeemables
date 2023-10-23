@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {ERC721ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc721/ERC721ConduitPreapproved_Solady.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
@@ -15,6 +16,8 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
     /// @dev Revert if the sender of mintRedemption is not this contract.
     error InvalidSender();
 
+    constructor(string memory name_, string memory symbol_) ERC721ShipyardRedeemable(name_, symbol_) {}
+
     function mintRedemption(
         uint256, /* campaignId */
         address recipient,
@@ -27,5 +30,14 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
         _mint(recipient, 1);
     }
 
-    constructor(string memory name_, string memory symbol_) ERC721ShipyardRedeemable(name_, symbol_) {}
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC721ShipyardRedeemable, IERC165)
+        returns (bool)
+    {
+        return interfaceId == type(IRedemptionMintable).interfaceId
+            || ERC721ShipyardRedeemable.supportsInterface(interfaceId);
+    }
 }

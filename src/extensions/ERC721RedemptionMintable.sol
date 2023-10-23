@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ERC721ShipyardContractMetadata} from "../lib/ERC721ShipyardContractMetadata.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
@@ -8,7 +9,7 @@ import {TraitRedemption} from "../lib/RedeemablesStructs.sol";
 
 contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemptionMintable {
     /// @dev The ERC-7498 redeemables contract.
-    address internal immutable _ERC7498_REDEEMABLES_CONTRACT;
+    address[] internal _ERC7498_REDEEMABLES_CONTRACTS;
 
     /// @dev The next token id to mint.
     uint256 internal _nextTokenId = 1;
@@ -16,11 +17,11 @@ contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemption
     /// @dev Revert if the sender of mintRedemption is not the redeemable contract offerer.
     error InvalidSender();
 
-    constructor(string memory name_, string memory symbol_, address redeemablesContractAddress)
+    constructor(string memory name_, string memory symbol_, address[] memory redeemablesContractAddresses)
         ERC721ShipyardContractMetadata(name_, symbol_)
     {
         // Set the redeemables contract address.
-        _ERC7498_REDEEMABLES_CONTRACT = redeemablesContractAddress;
+        _ERC7498_REDEEMABLES_CONTRACTS = redeemablesContractAddresses;
     }
 
     function mintRedemption(
@@ -29,7 +30,13 @@ contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemption
         ConsiderationItem[] calldata, /* consideration */
         TraitRedemption[] calldata /* traitRedemptions */
     ) external {
-        if (msg.sender != _ERC7498_REDEEMABLES_CONTRACT) {
+        bool validSender;
+        for (uint256 i; i < _ERC7498_REDEEMABLES_CONTRACTS.length; i++) {
+            if (msg.sender == _ERC7498_REDEEMABLES_CONTRACTS[i]) {
+                validSender = true;
+            }
+        }
+        if (!validSender) {
             revert InvalidSender();
         }
 
@@ -43,10 +50,10 @@ contract ERC721RedemptionMintable is ERC721ShipyardContractMetadata, IRedemption
         public
         view
         virtual
-        override(ERC721ShipyardContractMetadata)
+        override(ERC721ShipyardContractMetadata, IERC165)
         returns (bool)
     {
-        return ERC721ShipyardContractMetadata.supportsInterface(interfaceId)
-            || interfaceId == type(IRedemptionMintable).interfaceId;
+        return interfaceId == type(IRedemptionMintable).interfaceId
+            || ERC721ShipyardContractMetadata.supportsInterface(interfaceId);
     }
 }
