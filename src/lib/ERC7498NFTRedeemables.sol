@@ -16,7 +16,7 @@ import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
 
-contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
+contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
@@ -377,12 +377,9 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
     ) internal {}
 
     function _setTraits(TraitRedemption[] calldata traitRedemptions) internal {
-        /*
         // Iterate over the trait redemptions and set traits on the tokens.
         for (uint256 i; i < traitRedemptions.length;) {
-            // Get the trait redemption token address and place on the stack.
-            address token = traitRedemptions[i].token;
-
+            // Get the trait redemption identifier and place on the stack.
             uint256 identifier = traitRedemptions[i].identifier;
 
             // Declare a new block to manage stack depth.
@@ -396,10 +393,11 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                 // Get the trait key and place on the stack.
                 bytes32 traitKey = traitRedemptions[i].traitKey;
 
+                // Get the trait value and place on the stack.
                 bytes32 traitValue = traitRedemptions[i].traitValue;
 
                 // Get the current trait value and place on the stack.
-                bytes32 currentTraitValue = getTraitValue(traitKey, identifier);
+                bytes32 currentTraitValue = getTraitValue(identifier, traitKey);
 
                 // If substandard is 1, set trait to traitValue.
                 if (substandard == 1) {
@@ -409,7 +407,7 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                     }
 
                     // Set the trait to the trait value.
-                    _setTrait(traitRedemptions[i].traitKey, identifier, traitValue);
+                    setTrait(identifier, traitRedemptions[i].traitKey, traitValue);
                     // If substandard is 2, increment trait by traitValue.
                 } else if (substandard == 2) {
                     // Revert if the current trait value is greater than the substandard value.
@@ -420,7 +418,7 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                     // Increment the trait by the trait value.
                     uint256 newTraitValue = uint256(currentTraitValue) + uint256(traitValue);
 
-                    _setTrait(traitRedemptions[i].traitKey, identifier, bytes32(newTraitValue));
+                    setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 3) {
                     // Revert if the current trait value is less than the substandard value.
                     if (currentTraitValue < substandardValue) {
@@ -430,7 +428,12 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                     uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
 
                     // Decrement the trait by the trait value.
-                    _setTrait(traitRedemptions[i].traitKey, traitRedemptions[i].identifier, bytes32(newTraitValue));
+                    setTrait(traitRedemptions[i].identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
+                } else if (substandard == 4) {
+                    // Revert if the current trait value is not equal to the substandard value.
+                    if (currentTraitValue != substandardValue) {
+                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                    }
                 }
             }
 
@@ -438,10 +441,16 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                 ++i;
             }
         }
-        */
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(DynamicTraits) returns (bool) {
-        return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(IERC165, DynamicTraits)
+        returns (bool)
+    {
+        return interfaceId == type(IERC7498).interfaceId || interfaceId == type(IERC165).interfaceId
+            || DynamicTraits.supportsInterface(interfaceId);
     }
 }
