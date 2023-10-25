@@ -2,7 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {Solarray} from "solarray/Solarray.sol";
-import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
@@ -206,6 +207,15 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         } else {
             // token is ERC1155
             assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
+        }
+    }
+
+    function _mintToken(address token, uint256 tokenId, bool isToken721) internal {
+        if (isToken721) {
+            ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId);
+        } else {
+            // token is ERC1155
+            ERC1155ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId, 1);
         }
     }
 }
