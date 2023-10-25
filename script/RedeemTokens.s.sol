@@ -14,9 +14,9 @@ contract RedeemTokens is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
+        address redeemToken = 0x8fe638b493e1C548456F3E74B80D4Eb4ca4a1825;
         ERC1155ShipyardRedeemableMintable receiveToken =
-            ERC1155ShipyardRedeemableMintable(0x3D0fa2a8D07dfe357905a4cB4ed51b0Aea8385B9);
+            ERC1155ShipyardRedeemableMintable(0x9E0B99a4f213439Be7F25f5C1e42087aF65F1b0A);
 
         // Let's redeem them!
         uint256 campaignId = 1;

@@ -16,9 +16,11 @@ contract DeployAndConfigure1155Receive is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
-        ERC1155ShipyardRedeemableMintable receiveToken =
-            new ERC1155ShipyardRedeemableMintable("TestRedeemablesReceive1155SequentialIds", "TEST");
+        address redeemToken = 0x8fe638b493e1C548456F3E74B80D4Eb4ca4a1825;
+        ERC1155ShipyardRedeemableMintable receiveToken = new ERC1155ShipyardRedeemableMintable(
+                "ArbitrumTestReceiveToken1155",
+                "ArbiTestReceive1155"
+            );
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](3);
@@ -71,9 +73,11 @@ contract DeployAndConfigure1155Receive is Script, Test {
         uint256 campaignId =
             receiveToken.createCampaign(params, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
 
+        receiveToken.setBaseURI("ipfs://QmWxgnz8T9wsMBmpCY4Cvanj3RR1obFD2hqDKPZhKN5Tsq/");
+
         // To test updateCampaign, update to proper start/end times.
         params.startTime = uint32(block.timestamp);
-        params.endTime = uint32(block.timestamp + 1_000_000);
-        receiveToken.updateCampaign(1, params, "");
+        params.endTime = uint32(block.timestamp + 10_000_000);
+        receiveToken.updateCampaign(campaignId, params, "");
     }
 }
