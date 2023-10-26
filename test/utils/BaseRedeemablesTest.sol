@@ -109,13 +109,13 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         _setApprovals(address(this));
 
         // Save the default campaign offer and consideration
-        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).saveDefault(
-            DEFAULT_ERC721_CAMPAIGN_OFFER
-        );
+        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).withItemType(
+            ItemType.ERC721_WITH_CRITERIA
+        ).saveDefault(DEFAULT_ERC721_CAMPAIGN_OFFER);
 
         ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(
             _BURN_ADDRESS
-        ).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
+        ).withItemType(ItemType.ERC721_WITH_CRITERIA).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
 
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 

@@ -35,4 +35,5 @@ interface RedeemablesErrors {
     error InvalidTxValue(uint256 got, uint256 want);
     error InvalidConsiderationTokenIdSupplied(address token, uint256 got, uint256 want);
     error TokenIdsDontMatchConsiderationLength(uint256 considerationLength, uint256 tokenIdsLength);
+    error TokenIdsDontMatchTraitRedemptionsLength(uint256 traitRedemptionsLength, uint256 tokenIdsLength);
 }

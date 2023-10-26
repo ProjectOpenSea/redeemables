@@ -44,7 +44,12 @@ contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTR
         return true;
     }
 
-    function _internalBurn(address, /* from */ uint256 id, uint256 /* amount */ ) internal virtual override {
+    function _internalBurn(
+        address,
+        /* from */
+        uint256 id,
+        uint256 /* amount */
+    ) internal virtual override {
         _burn(id);
     }
 
