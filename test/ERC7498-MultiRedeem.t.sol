@@ -106,7 +106,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
-        bytes memory extraData = abi.encode(1, 0, bytes32(0));
+        bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId, tokenId);
@@ -120,6 +120,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         _checkTokenSentToBurnAddress(secondRedeemTokenAddress, tokenId, context.isErc7498Token721);
 
         assertEq(receiveToken721.ownerOf(1), address(this));
+        assertEq(receiveToken721.balanceOf(address(this)), 1);
     }
 
     function testBurnOneErc721OrErc1155RedeemMultiErc1155() public {
@@ -196,7 +197,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
-        bytes memory extraData = abi.encode(1, 0, bytes32(0));
+        bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
