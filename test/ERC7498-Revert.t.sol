@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {BaseRedeemablesTest} from "./utils/BaseRedeemablesTest.sol";
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "solady/src/tokens/ERC721.sol";
-import {IERC7498} from "../../src/interfaces/IERC7498.sol";
+import {IERC7498} from "../src/interfaces/IERC7498.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {TestERC1155} from "./utils/mocks/TestERC1155.sol";

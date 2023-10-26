@@ -7,7 +7,7 @@ import {ERC721} from "solady/src/tokens/ERC721.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
-import {IERC7498} from "../../src/interfaces/IERC7498.sol";
+import {IERC7498} from "../src/interfaces/IERC7498.sol";
 import {TestERC20} from "./utils/mocks/TestERC20.sol";
 import {TestERC721} from "./utils/mocks/TestERC721.sol";
 import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
