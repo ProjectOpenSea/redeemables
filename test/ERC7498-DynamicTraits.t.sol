@@ -89,12 +89,12 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
             substandardValue: bytes32(uint256(0))
         });
 
-        // consideration is empty
-        ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
-
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
         );
+
+        // consideration is empty
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
 
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
@@ -133,6 +133,6 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
 
         assertEq(bytes32(uint256(1)), actualTraitValue);
 
-        assertEq(IERC721(address(context.erc7498Token)).ownerOf(tokenId), address(this));
+        assertEq(IERC721(address(receiveToken721)).ownerOf(1), address(this));
     }
 }

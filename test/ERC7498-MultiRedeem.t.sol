@@ -83,6 +83,12 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
             secondRedeemToken1155.setApprovalForAll(address(context.erc7498Token), true);
         }
 
+        ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
+            "TestRedeemablesReceive721",
+            "TEST",
+            erc7498Tokens
+        );
+
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), context.isErc7498Token721);
         consideration[1] = _getCampaignConsiderationItem(secondRedeemTokenAddress, context.isErc7498Token721);
@@ -90,7 +96,9 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
         );
-        requirements[0].offer = defaultCampaignOffer;
+        OfferItem[] memory offer = new OfferItem[](1);
+        offer[0] = defaultCampaignOffer[0].withToken(address(receiveToken));
+        requirements[0].offer = offer;
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
@@ -119,8 +127,8 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
         _checkTokenSentToBurnAddress(secondRedeemTokenAddress, tokenId, context.isErc7498Token721);
 
-        assertEq(receiveToken721.ownerOf(1), address(this));
-        assertEq(receiveToken721.balanceOf(address(this)), 1);
+        assertEq(receiveToken.ownerOf(1), address(this));
+        assertEq(receiveToken.balanceOf(address(this)), 1);
     }
 
     function testBurnOneErc721OrErc1155RedeemMultiErc1155() public {

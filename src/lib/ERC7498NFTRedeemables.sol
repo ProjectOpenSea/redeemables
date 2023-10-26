@@ -42,16 +42,17 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         }
 
         // Get the values from extraData.
-        uint256 campaignId = uint256(bytes32(extraData[0:32]));
-        uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
-        uint256[] memory traitRedemptionTokenIds;
-        // (
-        //     uint256 campaignId,
-        //     uint256 requirementsIndex,
-        //     uint256[] memory traitRedemptionTokenIds,
-        //     uint256 salt,
-        //     bytes memory signature
-        // ) = abi.decode(extraData, (uint256, uint256, uint256[], uint256, bytes));
+        // uint256 campaignId = uint256(bytes32(extraData[0:32]));
+        // uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
+        // uint256[] memory traitRedemptionTokenIds;
+        (
+            uint256 campaignId,
+            uint256 requirementsIndex,
+            bytes32 redemptionHash,
+            uint256[] memory traitRedemptionTokenIds,
+            uint256 salt,
+            bytes memory signature
+        ) = abi.decode(extraData, (uint256, uint256, bytes32, uint256[], uint256, bytes));
 
         // Get the campaign params.
         CampaignParams storage params = _campaignParams[campaignId];
@@ -66,10 +67,18 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         if (requirementsIndex >= params.requirements.length) {
             revert RequirementsIndexOutOfBounds();
         }
-        CampaignRequirements storage requirements = params.requirements[requirementsIndex];
+        // CampaignRequirements storage requirements = params.requirements[
+        //     requirementsIndex
+        // ];
 
         // Process the redemption.
-        _processRedemption(campaignId, requirements, considerationTokenIds, traitRedemptionTokenIds, recipient);
+        _processRedemption(
+            campaignId,
+            params.requirements[requirementsIndex],
+            considerationTokenIds,
+            traitRedemptionTokenIds,
+            recipient
+        );
 
         // Emit the Redemption event.
         emit Redemption(
@@ -290,27 +299,27 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         uint256[] memory traitRedemptionTokenIds,
         address recipient
     ) internal {
-        // Process the consideration items.
-        _processConsiderationItems(
-            campaignId,
-            requirements.consideration,
-            considerationTokenIds,
-            requirements.offer,
-            requirements.traitRedemptions,
-            recipient
-        );
+        if (requirements.traitRedemptions.length > 0) {
+            // Process the trait redemptions.
+            _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
+        }
 
-        // Process the trait redemptions.
-        _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
+        if (requirements.consideration.length > 0) {
+            // Process the consideration items.
+            _processConsiderationItems(requirements.consideration, considerationTokenIds);
+        }
+
+        if (requirements.offer.length > 0) {
+            // Process the offer items.
+            _processOfferItems(
+                campaignId, requirements.consideration, requirements.offer, requirements.traitRedemptions, recipient
+            );
+        }
     }
 
     function _processConsiderationItems(
-        uint256 campaignId,
         ConsiderationItem[] memory consideration,
-        uint256[] memory considerationTokenIds,
-        OfferItem[] memory offer,
-        TraitRedemption[] memory traitRedemptions,
-        address recipient
+        uint256[] memory considerationTokenIds
     ) internal {
         // Revert if the tokenIds length does not match the consideration length.
         if (consideration.length != considerationTokenIds.length) {
@@ -321,12 +330,12 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         uint256 totalNativeValue;
 
         // Iterate over the consideration items.
-        for (uint256 j; j < consideration.length;) {
+        for (uint256 i; i < consideration.length;) {
             // Get the consideration item.
-            ConsiderationItem memory c = consideration[j];
+            ConsiderationItem memory c = consideration[i];
 
             // Get the identifier.
-            uint256 id = considerationTokenIds[j];
+            uint256 id = considerationTokenIds[i];
 
             // Get the token balance.
             uint256 balance;
@@ -350,18 +359,8 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
             // Transfer the consideration item.
             _transferConsiderationItem(id, c);
 
-            // Mint the new tokens.
-            for (uint256 k; k < offer.length;) {
-                IRedemptionMintable(offer[k].token).mintRedemption(
-                    campaignId, recipient, consideration, traitRedemptions
-                );
-                unchecked {
-                    ++k;
-                }
-            }
-
             unchecked {
-                ++j;
+                ++i;
             }
         }
 
@@ -374,13 +373,35 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     function _processTraitRedemptions(
         TraitRedemption[] memory traitRedemptions,
         uint256[] memory traitRedemptionTokenIds
-    ) internal {}
+    ) internal {
+        if (traitRedemptions.length != traitRedemptionTokenIds.length) {
+            revert TokenIdsDontMatchTraitRedemptionsLength(traitRedemptions.length, traitRedemptionTokenIds.length);
+        }
 
-    function _setTraits(TraitRedemption[] calldata traitRedemptions) internal {
+        _setTraits(traitRedemptions, traitRedemptionTokenIds);
+    }
+
+    function _processOfferItems(
+        uint256 campaignId,
+        ConsiderationItem[] memory consideration,
+        OfferItem[] memory offer,
+        TraitRedemption[] memory traitRedemptions,
+        address recipient
+    ) internal {
+        // Mint the new tokens.
+        for (uint256 i; i < offer.length;) {
+            IRedemptionMintable(offer[i].token).mintRedemption(campaignId, recipient, consideration, traitRedemptions);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _setTraits(TraitRedemption[] memory traitRedemptions, uint256[] memory traitRedemptionTokenIds) internal {
         // Iterate over the trait redemptions and set traits on the tokens.
         for (uint256 i; i < traitRedemptions.length;) {
             // Get the trait redemption identifier and place on the stack.
-            uint256 identifier = traitRedemptions[i].identifier;
+            uint256 identifier = traitRedemptionTokenIds[i];
 
             // Declare a new block to manage stack depth.
             {
@@ -390,6 +411,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 // Get the substandard value and place on the stack.
                 bytes32 substandardValue = traitRedemptions[i].substandardValue;
 
+                // Get the token and place on the stack.
+                address token = traitRedemptions[i].token;
+
                 // Get the trait key and place on the stack.
                 bytes32 traitKey = traitRedemptions[i].traitKey;
 
@@ -397,7 +421,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 bytes32 traitValue = traitRedemptions[i].traitValue;
 
                 // Get the current trait value and place on the stack.
-                bytes32 currentTraitValue = getTraitValue(identifier, traitKey);
+                bytes32 currentTraitValue = DynamicTraits(token).getTraitValue(identifier, traitKey);
 
                 // If substandard is 1, set trait to traitValue.
                 if (substandard == 1) {
@@ -407,7 +431,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     }
 
                     // Set the trait to the trait value.
-                    setTrait(identifier, traitRedemptions[i].traitKey, traitValue);
+                    DynamicTraits(token).setTrait(identifier, traitRedemptions[i].traitKey, traitValue);
                     // If substandard is 2, increment trait by traitValue.
                 } else if (substandard == 2) {
                     // Revert if the current trait value is greater than the substandard value.
@@ -418,7 +442,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     // Increment the trait by the trait value.
                     uint256 newTraitValue = uint256(currentTraitValue) + uint256(traitValue);
 
-                    setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
+                    DynamicTraits(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 3) {
                     // Revert if the current trait value is less than the substandard value.
                     if (currentTraitValue < substandardValue) {
@@ -428,7 +452,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
 
                     // Decrement the trait by the trait value.
-                    setTrait(traitRedemptions[i].identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
+                    DynamicTraits(token).setTrait(
+                        traitRedemptions[i].identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue)
+                    );
                 } else if (substandard == 4) {
                     // Revert if the current trait value is not equal to the substandard value.
                     if (currentTraitValue != substandardValue) {

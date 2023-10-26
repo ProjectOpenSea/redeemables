@@ -180,9 +180,9 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         IERC7498(context.erc7498Token).createCampaign(params, "");
 
         // campaignId: 1
-        // requirementsIndex: 0
+        // requirementsIndex: 1
         // redemptionHash: bytes32(0)
-        bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
+        bytes memory extraData = abi.encode(1, 1, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
