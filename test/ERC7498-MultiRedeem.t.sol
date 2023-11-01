@@ -45,12 +45,9 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
     function testBurnMultiErc721OrErc1155RedeemSingleErc721() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
-            bool isErc7498Token721 = IERC165(address(erc7498Tokens[i]))
-                .supportsInterface(type(IERC721).interfaceId);
+            bool isErc7498Token721 = IERC165(address(erc7498Tokens[i])).supportsInterface(type(IERC721).interfaceId);
 
-            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(
-                address(erc7498Tokens[i])
-            );
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
             testRedeemable(
                 this.burnMultiErc721OrErc1155RedeemSingleErc721,
                 RedeemablesContext({
@@ -62,13 +59,10 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         }
     }
 
-    function burnMultiErc721OrErc1155RedeemSingleErc721(
-        RedeemablesContext memory context
-    ) public {
+    function burnMultiErc721OrErc1155RedeemSingleErc721(RedeemablesContext memory context) public {
         address secondRedeemTokenAddress;
         if (context.isErc7498Token721) {
-            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token))
-                .mint(address(this), tokenId);
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
 
             ERC721ShipyardRedeemableOwnerMintable secondRedeemToken721 = new ERC721ShipyardRedeemableOwnerMintable(
                     "",
@@ -78,24 +72,16 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
             secondRedeemToken721.mint(address(this), tokenId);
 
             vm.label(address(secondRedeemToken721), "secondRedeemToken721");
-            secondRedeemToken721.setApprovalForAll(
-                address(context.erc7498Token),
-                true
-            );
+            secondRedeemToken721.setApprovalForAll(address(context.erc7498Token), true);
         } else {
-            ERC1155ShipyardRedeemableOwnerMintable(
-                address(context.erc7498Token)
-            ).mint(address(this), tokenId, 1);
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
             ERC1155ShipyardRedeemableOwnerMintable secondRedeemToken1155 = new ERC1155ShipyardRedeemableOwnerMintable(
                     "",
                     ""
                 );
             secondRedeemTokenAddress = address(secondRedeemToken1155);
             secondRedeemToken1155.mint(address(this), tokenId, 1);
-            secondRedeemToken1155.setApprovalForAll(
-                address(context.erc7498Token),
-                true
-            );
+            secondRedeemToken1155.setApprovalForAll(address(context.erc7498Token), true);
         }
 
         ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
@@ -105,14 +91,8 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         );
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
-        consideration[0] = _getCampaignConsiderationItem(
-            address(context.erc7498Token),
-            context.isErc7498Token721
-        );
-        consideration[1] = _getCampaignConsiderationItem(
-            secondRedeemTokenAddress,
-            context.isErc7498Token721
-        );
+        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), context.isErc7498Token721);
+        consideration[1] = _getCampaignConsiderationItem(secondRedeemTokenAddress, context.isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -135,36 +115,18 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
-        bytes memory extraData = abi.encode(
-            1,
-            0,
-            bytes32(0),
-            defaultTraitRedemptionTokenIds,
-            uint256(0),
-            bytes("")
-        );
+        bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId, tokenId);
 
-        IERC7498(context.erc7498Token).redeem(
-            tokenIds,
-            address(this),
-            extraData
-        );
+        IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
         _checkTokenDoesNotExist(
-            address(context.erc7498Token),
-            tokenId,
-            context.isErc7498Token721,
-            context.isErc7498TokenSeaDrop
+            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
         );
 
-        _checkTokenSentToBurnAddress(
-            secondRedeemTokenAddress,
-            tokenId,
-            context.isErc7498Token721
-        );
+        _checkTokenSentToBurnAddress(secondRedeemTokenAddress, tokenId, context.isErc7498Token721);
 
         assertEq(receiveToken.ownerOf(1), address(this));
         assertEq(receiveToken.balanceOf(address(this)), 1);
@@ -172,12 +134,9 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
     function testBurnOneErc721OrErc1155RedeemMultiErc1155() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
-            bool isErc7498Token721 = IERC165(address(erc7498Tokens[i]))
-                .supportsInterface(type(IERC721).interfaceId);
+            bool isErc7498Token721 = IERC165(address(erc7498Tokens[i])).supportsInterface(type(IERC721).interfaceId);
 
-            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(
-                address(erc7498Tokens[i])
-            );
+            bool isErc7498TokenSeaDrop = _isErc7498TokenSeaDrop(address(erc7498Tokens[i]));
             testRedeemable(
                 this.burnOneErc721OrErc1155RedeemMultiErc1155,
                 RedeemablesContext({
@@ -189,26 +148,18 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         }
     }
 
-    function burnOneErc721OrErc1155RedeemMultiErc1155(
-        RedeemablesContext memory context
-    ) public {
+    function burnOneErc721OrErc1155RedeemMultiErc1155(RedeemablesContext memory context) public {
         if (context.isErc7498Token721) {
-            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token))
-                .mint(address(this), tokenId);
+            ERC721ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId);
         } else {
-            ERC1155ShipyardRedeemableOwnerMintable(
-                address(context.erc7498Token)
-            ).mint(address(this), tokenId, 1);
+            ERC1155ShipyardRedeemableOwnerMintable(address(context.erc7498Token)).mint(address(this), tokenId, 1);
         }
 
         ERC1155ShipyardRedeemableMintable receiveToken = new ERC1155ShipyardRedeemableMintable(
                 "TestRedeemablesReceive1155SequentialIds",
                 "TEST"
             );
-        ERC721(address(context.erc7498Token)).setApprovalForAll(
-            address(receiveToken),
-            true
-        );
+        ERC721(address(context.erc7498Token)).setApprovalForAll(address(receiveToken), true);
 
         OfferItem[] memory offer = new OfferItem[](3);
         offer[0] = OfferItem({
@@ -234,10 +185,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         });
 
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
-        consideration[0] = _getCampaignConsiderationItem(
-            address(context.erc7498Token),
-            context.isErc7498Token721
-        );
+        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token), context.isErc7498Token721);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -258,14 +206,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         // campaignId: 1
         // requirementsIndex: 0
         // redemptionHash: bytes32(0)
-        bytes memory extraData = abi.encode(
-            1,
-            0,
-            bytes32(0),
-            defaultTraitRedemptionTokenIds,
-            uint256(0),
-            bytes("")
-        );
+        bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
@@ -273,10 +214,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         IERC7498(receiveToken).redeem(tokenIds, address(this), extraData);
 
         _checkTokenDoesNotExist(
-            address(context.erc7498Token),
-            tokenId,
-            context.isErc7498Token721,
-            context.isErc7498TokenSeaDrop
+            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
         );
 
         assertEq(receiveToken.balanceOf(address(this), 1), 1);
