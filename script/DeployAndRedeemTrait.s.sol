@@ -54,7 +54,7 @@ contract DeployAndRedeemTrait is Script, Test {
         TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
 
         // trait key is "hasRedeemed"
-        bytes32 traitKey = bytes32(bytes(string("hasRedeemed")));
+        bytes32 traitKey = bytes32("hasRedeemed");
 
         // previous trait value (`substandardValue`) should be 0
         bytes32 substandardValue = bytes32(uint256(0));

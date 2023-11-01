@@ -76,7 +76,7 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
         TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
 
         // trait key is "hasRedeemed"
-        bytes32 traitKey = bytes32(bytes(string("hasRedeemed")));
+        bytes32 traitKey = bytes32("hasRedeemed");
 
         // previous trait value (`substandardValue`) should be 0
         // new trait value should be 1
