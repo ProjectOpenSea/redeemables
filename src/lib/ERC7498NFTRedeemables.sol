@@ -11,12 +11,14 @@ import {ERC1155Burnable} from "openzeppelin-contracts/contracts/token/ERC1155/ex
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
+import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {IERC7498} from "../interfaces/IERC7498.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "./RedeemablesConstants.sol";
 
-contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
+contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
@@ -29,9 +31,6 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev The total current redemptions by campaign id.
     mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
 
-    /// @dev The burn address.
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function redeem(uint256[] calldata considerationTokenIds, address recipient, bytes calldata extraData)
         public
         payable
@@ -42,16 +41,16 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         }
 
         // Get the values from extraData.
-        uint256 campaignId = uint256(bytes32(extraData[0:32]));
-        uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
-        uint256[] memory traitRedemptionTokenIds;
-        // (
-        //     uint256 campaignId,
-        //     uint256 requirementsIndex,
-        //     uint256[] memory traitRedemptionTokenIds,
-        //     uint256 salt,
-        //     bytes memory signature
-        // ) = abi.decode(extraData, (uint256, uint256, uint256[], uint256, bytes));
+        (
+            uint256 campaignId,
+            uint256 requirementsIndex,
+            /* bytes32 redemptionHash */
+            ,
+            uint256[] memory traitRedemptionTokenIds,
+            /* uint256 salt */
+            ,
+            /*bytes memory signature */
+        ) = abi.decode(extraData, (uint256, uint256, bytes32, uint256[], uint256, bytes));
 
         // Get the campaign params.
         CampaignParams storage params = _campaignParams[campaignId];
@@ -66,10 +65,18 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         if (requirementsIndex >= params.requirements.length) {
             revert RequirementsIndexOutOfBounds();
         }
-        CampaignRequirements storage requirements = params.requirements[requirementsIndex];
+        // CampaignRequirements storage requirements = params.requirements[
+        //     requirementsIndex
+        // ];
 
         // Process the redemption.
-        _processRedemption(campaignId, requirements, considerationTokenIds, traitRedemptionTokenIds, recipient);
+        _processRedemption(
+            campaignId,
+            params.requirements[requirementsIndex],
+            considerationTokenIds,
+            traitRedemptionTokenIds,
+            recipient
+        );
 
         // Emit the Redemption event.
         emit Redemption(
@@ -213,13 +220,13 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
 
         // If consideration item is this contract, recipient is burn address, and _useInternalBurn() fn returns true,
         // call the internal burn function and return.
-        if (c.token == address(this) && c.recipient == payable(_BURN_ADDRESS) && _useInternalBurn()) {
+        if (c.token == address(this) && c.recipient == payable(BURN_ADDRESS) && _useInternalBurn()) {
             _internalBurn(msg.sender, id, c.startAmount);
         } else {
             // Transfer the token to the consideration recipient.
             if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
                 // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     try ERC721Burnable(c.token).burn(id) {
                         // If the burn worked, return.
                         return;
@@ -231,7 +238,7 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                     IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
                 }
             } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
                     try ERC1155Burnable(c.token).burn(msg.sender, id, c.startAmount) {
                         // If the burn worked, return.
@@ -244,7 +251,7 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                     IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
                 }
             } else if (c.itemType == ItemType.ERC20) {
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
                     try ERC20Burnable(c.token).burnFrom(msg.sender, c.startAmount) {
                         // If the burn worked, return.
@@ -290,43 +297,43 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
         uint256[] memory traitRedemptionTokenIds,
         address recipient
     ) internal {
-        // Process the consideration items.
-        _processConsiderationItems(
-            campaignId,
-            requirements.consideration,
-            considerationTokenIds,
-            requirements.offer,
-            requirements.traitRedemptions,
-            recipient
-        );
+        if (requirements.traitRedemptions.length > 0) {
+            // Process the trait redemptions.
+            _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
+        }
 
-        // Process the trait redemptions.
-        _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
+        if (requirements.consideration.length > 0) {
+            // Process the consideration items.
+            _processConsiderationItems(requirements.consideration, considerationTokenIds);
+        }
+
+        if (requirements.offer.length > 0) {
+            // Process the offer items.
+            _processOfferItems(
+                campaignId, requirements.consideration, requirements.offer, requirements.traitRedemptions, recipient
+            );
+        }
     }
 
     function _processConsiderationItems(
-        uint256 campaignId,
         ConsiderationItem[] memory consideration,
-        uint256[] memory considerationTokenIds,
-        OfferItem[] memory offer,
-        TraitRedemption[] memory traitRedemptions,
-        address recipient
+        uint256[] memory considerationTokenIds
     ) internal {
         // Revert if the tokenIds length does not match the consideration length.
         if (consideration.length != considerationTokenIds.length) {
-            revert TokenIdsDontMatchConsiderationLength(consideration.length, considerationTokenIds.length);
+            revert ConsiderationTokenIdsDontMatchConsiderationLength(consideration.length, considerationTokenIds.length);
         }
 
         // Keep track of the total native value to validate.
         uint256 totalNativeValue;
 
         // Iterate over the consideration items.
-        for (uint256 j; j < consideration.length;) {
+        for (uint256 i; i < consideration.length;) {
             // Get the consideration item.
-            ConsiderationItem memory c = consideration[j];
+            ConsiderationItem memory c = consideration[i];
 
             // Get the identifier.
-            uint256 id = considerationTokenIds[j];
+            uint256 id = considerationTokenIds[i];
 
             // Get the token balance.
             uint256 balance;
@@ -350,18 +357,8 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
             // Transfer the consideration item.
             _transferConsiderationItem(id, c);
 
-            // Mint the new tokens.
-            for (uint256 k; k < offer.length;) {
-                IRedemptionMintable(offer[k].token).mintRedemption(
-                    campaignId, recipient, consideration, traitRedemptions
-                );
-                unchecked {
-                    ++k;
-                }
-            }
-
             unchecked {
-                ++j;
+                ++i;
             }
         }
 
@@ -374,16 +371,37 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
     function _processTraitRedemptions(
         TraitRedemption[] memory traitRedemptions,
         uint256[] memory traitRedemptionTokenIds
-    ) internal {}
+    ) internal {
+        if (traitRedemptions.length != traitRedemptionTokenIds.length) {
+            revert TraitRedemptionTokenIdsDontMatchTraitRedemptionsLength(
+                traitRedemptions.length, traitRedemptionTokenIds.length
+            );
+        }
 
-    function _setTraits(TraitRedemption[] calldata traitRedemptions) internal {
-        /*
+        _setTraits(traitRedemptions, traitRedemptionTokenIds);
+    }
+
+    function _processOfferItems(
+        uint256 campaignId,
+        ConsiderationItem[] memory consideration,
+        OfferItem[] memory offer,
+        TraitRedemption[] memory traitRedemptions,
+        address recipient
+    ) internal {
+        // Mint the new tokens.
+        for (uint256 i; i < offer.length;) {
+            IRedemptionMintable(offer[i].token).mintRedemption(campaignId, recipient, consideration, traitRedemptions);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _setTraits(TraitRedemption[] memory traitRedemptions, uint256[] memory traitRedemptionTokenIds) internal {
         // Iterate over the trait redemptions and set traits on the tokens.
         for (uint256 i; i < traitRedemptions.length;) {
-            // Get the trait redemption token address and place on the stack.
-            address token = traitRedemptions[i].token;
-
-            uint256 identifier = traitRedemptions[i].identifier;
+            // Get the trait redemption identifier and place on the stack.
+            uint256 identifier = traitRedemptionTokenIds[i];
 
             // Declare a new block to manage stack depth.
             {
@@ -393,44 +411,61 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                 // Get the substandard value and place on the stack.
                 bytes32 substandardValue = traitRedemptions[i].substandardValue;
 
+                // Get the token and place on the stack.
+                address token = traitRedemptions[i].token;
+
                 // Get the trait key and place on the stack.
                 bytes32 traitKey = traitRedemptions[i].traitKey;
 
+                // Get the trait value and place on the stack.
                 bytes32 traitValue = traitRedemptions[i].traitValue;
 
                 // Get the current trait value and place on the stack.
-                bytes32 currentTraitValue = getTraitValue(traitKey, identifier);
+                bytes32 currentTraitValue = IERC7496(token).getTraitValue(identifier, traitKey);
 
                 // If substandard is 1, set trait to traitValue.
                 if (substandard == 1) {
                     // Revert if the current trait value does not match the substandard value.
                     if (currentTraitValue != substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     // Set the trait to the trait value.
-                    _setTrait(traitRedemptions[i].traitKey, identifier, traitValue);
+                    IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, traitValue);
                     // If substandard is 2, increment trait by traitValue.
                 } else if (substandard == 2) {
                     // Revert if the current trait value is greater than the substandard value.
                     if (currentTraitValue > substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     // Increment the trait by the trait value.
                     uint256 newTraitValue = uint256(currentTraitValue) + uint256(traitValue);
 
-                    _setTrait(traitRedemptions[i].traitKey, identifier, bytes32(newTraitValue));
+                    IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 3) {
                     // Revert if the current trait value is less than the substandard value.
                     if (currentTraitValue < substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
 
                     // Decrement the trait by the trait value.
-                    _setTrait(traitRedemptions[i].traitKey, traitRedemptions[i].identifier, bytes32(newTraitValue));
+                    IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
+                } else if (substandard == 4) {
+                    // Revert if the current trait value is not equal to the substandard value.
+                    if (currentTraitValue != substandardValue) {
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
+                    }
                 }
             }
 
@@ -438,10 +473,16 @@ contract ERC7498NFTRedeemables is IERC7498, DynamicTraits, RedeemablesErrors {
                 ++i;
             }
         }
-        */
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(DynamicTraits) returns (bool) {
-        return interfaceId == type(IERC7498).interfaceId || DynamicTraits.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(IERC165, DynamicTraits)
+        returns (bool)
+    {
+        return interfaceId == type(IERC7498).interfaceId || interfaceId == type(IERC165).interfaceId
+            || interfaceId == type(IERC7496).interfaceId;
     }
 }

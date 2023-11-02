@@ -21,7 +21,6 @@ struct CampaignRequirements {
 struct TraitRedemption {
     uint8 substandard;
     address token;
-    uint256 identifier;
     bytes32 traitKey;
     bytes32 traitValue;
     bytes32 substandardValue;

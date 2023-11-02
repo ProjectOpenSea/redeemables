@@ -23,7 +23,9 @@ interface RedeemablesErrors {
     error InvalidOfferLength(uint256 got, uint256 want);
     error InvalidNativeOfferItem();
     error InvalidOwner();
-    error InvalidRequiredValue(bytes32 got, bytes32 want);
+    error InvalidRequiredTraitValue(
+        address token, uint256 tokenId, bytes32 traitKey, bytes32 gotTraitValue, bytes32 wantTraitValue
+    );
     //error InvalidSubstandard(uint256 substandard);
     error InvalidTraitRedemption();
     error InvalidTraitRedemptionToken(address token);
@@ -34,5 +36,6 @@ interface RedeemablesErrors {
     error EtherTransferFailed();
     error InvalidTxValue(uint256 got, uint256 want);
     error InvalidConsiderationTokenIdSupplied(address token, uint256 got, uint256 want);
-    error TokenIdsDontMatchConsiderationLength(uint256 considerationLength, uint256 tokenIdsLength);
+    error ConsiderationTokenIdsDontMatchConsiderationLength(uint256 considerationLength, uint256 tokenIdsLength);
+    error TraitRedemptionTokenIdsDontMatchTraitRedemptionsLength(uint256 traitRedemptionsLength, uint256 tokenIdsLength);
 }

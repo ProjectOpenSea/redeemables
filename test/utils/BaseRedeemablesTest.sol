@@ -2,7 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {Solarray} from "solarray/Solarray.sol";
-import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
@@ -25,6 +26,7 @@ import {ERC1155ShipyardRedeemableOwnerMintable} from "../../src/test/ERC1155Ship
 import {ERC1155SeaDropRedeemableOwnerMintable} from "../../src/test/ERC1155SeaDropRedeemableOwnerMintable.sol";
 import {RedeemablesErrors} from "../../src/lib/RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../../src/lib/RedeemablesConstants.sol";
 
 contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     using OfferItemLib for OfferItem;
@@ -34,8 +36,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     struct RedeemablesContext {
         IERC7498 erc7498Token;
-        bool isErc7498Token721;
-        bool isErc7498TokenSeaDrop;
     }
 
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
@@ -57,8 +57,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     CampaignRequirements[] defaultCampaignRequirements;
     // CampaignParams defaultCampaignParams;
-
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     string constant DEFAULT_ERC721_CAMPAIGN_OFFER = "default erc721 campaign offer";
     string constant DEFAULT_ERC721_CAMPAIGN_CONSIDERATION = "default erc721 campaign consideration";
@@ -108,13 +106,12 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         _setApprovals(address(this));
 
         // Save the default campaign offer and consideration
-        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).saveDefault(
-            DEFAULT_ERC721_CAMPAIGN_OFFER
-        );
+        OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).withItemType(
+            ItemType.ERC721_WITH_CRITERIA
+        ).saveDefault(DEFAULT_ERC721_CAMPAIGN_OFFER);
 
-        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(
-            _BURN_ADDRESS
-        ).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
+        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(BURN_ADDRESS)
+            .withItemType(ItemType.ERC721_WITH_CRITERIA).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
 
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 
@@ -158,41 +155,29 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         vm.stopPrank();
     }
 
-    function _isErc7498Token721(address token) internal view returns (bool) {
-        bool isErc7498Token721;
-        if (IERC165(token).supportsInterface(type(IERC721).interfaceId)) {
-            isErc7498Token721 = true;
-        }
-
-        return isErc7498Token721;
-    }
-
-    function _isErc7498TokenSeaDrop(address token) internal view returns (bool) {
-        bool isErc7498TokenSeaDrop;
+    function _isSeaDrop(address token) internal view returns (bool isSeaDrop) {
         if (
             IERC165(token).supportsInterface(type(IERC721SeaDrop).interfaceId)
                 || IERC165(token).supportsInterface(type(IERC1155SeaDrop).interfaceId)
         ) {
-            isErc7498TokenSeaDrop = true;
+            isSeaDrop = true;
         }
-
-        return isErc7498TokenSeaDrop;
     }
 
-    function _getCampaignConsiderationItem(address token, bool isToken721)
+    function _getCampaignConsiderationItem(address token)
         internal
         view
         returns (ConsiderationItem memory considerationItem)
     {
         considerationItem = defaultCampaignConsideration[0].withToken(token).withItemType(
-            isToken721 ? ItemType.ERC721_WITH_CRITERIA : ItemType.ERC1155_WITH_CRITERIA
+            _isERC721(address(token)) ? ItemType.ERC721_WITH_CRITERIA : ItemType.ERC1155_WITH_CRITERIA
         );
     }
 
-    function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721, bool isTokenSeaDrop) internal {
-        if (isToken721) {
+    function _checkTokenDoesNotExist(address token, uint256 tokenId) internal {
+        if (_isERC721(token)) {
             try IERC721(address(token)).ownerOf(tokenId) returns (address owner) {
-                assertEq(owner, address(_BURN_ADDRESS));
+                assertEq(owner, address(BURN_ADDRESS));
             } catch {}
         } else {
             // token is ERC1155
@@ -200,12 +185,25 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         }
     }
 
-    function _checkTokenSentToBurnAddress(address token, uint256 tokenId, bool isToken721) internal {
-        if (isToken721) {
-            assertEq(IERC721(address(token)).ownerOf(tokenId), _BURN_ADDRESS);
+    function _checkTokenSentToBurnAddress(address token, uint256 tokenId) internal {
+        if (_isERC721(token)) {
+            assertEq(IERC721(address(token)).ownerOf(tokenId), BURN_ADDRESS);
         } else {
             // token is ERC1155
             assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);
         }
+    }
+
+    function _mintToken(address token, uint256 tokenId) internal {
+        if (_isERC721(token)) {
+            ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId);
+        } else if (IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
+            // token is ERC1155
+            ERC1155ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId, 1);
+        }
+    }
+
+    function _isERC721(address token) internal view returns (bool isERC721) {
+        isERC721 = IERC165(token).supportsInterface(type(IERC721).interfaceId);
     }
 }

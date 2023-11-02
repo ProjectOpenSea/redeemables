@@ -6,13 +6,12 @@ import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 
 contract DeployAndConfigure1155Receive is Script, Test {
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function run() external {
         vm.startBroadcast();
 
@@ -51,7 +50,7 @@ contract DeployAndConfigure1155Receive is Script, Test {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -68,8 +67,7 @@ contract DeployAndConfigure1155Receive is Script, Test {
             maxCampaignRedemptions: 1_000,
             manager: msg.sender
         });
-        uint256 campaignId =
-            receiveToken.createCampaign(params, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
+        receiveToken.createCampaign(params, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
 
         // To test updateCampaign, update to proper start/end times.
         params.startTime = uint32(block.timestamp);

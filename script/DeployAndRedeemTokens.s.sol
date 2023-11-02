@@ -6,12 +6,11 @@ import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens is Script, Test {
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function run() external {
         vm.startBroadcast();
 
@@ -44,7 +43,7 @@ contract DeployAndRedeemTokens is Script, Test {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -69,8 +68,10 @@ contract DeployAndRedeemTokens is Script, Test {
         // Let's redeem them!
         uint256 campaignId = 1;
         uint256 requirementsIndex = 0;
-        bytes32 redemptionHash = bytes32(0);
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
+        bytes32 redemptionHash;
+        uint256 salt;
+        bytes memory signature;
+        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;

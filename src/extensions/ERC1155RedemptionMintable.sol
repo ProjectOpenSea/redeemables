@@ -27,7 +27,7 @@ contract ERC1155RedemptionMintable is ERC1155ShipyardContractMetadata, IRedempti
     function mintRedemption(
         uint256, /* campaignId */
         address recipient,
-        ConsiderationItem[] calldata consideration,
+        ConsiderationItem[] calldata, /* consideration */
         TraitRedemption[] calldata /* traitRedemptions */
     ) external {
         bool validSender;

@@ -11,13 +11,14 @@ import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintab
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 
-contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
+contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
+        ERC721ShipyardRedeemableMintable redeemToken =
+            ERC721ShipyardRedeemableMintable(0xa1783E74857736b2AEE610A36b537B31CC333048);
         ERC721ShipyardRedeemableMintable receiveToken =
-            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST");
+            ERC721ShipyardRedeemableMintable(0x343B9aEC7fAB02d07c6747Bace112920822334B4);
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -56,8 +57,13 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         uint256 campaignId =
             receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
 
-        // Mint token 1 to redeem for token 1.
-        redeemToken.mint(msg.sender, 1);
+        // redeemToken.setBaseURI(
+        //     "ipfs://QmYTSupCtriDLBHgPBBhZ98wYdp6N9S8jTL5sKSZwbASeT"
+        // );
+
+        // receiveToken.setBaseURI(
+        //     "ipfs://QmWxgnz8T9wsMBmpCY4Cvanj3RR1obFD2hqDKPZhKN5Tsq/"
+        // );
 
         // Let's redeem them!
         uint256 requirementsIndex = 0;
@@ -69,14 +75,12 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;
 
-        // Individual user approvals not needed when setting the burn address.
         redeemToken.setApprovalForAll(address(receiveToken), true);
-        // redeemToken.setBurnAddress(address(receiveToken));
 
         receiveToken.redeem(tokenIds, msg.sender, data);
 
         // Assert redeemable token is burned and redemption token is minted.
-        assertEq(redeemToken.balanceOf(msg.sender), 0);
+        assertEq(redeemToken.balanceOf(msg.sender), 2);
         assertEq(receiveToken.ownerOf(1), msg.sender);
     }
 }
