@@ -321,7 +321,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     ) internal {
         // Revert if the tokenIds length does not match the consideration length.
         if (consideration.length != considerationTokenIds.length) {
-            revert TokenIdsDontMatchConsiderationLength(consideration.length, considerationTokenIds.length);
+            revert ConsiderationTokenIdsDontMatchConsiderationLength(consideration.length, considerationTokenIds.length);
         }
 
         // Keep track of the total native value to validate.
@@ -373,7 +373,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         uint256[] memory traitRedemptionTokenIds
     ) internal {
         if (traitRedemptions.length != traitRedemptionTokenIds.length) {
-            revert TokenIdsDontMatchTraitRedemptionsLength(traitRedemptions.length, traitRedemptionTokenIds.length);
+            revert TraitRedemptionTokenIdsDontMatchTraitRedemptionsLength(
+                traitRedemptions.length, traitRedemptionTokenIds.length
+            );
         }
 
         _setTraits(traitRedemptions, traitRedemptionTokenIds);
@@ -425,7 +427,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 if (substandard == 1) {
                     // Revert if the current trait value does not match the substandard value.
                     if (currentTraitValue != substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     // Set the trait to the trait value.
@@ -434,7 +438,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 } else if (substandard == 2) {
                     // Revert if the current trait value is greater than the substandard value.
                     if (currentTraitValue > substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     // Increment the trait by the trait value.
@@ -444,7 +450,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 } else if (substandard == 3) {
                     // Revert if the current trait value is less than the substandard value.
                     if (currentTraitValue < substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
 
                     uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
@@ -456,7 +464,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 } else if (substandard == 4) {
                     // Revert if the current trait value is not equal to the substandard value.
                     if (currentTraitValue != substandardValue) {
-                        revert InvalidRequiredValue(currentTraitValue, substandardValue);
+                        revert InvalidRequiredTraitValue(
+                            token, identifier, traitKey, currentTraitValue, substandardValue
+                        );
                     }
                 }
             }

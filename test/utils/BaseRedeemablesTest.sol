@@ -36,8 +36,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     struct RedeemablesContext {
         IERC7498 erc7498Token;
-        bool isErc7498Token721;
-        bool isErc7498TokenSeaDrop;
     }
 
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
@@ -157,30 +155,27 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         vm.stopPrank();
     }
 
-    function _isErc7498TokenSeaDrop(address token) internal view returns (bool) {
-        bool isErc7498TokenSeaDrop;
+    function _isSeaDrop(address token) internal view returns (bool isSeaDrop) {
         if (
             IERC165(token).supportsInterface(type(IERC721SeaDrop).interfaceId)
                 || IERC165(token).supportsInterface(type(IERC1155SeaDrop).interfaceId)
         ) {
-            isErc7498TokenSeaDrop = true;
+            isSeaDrop = true;
         }
-
-        return isErc7498TokenSeaDrop;
     }
 
-    function _getCampaignConsiderationItem(address token, bool isToken721)
+    function _getCampaignConsiderationItem(address token)
         internal
         view
         returns (ConsiderationItem memory considerationItem)
     {
         considerationItem = defaultCampaignConsideration[0].withToken(token).withItemType(
-            isToken721 ? ItemType.ERC721_WITH_CRITERIA : ItemType.ERC1155_WITH_CRITERIA
+            _isERC721(address(token)) ? ItemType.ERC721_WITH_CRITERIA : ItemType.ERC1155_WITH_CRITERIA
         );
     }
 
-    function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721) internal {
-        if (isToken721) {
+    function _checkTokenDoesNotExist(address token, uint256 tokenId) internal {
+        if (_isERC721(token)) {
             try IERC721(address(token)).ownerOf(tokenId) returns (address owner) {
                 assertEq(owner, address(BURN_ADDRESS));
             } catch {}
@@ -190,8 +185,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         }
     }
 
-    function _checkTokenSentToBurnAddress(address token, uint256 tokenId, bool isToken721) internal {
-        if (isToken721) {
+    function _checkTokenSentToBurnAddress(address token, uint256 tokenId) internal {
+        if (_isERC721(token)) {
             assertEq(IERC721(address(token)).ownerOf(tokenId), BURN_ADDRESS);
         } else {
             // token is ERC1155
@@ -200,11 +195,15 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     }
 
     function _mintToken(address token, uint256 tokenId) internal {
-        if (IERC165(token).supportsInterface(type(IERC721).interfaceId)) {
+        if (_isERC721(token)) {
             ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId);
         } else if (IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
             // token is ERC1155
             ERC1155ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId, 1);
         }
+    }
+
+    function _isERC721(address token) internal view returns (bool isERC721) {
+        isERC721 = IERC165(token).supportsInterface(type(IERC721).interfaceId);
     }
 }

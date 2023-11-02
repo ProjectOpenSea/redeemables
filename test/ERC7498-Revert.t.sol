@@ -135,7 +135,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
-        vm.expectRevert(abi.encodeWithSelector(TokenIdsDontMatchConsiderationLength.selector, 2, 1));
+        vm.expectRevert(abi.encodeWithSelector(ConsiderationTokenIdsDontMatchConsiderationLength.selector, 2, 1));
 
         IERC7498(erc7498Tokens[0]).redeem(tokenIds, address(this), extraData);
 
