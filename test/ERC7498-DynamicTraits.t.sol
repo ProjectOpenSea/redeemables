@@ -11,8 +11,8 @@ import {TestERC1155} from "./utils/mocks/TestERC1155.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/contracts/interfaces/IERC1155.sol";
+import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {IERC7498} from "../src/interfaces/IERC7498.sol";
-import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
@@ -119,10 +119,6 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
-        // traitRedemptionTokenIds: traitRedemptionTokenIds
-        // salt: 0
-        // signature: bytes(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), traitRedemptionTokenIds, uint256(0), bytes(""));
 
         vm.expectEmit(true, true, true, true);
@@ -130,10 +126,8 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
 
         context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
 
-        bytes32 actualTraitValue = DynamicTraits(address(redeemToken)).getTraitValue(tokenId, traitKey);
-
+        bytes32 actualTraitValue = IERC7496(address(redeemToken)).getTraitValue(tokenId, traitKey);
         assertEq(bytes32(uint256(1)), actualTraitValue);
-
         assertEq(IERC721(address(receiveToken721)).ownerOf(1), address(this));
     }
 }

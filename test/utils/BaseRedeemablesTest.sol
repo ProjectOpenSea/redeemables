@@ -26,6 +26,7 @@ import {ERC1155ShipyardRedeemableOwnerMintable} from "../../src/test/ERC1155Ship
 import {ERC1155SeaDropRedeemableOwnerMintable} from "../../src/test/ERC1155SeaDropRedeemableOwnerMintable.sol";
 import {RedeemablesErrors} from "../../src/lib/RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../../src/lib/RedeemablesConstants.sol";
 
 contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     using OfferItemLib for OfferItem;
@@ -58,8 +59,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     CampaignRequirements[] defaultCampaignRequirements;
     // CampaignParams defaultCampaignParams;
-
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     string constant DEFAULT_ERC721_CAMPAIGN_OFFER = "default erc721 campaign offer";
     string constant DEFAULT_ERC721_CAMPAIGN_CONSIDERATION = "default erc721 campaign consideration";
@@ -113,9 +112,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
             ItemType.ERC721_WITH_CRITERIA
         ).saveDefault(DEFAULT_ERC721_CAMPAIGN_OFFER);
 
-        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(
-            _BURN_ADDRESS
-        ).withItemType(ItemType.ERC721_WITH_CRITERIA).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
+        ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(BURN_ADDRESS)
+            .withItemType(ItemType.ERC721_WITH_CRITERIA).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
 
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
 
@@ -181,10 +179,10 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         );
     }
 
-    function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721, bool isTokenSeaDrop) internal {
+    function _checkTokenDoesNotExist(address token, uint256 tokenId, bool isToken721) internal {
         if (isToken721) {
             try IERC721(address(token)).ownerOf(tokenId) returns (address owner) {
-                assertEq(owner, address(_BURN_ADDRESS));
+                assertEq(owner, address(BURN_ADDRESS));
             } catch {}
         } else {
             // token is ERC1155
@@ -194,7 +192,7 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     function _checkTokenSentToBurnAddress(address token, uint256 tokenId, bool isToken721) internal {
         if (isToken721) {
-            assertEq(IERC721(address(token)).ownerOf(tokenId), _BURN_ADDRESS);
+            assertEq(IERC721(address(token)).ownerOf(tokenId), BURN_ADDRESS);
         } else {
             // token is ERC1155
             assertEq(IERC1155(address(token)).balanceOf(address(this), tokenId), 0);

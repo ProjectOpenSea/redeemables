@@ -20,6 +20,7 @@ import {MockERC721DynamicTraits} from "./utils/mocks/MockERC721DynamicTraits.sol
 import {OfferItemLib, ConsiderationItemLib, OrderParametersLib} from "seaport-sol/src/SeaportSol.sol";
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
 import {ERC1155RedemptionMintable} from "../src/lib/ERC1155RedemptionMintable.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
@@ -37,7 +38,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     CriteriaResolver[] criteriaResolvers;
     Merkle merkle = new Merkle();
 
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     function setUp() public override {
         super.setUp();
@@ -77,7 +78,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             identifierOrCriteria: 0,
             startAmount: amount,
             endAmount: amount,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         {
@@ -113,7 +114,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
                 identifierOrCriteria: tokenId,
                 startAmount: amount,
                 endAmount: amount,
-                recipient: payable(_BURN_ADDRESS)
+                recipient: payable(BURN_ADDRESS)
             });
 
             assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
@@ -147,7 +148,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
                 recipient: address(0)
             });
 
-            assertEq(redeemableToken.balanceOf(_BURN_ADDRESS, tokenId), amount);
+            assertEq(redeemableToken.balanceOf(BURN_ADDRESS, tokenId), amount);
 
             // tokenId of redemption token will be 0.
             // amount minted will be equal to amount burned.
@@ -191,7 +192,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             identifierOrCriteria: 0,
             startAmount: amount,
             endAmount: amount,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
         campaignConsideration[1] = ConsiderationItem({
             itemType: ItemType.ERC20,
@@ -235,7 +236,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
                 identifierOrCriteria: tokenId,
                 startAmount: 1,
                 endAmount: 1,
-                recipient: payable(_BURN_ADDRESS)
+                recipient: payable(BURN_ADDRESS)
             });
 
             assertGt(uint256(campaignConsideration[0].itemType), uint256(considerationFromEvent[0].itemType));
@@ -267,7 +268,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
                 recipient: address(0)
             });
 
-            assertEq(redeemableToken.balanceOf(_BURN_ADDRESS, tokenId), amount);
+            assertEq(redeemableToken.balanceOf(BURN_ADDRESS, tokenId), amount);
             assertEq(redemptionToken.balanceOf(address(this), 0), amount);
             assertEq(erc20BalanceBefore - erc20.balanceOf(address(this)), erc20Amount);
             assertEq(erc20.balanceOf(eve.addr), erc20Amount);
@@ -309,7 +310,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             identifierOrCriteria: uint256(root),
             startAmount: amount,
             endAmount: amount,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         {
@@ -342,7 +343,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
                 identifierOrCriteria: tokenId,
                 startAmount: 1,
                 endAmount: 1,
-                recipient: payable(_BURN_ADDRESS)
+                recipient: payable(BURN_ADDRESS)
             });
 
             assertGt(uint256(consideration[0].itemType), uint256(considerationFromEvent[0].itemType));
@@ -382,7 +383,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             });
 
             // TODO: failing because redemptionToken tokenId is merkle root
-            assertEq(redeemableToken.balanceOf(_BURN_ADDRESS, tokenId), amount);
+            assertEq(redeemableToken.balanceOf(BURN_ADDRESS, tokenId), amount);
             // assertEq(redemptionToken.ownerOf(tokenId), address(this));
         }
     }
@@ -427,7 +428,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     consideration[1] = ConsiderationItem({
@@ -436,7 +437,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     // Create the CampaignParams with the offer and consideration from above.
@@ -478,7 +479,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: burnTokenId0,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         considerationFromEvent[1] = ConsiderationItem({
@@ -487,7 +488,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: burnTokenId1,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
@@ -534,8 +535,8 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         });
 
     //         // Check that the two redeemable tokens have been burned
-    //         assertEq(redeemableToken.ownerOf(burnTokenId0), _BURN_ADDRESS);
-    //         assertEq(redeemableToken.ownerOf(burnTokenId1), _BURN_ADDRESS);
+    //         assertEq(redeemableToken.ownerOf(burnTokenId0), BURN_ADDRESS);
+    //         assertEq(redeemableToken.ownerOf(burnTokenId1), BURN_ADDRESS);
 
     //         // Check that the redemption token has been minted to the test contract
     //         assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
@@ -587,7 +588,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     // Create the CampaignParams with the offer and consideration from above.
@@ -637,7 +638,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: redeemableTokenId0,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
@@ -685,7 +686,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         // Check that the redeemableToken has been burned
     //         assertEq(
     //             redeemableToken.ownerOf(redeemableTokenId0),
-    //             _BURN_ADDRESS
+    //             BURN_ADDRESS
     //         );
 
     //         // Check that the two redemptionTokens has been minted to the test contract
@@ -733,7 +734,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     consideration[1] = ConsiderationItem({
@@ -742,7 +743,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     // Create the CampaignParams with the offer and consideration from above.
@@ -784,7 +785,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: burnTokenId0,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         considerationFromEvent[1] = ConsiderationItem({
@@ -793,7 +794,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: burnTokenId0,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
@@ -840,8 +841,8 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         });
 
     //         // Check that one redeemableToken and one redeemableTokenTwo have been burned
-    //         assertEq(redeemableToken.ownerOf(burnTokenId0), _BURN_ADDRESS);
-    //         assertEq(redeemableTokenTwo.ownerOf(burnTokenId0), _BURN_ADDRESS);
+    //         assertEq(redeemableToken.ownerOf(burnTokenId0), BURN_ADDRESS);
+    //         assertEq(redeemableTokenTwo.ownerOf(burnTokenId0), BURN_ADDRESS);
 
     //         // Check that the redemption token has been minted to the test contract
     //         assertEq(redemptionToken.ownerOf(burnTokenId0), address(this));
@@ -895,7 +896,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     // Create the CampaignParams with the offer and consideration from above.
@@ -945,7 +946,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //             identifierOrCriteria: redeemableTokenId,
     //             startAmount: 1,
     //             endAmount: 1,
-    //             recipient: payable(_BURN_ADDRESS)
+    //             recipient: payable(BURN_ADDRESS)
     //         });
 
     //         // Check that the consideration passed into createCampaign has itemType ERC721_WITH_CRITERIA
@@ -991,7 +992,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         });
 
     //         // Check that the redeemableToken has been burned
-    //         assertEq(redeemableToken.ownerOf(redeemableTokenId), _BURN_ADDRESS);
+    //         assertEq(redeemableToken.ownerOf(redeemableTokenId), BURN_ADDRESS);
 
     //         // Check that the two redemptionTokens has been minted to the test contract
     //         assertEq(redemptionToken.ownerOf(redemptionTokenId), address(this));
@@ -1149,7 +1150,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     OrderParameters memory parameters = OrderParametersLib
@@ -1207,7 +1208,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         identifierOrCriteria: 0,
     //         startAmount: 1,
     //         endAmount: 1,
-    //         recipient: payable(_BURN_ADDRESS)
+    //         recipient: payable(BURN_ADDRESS)
     //     });
 
     //     (
@@ -1227,7 +1228,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
 
     //     for (uint256 i; i < 5; i++) {
     //         tokenId = i;
-    //         assertEq(redeemableToken.ownerOf(tokenId), _BURN_ADDRESS);
+    //         assertEq(redeemableToken.ownerOf(tokenId), BURN_ADDRESS);
     //         assertEq(redemptionToken.ownerOf(tokenId), address(this));
     //     }
     // }

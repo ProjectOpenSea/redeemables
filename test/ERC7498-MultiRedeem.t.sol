@@ -85,8 +85,8 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         }
 
         ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
-            "TestRedeemablesReceive721",
-            "TEST",
+            "",
+            "",
             erc7498Tokens
         );
 
@@ -114,7 +114,6 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         IERC7498(context.erc7498Token).createCampaign(params, "");
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
@@ -122,9 +121,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
         IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        _checkTokenDoesNotExist(
-            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
-        );
+        _checkTokenDoesNotExist(address(context.erc7498Token), tokenId, context.isErc7498Token721);
 
         _checkTokenSentToBurnAddress(secondRedeemTokenAddress, tokenId, context.isErc7498Token721);
 
@@ -156,8 +153,8 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         }
 
         ERC1155ShipyardRedeemableMintable receiveToken = new ERC1155ShipyardRedeemableMintable(
-                "TestRedeemablesReceive1155SequentialIds",
-                "TEST"
+                "",
+                ""
             );
         ERC721(address(context.erc7498Token)).setApprovalForAll(address(receiveToken), true);
 
@@ -205,7 +202,6 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         IERC7498(receiveToken).createCampaign(params, "");
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
@@ -213,9 +209,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
         IERC7498(receiveToken).redeem(tokenIds, address(this), extraData);
 
-        _checkTokenDoesNotExist(
-            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
-        );
+        _checkTokenDoesNotExist(address(context.erc7498Token), tokenId, context.isErc7498Token721);
 
         assertEq(receiveToken.balanceOf(address(this), 1), 1);
         assertEq(receiveToken.balanceOf(address(this), 2), 1);

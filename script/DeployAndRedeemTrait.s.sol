@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
+import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
@@ -13,8 +13,6 @@ import {ERC721ShipyardRedeemablePreapprovedTraitSetters} from
     "../src/test/ERC721ShipyardRedeemablePreapprovedTraitSetters.sol";
 
 contract DeployAndRedeemTrait is Script, Test {
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function run() external {
         vm.startBroadcast();
 
@@ -107,11 +105,9 @@ contract DeployAndRedeemTrait is Script, Test {
         receiveToken.redeem(new uint256[](0), msg.sender, data);
 
         // Assert new trait has been set and redemption token is minted.
-        bytes32 actualTraitValue = DynamicTraits(address(redeemToken)).getTraitValue(1, traitKey);
-
+        bytes32 actualTraitValue = IERC7496(address(redeemToken)).getTraitValue(1, traitKey);
         // "hasRedeemed" should be 1 (true)
         assertEq(bytes32(uint256(1)), actualTraitValue);
-
         assertEq(receiveToken.ownerOf(1), msg.sender);
     }
 }

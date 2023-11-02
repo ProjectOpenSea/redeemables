@@ -13,6 +13,7 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
@@ -65,7 +66,6 @@ contract ERC7498_Revert is BaseRedeemablesTest {
         IERC7498(erc7498Tokens[0]).createCampaign(params, "");
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         uint256[] memory tokenIds = Solarray.uint256s(invalidTokenId);
 
@@ -100,7 +100,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
         consideration[1] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
@@ -108,7 +108,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -130,7 +130,6 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
@@ -165,7 +164,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
         consideration[1] = ConsiderationItem({
             itemType: ItemType.NATIVE,
@@ -195,12 +194,10 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId, 0);
-        uint256[] memory traitRedemptionTokenIds;
 
         vm.expectRevert(abi.encodeWithSelector(InvalidTxValue.selector, 0.05 ether, 0.1 ether));
         IERC7498(erc7498Tokens[0]).redeem{value: 0.05 ether}(considerationTokenIds, address(this), extraData);
@@ -233,7 +230,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
         consideration[1] = ConsiderationItem({
             itemType: ItemType.ERC20,
@@ -265,7 +262,6 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
         consideration[0].identifierOrCriteria = tokenId;
 
@@ -315,7 +311,6 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
@@ -367,7 +362,6 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);

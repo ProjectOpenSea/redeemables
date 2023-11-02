@@ -17,6 +17,7 @@ import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
@@ -90,9 +91,8 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         context.erc7498Token.createCampaign(params, "");
 
-        // campaignId: 1
+        // campaignId: 1,
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
@@ -101,9 +101,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
         context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
 
-        _checkTokenDoesNotExist(
-            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
-        );
+        _checkTokenDoesNotExist(address(context.erc7498Token), tokenId, context.isErc7498Token721);
 
         assertEq(receiveToken721.ownerOf(1), address(this));
     }
@@ -147,7 +145,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
@@ -182,16 +180,13 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 1
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 1, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory tokenIds = Solarray.uint256s(tokenId);
 
         IERC7498(context.erc7498Token).redeem(tokenIds, address(this), extraData);
 
-        _checkTokenDoesNotExist(
-            address(context.erc7498Token), tokenId, context.isErc7498Token721, context.isErc7498TokenSeaDrop
-        );
+        _checkTokenDoesNotExist(address(context.erc7498Token), tokenId, context.isErc7498Token721);
 
         assertEq(firstRequirementRedeemToken.ownerOf(tokenId), address(this));
 
@@ -214,7 +209,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         }
     }
 
-    function burnErc20RedeemErc721(RedeemablesContext memory context) public {
+    function burnErc20RedeemErc721(RedeemablesContext memory /* context */ ) public {
         erc20s[0].mint(address(this), 0.5 ether);
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
@@ -244,7 +239,6 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(0);
@@ -288,7 +282,6 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         // campaignId: 1
         // requirementsIndex: 0
-        // redemptionHash: bytes32(0)
         bytes memory extraData = abi.encode(1, 0, bytes32(0), defaultTraitRedemptionTokenIds, uint256(0), bytes(""));
 
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);

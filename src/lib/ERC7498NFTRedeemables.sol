@@ -16,6 +16,7 @@ import {IERC7498} from "../interfaces/IERC7498.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "./RedeemablesConstants.sol";
 
 contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev Counter for next campaign id.
@@ -30,9 +31,6 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     /// @dev The total current redemptions by campaign id.
     mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
 
-    /// @dev The burn address.
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function redeem(uint256[] calldata considerationTokenIds, address recipient, bytes calldata extraData)
         public
         payable
@@ -43,16 +41,15 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         }
 
         // Get the values from extraData.
-        // uint256 campaignId = uint256(bytes32(extraData[0:32]));
-        // uint256 requirementsIndex = uint256(bytes32(extraData[32:64]));
-        // uint256[] memory traitRedemptionTokenIds;
         (
             uint256 campaignId,
             uint256 requirementsIndex,
-            bytes32 redemptionHash,
+            /* bytes32 redemptionHash */
+            ,
             uint256[] memory traitRedemptionTokenIds,
-            uint256 salt,
-            bytes memory signature
+            /* uint256 salt */
+            ,
+            /*bytes memory signature */
         ) = abi.decode(extraData, (uint256, uint256, bytes32, uint256[], uint256, bytes));
 
         // Get the campaign params.
@@ -223,13 +220,13 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
 
         // If consideration item is this contract, recipient is burn address, and _useInternalBurn() fn returns true,
         // call the internal burn function and return.
-        if (c.token == address(this) && c.recipient == payable(_BURN_ADDRESS) && _useInternalBurn()) {
+        if (c.token == address(this) && c.recipient == payable(BURN_ADDRESS) && _useInternalBurn()) {
             _internalBurn(msg.sender, id, c.startAmount);
         } else {
             // Transfer the token to the consideration recipient.
             if (c.itemType == ItemType.ERC721 || c.itemType == ItemType.ERC721_WITH_CRITERIA) {
                 // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     try ERC721Burnable(c.token).burn(id) {
                         // If the burn worked, return.
                         return;
@@ -241,7 +238,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     IERC721(c.token).safeTransferFrom(msg.sender, c.recipient, id);
                 }
             } else if ((c.itemType == ItemType.ERC1155 || c.itemType == ItemType.ERC1155_WITH_CRITERIA)) {
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
                     try ERC1155Burnable(c.token).burn(msg.sender, id, c.startAmount) {
                         // If the burn worked, return.
@@ -254,7 +251,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     IERC1155(c.token).safeTransferFrom(msg.sender, c.recipient, id, c.startAmount, "");
                 }
             } else if (c.itemType == ItemType.ERC20) {
-                if (c.recipient == payable(_BURN_ADDRESS)) {
+                if (c.recipient == payable(BURN_ADDRESS)) {
                     // If recipient is the burn address, try burning the token first, if that doesn't work use transfer.
                     try ERC20Burnable(c.token).burnFrom(msg.sender, c.startAmount) {
                         // If the burn worked, return.

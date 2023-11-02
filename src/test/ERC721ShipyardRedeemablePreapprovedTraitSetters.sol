@@ -7,6 +7,9 @@ import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol"
 import {CampaignParams} from "../lib/RedeemablesStructs.sol";
 
 contract ERC721ShipyardRedeemablePreapprovedTraitSetters is ERC721ShipyardRedeemableOwnerMintable {
+    // TODO add the `allowedTraitSetters` logic to DynamicTraits.sol contract in shipyard-core
+    // with getAllowedTraitSetters() and setAllowedTraitSetters(). add `is DynamicTraits` to
+    // ERC721ShipyardRedeemable and ERC721SeaDropRedeemable contracts with onlyOwner on setAllowedTraitSetters().
     address[] public allowedTraitSetters;
 
     constructor(string memory name_, string memory symbol_, address[] memory allowedTraitSetters_)

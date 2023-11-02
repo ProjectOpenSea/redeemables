@@ -6,12 +6,11 @@ import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens is Script, Test {
-    address constant _BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-
     function run() external {
         vm.startBroadcast();
 
@@ -44,7 +43,7 @@ contract DeployAndRedeemTokens is Script, Test {
             identifierOrCriteria: 0,
             startAmount: 1,
             endAmount: 1,
-            recipient: payable(_BURN_ADDRESS)
+            recipient: payable(BURN_ADDRESS)
         });
 
         CampaignRequirements[] memory requirements = new CampaignRequirements[](

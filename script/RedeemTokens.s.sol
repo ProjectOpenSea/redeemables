@@ -14,7 +14,7 @@ contract RedeemTokens is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
+        // address redeemToken = 0x1eCC76De3f9E4e9f8378f6ade61A02A10f976c45;
         ERC1155ShipyardRedeemableMintable receiveToken =
             ERC1155ShipyardRedeemableMintable(0x3D0fa2a8D07dfe357905a4cB4ed51b0Aea8385B9);
 
@@ -22,7 +22,7 @@ contract RedeemTokens is Script, Test {
         uint256 campaignId = 1;
         uint256 requirementsIndex = 0;
         bytes32 redemptionHash = bytes32(0);
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
+        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, bytes32(0), "");
 
         uint256[] memory redeemTokenIds = new uint256[](1);
         redeemTokenIds[0] = 1;
