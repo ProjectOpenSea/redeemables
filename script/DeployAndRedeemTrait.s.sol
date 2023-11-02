@@ -63,7 +63,6 @@ contract DeployAndRedeemTrait is Script, Test {
         traitRedemptions[0] = TraitRedemption({
             substandard: 1,
             token: address(redeemToken),
-            identifier: 0, // unused field
             traitKey: traitKey,
             traitValue: traitValue,
             substandardValue: substandardValue

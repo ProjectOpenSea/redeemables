@@ -1071,7 +1071,6 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         TraitRedemption memory traitRedemption = TraitRedemption({
     //             substandard: 0, // set value to traitValue
     //             token: address(dynamicTraitsToken),
-    //             identifier: redeemableTokenId0,
     //             traitKey: "isRedeemed",
     //             traitValue: bytes32(abi.encode(1)),
     //             substandardValue: bytes32(abi.encode(0))

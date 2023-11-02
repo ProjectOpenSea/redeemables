@@ -458,9 +458,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     uint256 newTraitValue = uint256(currentTraitValue) - uint256(traitValue);
 
                     // Decrement the trait by the trait value.
-                    IERC7496(token).setTrait(
-                        traitRedemptions[i].identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue)
-                    );
+                    IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 4) {
                     // Revert if the current trait value is not equal to the substandard value.
                     if (currentTraitValue != substandardValue) {

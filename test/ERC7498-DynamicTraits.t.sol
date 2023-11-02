@@ -77,7 +77,6 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
         traitRedemptions[0] = TraitRedemption({
             substandard: 1,
             token: address(redeemToken),
-            identifier: 0, // unused field
             traitKey: traitKey,
             traitValue: bytes32(uint256(1)),
             substandardValue: bytes32(uint256(0))
