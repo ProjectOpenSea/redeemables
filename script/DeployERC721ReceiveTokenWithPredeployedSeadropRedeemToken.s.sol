@@ -11,7 +11,7 @@ import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintab
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 
-contract DeployERC721ReceiveTokenWithPredeployedSeadropRedeemToken is Script, Test {
+contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Test {
     function run() external {
         vm.startBroadcast();
 
@@ -67,8 +67,10 @@ contract DeployERC721ReceiveTokenWithPredeployedSeadropRedeemToken is Script, Te
 
         // Let's redeem them!
         uint256 requirementsIndex = 0;
-        bytes32 redemptionHash = bytes32(0);
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
+        bytes32 redemptionHash;
+        uint256 salt;
+        bytes memory signature;
+        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;

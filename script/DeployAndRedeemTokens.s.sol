@@ -68,8 +68,10 @@ contract DeployAndRedeemTokens is Script, Test {
         // Let's redeem them!
         uint256 campaignId = 1;
         uint256 requirementsIndex = 0;
-        bytes32 redemptionHash = bytes32(0);
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash);
+        bytes32 redemptionHash;
+        uint256 salt;
+        bytes memory signature;
+        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;

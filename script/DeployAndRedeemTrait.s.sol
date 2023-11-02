@@ -99,7 +99,7 @@ contract DeployAndRedeemTrait is Script, Test {
             bytes32(0), // redemptionHash
             traitRedemptionTokenIds,
             uint256(0), // salt
-            bytes("") // signer
+            bytes("") // signature
         );
 
         receiveToken.redeem(new uint256[](0), msg.sender, data);
