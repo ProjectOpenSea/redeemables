@@ -60,11 +60,15 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         redeemToken.mint(msg.sender, 1);
 
         // Let's redeem them!
-        uint256 requirementsIndex = 0;
-        bytes32 redemptionHash;
-        uint256 salt;
-        bytes memory signature;
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
+        uint256[] memory traitRedemptionTokenIds;
+        bytes memory data = abi.encode(
+            campaignId,
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;
