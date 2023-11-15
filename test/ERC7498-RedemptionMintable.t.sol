@@ -13,10 +13,6 @@ contract TestERC7498_RedemptionMintable is BaseRedeemablesTest {
     using ConsiderationItemLib for ConsiderationItem;
     using ConsiderationItemLib for ConsiderationItem[];
 
-    function setUp() public virtual override {
-        super.setUp();
-    }
-
     function testSupportsInterfaceId() public {
         assertTrue(receiveToken721.supportsInterface(type(IRedemptionMintable).interfaceId));
         assertTrue(receiveToken1155.supportsInterface(type(IRedemptionMintable).interfaceId));

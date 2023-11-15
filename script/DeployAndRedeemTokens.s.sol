@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
@@ -53,14 +53,14 @@ contract DeployAndRedeemTokens is Script, Test {
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
-        redeemToken.createCampaign(params, "");
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        redeemToken.createCampaign(campaign, "");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);

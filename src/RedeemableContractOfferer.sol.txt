@@ -62,7 +62,7 @@ contract RedeemableContractOfferer is
         _SEAPORT = seaport;
     }
 
-    function createCampaign(CampaignParams calldata params, string calldata uri)
+    function createCampaign(CampaignParams calldata params, string calldata metadataURI)
         external
         returns (uint256 campaignId)
     {
@@ -88,7 +88,7 @@ contract RedeemableContractOfferer is
         emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
     }
 
-    function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external {
+    function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata metadataURI) external {
         // Revert if the campaign id is invalid.
         if (campaignId == 0 || campaignId >= _nextCampaignId) {
             revert InvalidCampaignId();
@@ -170,7 +170,7 @@ contract RedeemableContractOfferer is
         }
     }
 
-    function updateCampaignURI(uint256 campaignId, string calldata uri) external {
+    function updateCampaignURI(uint256 campaignId, string calldata metadataURI) external {
         CampaignParams storage params = _campaignParams[campaignId];
 
         if (params.manager != msg.sender) revert NotManager();

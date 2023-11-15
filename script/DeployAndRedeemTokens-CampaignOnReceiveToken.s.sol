@@ -5,7 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
@@ -46,18 +46,21 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
         uint256 campaignId =
-            receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
+            receiveToken.createCampaign(campaign, "ipfs://QmbFxYgQMoBSUNFyW7WRWGaAWwJiRPM6HbK86aFkSJSq5N");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
+        redeemToken.mint(msg.sender, 2);
+        redeemToken.mint(msg.sender, 3);
+        redeemToken.mint(msg.sender, 4);
 
         // Let's redeem them!
         uint256[] memory traitRedemptionTokenIds;

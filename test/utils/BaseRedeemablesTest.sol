@@ -38,22 +38,29 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         IERC7498 erc7498Token;
     }
 
+    event Redemption(
+        uint256 indexed campaignId,
+        uint256 requirementsIndex,
+        bytes32 redemptionHash,
+        uint256[] considerationTokenIds,
+        uint256[] traitRedemptionTokenIds,
+        address redeemedBy
+    );
+
     bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
 
     address[] erc7498Tokens;
-
     ERC721ShipyardRedeemableOwnerMintable erc721ShipyardRedeemable;
     ERC721SeaDropRedeemableOwnerMintable erc721SeaDropRedeemable;
     ERC1155ShipyardRedeemableOwnerMintable erc1155ShipyardRedeemable;
     ERC1155SeaDropRedeemableOwnerMintable erc1155SeaDropRedeemable;
-
     ERC721RedemptionMintable receiveToken721;
     ERC1155RedemptionMintable receiveToken1155;
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
     TraitRedemption[] defaultTraitRedemptions;
-    uint256[] defaultTraitRedemptionTokenIds = new uint256[](0);
+    uint256[] defaultTraitRedemptionTokenIds;
 
     CampaignRequirements[] defaultCampaignRequirements;
     // CampaignParams defaultCampaignParams;
@@ -109,22 +116,16 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         OfferItemLib.fromDefault(SINGLE_ERC721).withToken(address(receiveToken721)).withItemType(
             ItemType.ERC721_WITH_CRITERIA
         ).saveDefault(DEFAULT_ERC721_CAMPAIGN_OFFER);
-
         ConsiderationItemLib.fromDefault(SINGLE_ERC721).withToken(address(erc7498Tokens[0])).withRecipient(BURN_ADDRESS)
             .withItemType(ItemType.ERC721_WITH_CRITERIA).saveDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION);
-
         defaultCampaignOffer.push(OfferItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_OFFER));
-
         defaultCampaignConsideration.push(ConsiderationItemLib.fromDefault(DEFAULT_ERC721_CAMPAIGN_CONSIDERATION));
     }
 
     function testRedeemable(function(RedeemablesContext memory) external fn, RedeemablesContext memory context)
         internal
     {
-        try fn(context) {}
-        catch (bytes memory reason) {
-            assertPass(reason);
-        }
+        fn(context);
     }
 
     function _campaignParamsMap() private pure returns (mapping(string => CampaignParams) storage campaignParamsMap) {
@@ -151,7 +152,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
                 erc1155s[i].setApprovalForAll(address(erc7498Tokens[j]), true);
             }
         }
-
         vm.stopPrank();
     }
 
@@ -197,9 +197,18 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     function _mintToken(address token, uint256 tokenId) internal {
         if (_isERC721(token)) {
             ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId);
-        } else if (IERC165(token).supportsInterface(type(IERC1155).interfaceId)) {
+        } else {
             // token is ERC1155
             ERC1155ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId, 1);
+        }
+    }
+
+    function _mintToken(address token, uint256 tokenId, address recipient) internal {
+        if (_isERC721(token)) {
+            ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(recipient, tokenId);
+        } else {
+            // token is ERC1155
+            ERC1155ShipyardRedeemableOwnerMintable(address(token)).mint(recipient, tokenId, 1);
         }
     }
 

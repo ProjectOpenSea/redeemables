@@ -85,11 +85,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: offer,
                 consideration: consideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -207,11 +207,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: campaignOffer,
                 consideration: campaignConsideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -317,11 +317,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: offer,
                 consideration: consideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -445,11 +445,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -596,11 +596,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -751,11 +751,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -904,11 +904,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -1040,11 +1040,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -1181,11 +1181,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //     CampaignParams memory params = CampaignParams({
     //         offer: offer,
     //         consideration: consideration,
-    //         signer: address(0),
     //         startTime: uint32(block.timestamp),
     //         endTime: uint32(block.timestamp + 1000),
     //         maxCampaignRedemptions: 5,
-    //         manager: address(this)
+    //         manager: address(this),
+    //         signer: address(0)
     //     });
 
     //     offerer.createCampaign(params, "");

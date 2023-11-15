@@ -4,18 +4,18 @@ pragma solidity ^0.8.19;
 import {ERC721ShipyardContractMetadata} from "./lib/ERC721ShipyardContractMetadata.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
-import {CampaignParams} from "./lib/RedeemablesStructs.sol";
+import {Campaign} from "./lib/RedeemablesStructs.sol";
 
 contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTRedeemables {
     constructor(string memory name_, string memory symbol_) ERC721ShipyardContractMetadata(name_, symbol_) {}
 
-    function createCampaign(CampaignParams calldata params, string calldata uri)
+    function createCampaign(Campaign calldata campaign, string calldata metadataURI)
         public
         override
         onlyOwner
         returns (uint256 campaignId)
     {
-        campaignId = ERC7498NFTRedeemables.createCampaign(params, uri);
+        campaignId = ERC7498NFTRedeemables.createCampaign(campaign, metadataURI);
     }
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
