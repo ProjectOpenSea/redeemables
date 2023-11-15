@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {Solarray} from "solarray/Solarray.sol";
 import {ERC721} from "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import {ERC1155} from "openzeppelin-contracts/contracts/token/ERC1155/ERC1155.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {IERC721A} from "seadrop/lib/ERC721A/contracts/IERC721A.sol";
 import {IERC721} from "openzeppelin-contracts/contracts/interfaces/IERC721.sol";
@@ -197,6 +198,17 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         }
     }
 
+    function _checkTokenIsOwnedBy(address token, uint256 tokenId, address owner) internal {
+        if (_isERC721(token)) {
+            assertEq(IERC721(address(token)).ownerOf(tokenId), owner);
+        } else if (_isERC20(token)) {
+            assertGt(IERC20(address(token)).balanceOf(owner), 0);
+        } else {
+            // token is ERC1155
+            assertGt(IERC1155(address(token)).balanceOf(owner, tokenId), 0);
+        }
+    }
+
     function _mintToken(address token, uint256 tokenId) internal {
         if (_isERC721(token)) {
             ERC721ShipyardRedeemableOwnerMintable(address(token)).mint(address(this), tokenId);
@@ -217,5 +229,9 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
     function _isERC721(address token) internal view returns (bool isERC721) {
         isERC721 = IERC165(token).supportsInterface(type(IERC721).interfaceId);
+    }
+
+    function _isERC20(address token) internal view returns (bool isERC20) {
+        isERC20 = IERC165(token).supportsInterface(type(IERC20).interfaceId);
     }
 }

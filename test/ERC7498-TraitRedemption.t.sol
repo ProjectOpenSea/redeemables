@@ -105,5 +105,13 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
         bytes32 actualTraitValue = redeemToken.getTraitValue(tokenId, traitKey);
         assertEq(bytes32(uint256(1)), actualTraitValue);
         assertEq(receiveToken721.ownerOf(1), address(this));
+
+        // Redeeming one more time should fail with InvalidRequiredTraitValue since it is already 1.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidRequiredTraitValue.selector, redeemToken, tokenId, traitKey, bytes32(uint256(1)), bytes32(0)
+            )
+        );
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
     }
 }

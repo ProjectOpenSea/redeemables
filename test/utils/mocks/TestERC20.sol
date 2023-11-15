@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.19;
 
+import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
+import {IERC20} from "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import {ERC20} from "solady/src/tokens/ERC20.sol";
 
 // Used for minting test ERC20s in our tests
@@ -55,5 +57,9 @@ contract TestERC20 is ERC20 {
 
     function symbol() public view virtual override returns (string memory) {
         return "TST20";
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+        return interfaceId == type(IERC20).interfaceId;
     }
 }

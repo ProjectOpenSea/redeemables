@@ -96,6 +96,59 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         tokenId = 2;
     }
 
+    function testSendErc721OrErc1155RedeemErc721() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(
+                this.sendErc721OrErc1155RedeemErc721, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+            );
+        }
+    }
+
+    function sendErc721OrErc1155RedeemErc721(RedeemablesContext memory context) external {
+        _mintToken(address(context.erc7498Token), tokenId);
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
+        // Set consideration recipient to greg.
+        address greg = makeAddr("greg");
+        consideration[0].recipient = payable(greg);
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
+        CampaignParams memory params = CampaignParams({
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 1,
+            manager: address(this),
+            signer: address(0)
+        });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        context.erc7498Token.createCampaign(campaign, "");
+
+        // Grant approval to the erc7498Token.
+        IERC721(address(context.erc7498Token)).setApprovalForAll(address(context.erc7498Token), true);
+
+        bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            defaultTraitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+        uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
+        context.erc7498Token.redeem(considerationTokenIds, address(0), extraData);
+
+        _checkTokenIsOwnedBy(address(context.erc7498Token), tokenId, greg);
+        assertEq(receiveToken721.ownerOf(1), address(this));
+    }
+
     function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
             testRedeemable(
@@ -180,12 +233,6 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
     }
 
     function testBurnErc20RedeemErc721() public {
-        for (uint256 i; i < erc7498Tokens.length; i++) {
-            testRedeemable(this.burnErc20RedeemErc721, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])}));
-        }
-    }
-
-    function burnErc20RedeemErc721(RedeemablesContext memory /* context */ ) public {
         erc20s[0].mint(address(this), 0.5 ether);
         CampaignRequirements[] memory requirements = new CampaignRequirements[](
             1
@@ -225,6 +272,51 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
         vm.expectRevert(ERC721.TokenDoesNotExist.selector);
         IERC721(erc7498Tokens[0]).ownerOf(tokenId);
+        assertEq(receiveToken721.ownerOf(1), address(this));
+    }
+
+    function testSendErc20RedeemErc721() public {
+        erc20s[0].mint(address(this), 0.5 ether);
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
+        consideration[0] = defaultCampaignConsideration[0].withToken(address(erc20s[0])).withItemType(ItemType.ERC20)
+            .withStartAmount(0.5 ether).withEndAmount(0.5 ether);
+        // Set consideration recipient to greg.
+        address greg = makeAddr("greg");
+        consideration[0].recipient = payable(greg);
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: defaultTraitRedemptions
+        });
+        CampaignParams memory params = CampaignParams({
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this),
+            signer: address(0)
+        });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        IERC7498(erc7498Tokens[0]).createCampaign(campaign, "");
+
+        bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            defaultTraitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+
+        uint256[] memory considerationTokenIds = Solarray.uint256s(0);
+
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
+        IERC7498(erc7498Tokens[0]).redeem(considerationTokenIds, address(this), extraData);
+
+        _checkTokenIsOwnedBy(address(erc20s[0]), tokenId, greg);
         assertEq(receiveToken721.ownerOf(1), address(this));
     }
 
