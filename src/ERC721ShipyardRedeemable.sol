@@ -19,9 +19,7 @@ contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTR
     }
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
-        if (!_exists(tokenId)) {
-            revert TokenDoesNotExist();
-        }
+        if (!_exists(tokenId)) revert TokenDoesNotExist();
 
         DynamicTraits.setTrait(tokenId, traitKey, value);
     }
@@ -33,9 +31,7 @@ contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTR
         override
         returns (bytes32 traitValue)
     {
-        if (!_exists(tokenId)) {
-            revert TokenDoesNotExist();
-        }
+        if (!_exists(tokenId)) revert TokenDoesNotExist();
 
         traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
     }

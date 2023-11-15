@@ -10,14 +10,13 @@ import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {IERC7498} from "../src/interfaces/IERC7498.sol";
 import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
-import {ERC721ShipyardRedeemablePreapprovedTraitSetters} from
-    "../src/test/ERC721ShipyardRedeemablePreapprovedTraitSetters.sol";
+import {ERC721ShipyardRedeemableTraitSetters} from "../src/test/ERC721ShipyardRedeemableTraitSetters.sol";
 
-contract ERC7498_DynamicTraits is BaseRedeemablesTest {
+contract ERC7498_TraitRedemption is BaseRedeemablesTest {
     using OfferItemLib for OfferItem;
     using OfferItemLib for OfferItem[];
     using ConsiderationItemLib for ConsiderationItem;
@@ -38,8 +37,7 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
     function erc721TraitRedemptionSubstandardOneForErc721(RedeemablesContext memory context) public {
         address[] memory allowedTraitSetters = new address[](1);
         allowedTraitSetters[0] = address(context.erc7498Token);
-        ERC721ShipyardRedeemablePreapprovedTraitSetters redeemToken =
-        new ERC721ShipyardRedeemablePreapprovedTraitSetters(
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
                 "",
                 "",
                 allowedTraitSetters
@@ -76,8 +74,23 @@ contract ERC7498_DynamicTraits is BaseRedeemablesTest {
         context.erc7498Token.createCampaign(campaign, "");
 
         uint256[] memory considerationTokenIds;
-        uint256[] memory traitRedemptionTokenIds = Solarray.uint256s(tokenId);
+        // First test reverts with TraitRedemptionTokenIdsDontMatchTraitRedemptionsLength.
+        uint256[] memory traitRedemptionTokenIds = Solarray.uint256s(tokenId, tokenId + 1);
         bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(TraitRedemptionTokenIdsDontMatchTraitRedemptionsLength.selector, 1, 2));
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        // Now test with valid trait redemptions token ids length.
+        traitRedemptionTokenIds = Solarray.uint256s(tokenId);
+        extraData = abi.encode(
             1, // campaignId
             0, // requirementsIndex
             bytes32(0), // redemptionHash

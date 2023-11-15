@@ -136,10 +136,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
 
         // Revert if msg.sender is not the manager.
         address existingManager = _campaigns[campaignId].params.manager;
-        if (
-            campaign.params.manager != msg.sender
-                && (existingManager != address(0) && existingManager != campaign.params.manager)
-        ) {
+        if (existingManager != msg.sender) {
             revert NotManager();
         }
 
@@ -164,7 +161,7 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         }
 
         // Iterate over the requirements.
-        for (uint256 i = 0; i < campaign.requirements.length;) {
+        for (uint256 i; i < campaign.requirements.length;) {
             CampaignRequirements memory requirement = campaign.requirements[i];
 
             // Validate each consideration item.

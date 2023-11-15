@@ -26,7 +26,6 @@ interface RedeemablesErrors {
     error InvalidRequiredTraitValue(
         address token, uint256 tokenId, bytes32 traitKey, bytes32 gotTraitValue, bytes32 wantTraitValue
     );
-    //error InvalidSubstandard(uint256 substandard);
     error InvalidTraitRedemption();
     error InvalidTraitRedemptionToken(address token);
     error ConsiderationRecipientNotFound(address token);

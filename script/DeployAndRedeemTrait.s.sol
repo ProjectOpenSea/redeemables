@@ -7,10 +7,9 @@ import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721ShipyardRedeemablePreapprovedTraitSetters} from
-    "../src/test/ERC721ShipyardRedeemablePreapprovedTraitSetters.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableTraitSetters} from "../src/test/ERC721ShipyardRedeemableTraitSetters.sol";
 
 contract DeployAndRedeemTrait is Script, Test {
     function run() external {
@@ -27,8 +26,7 @@ contract DeployAndRedeemTrait is Script, Test {
         allowedTraitSetters[0] = address(receiveToken);
 
         // deploy the redeem token with the receive token as an allowed trait setter
-        ERC721ShipyardRedeemablePreapprovedTraitSetters redeemToken =
-        new ERC721ShipyardRedeemablePreapprovedTraitSetters(
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
                 "DynamicTraitsRedeemToken",
                 "TEST",
                 allowedTraitSetters

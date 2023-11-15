@@ -7,7 +7,7 @@ import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens is Script, Test {
@@ -20,11 +20,11 @@ contract DeployAndRedeemTokens is Script, Test {
             );
         address[] memory redeemTokens = new address[](1);
         redeemTokens[0] = address(redeemToken);
-        ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
             "TestRedeemablesRecieveToken",
-            "TEST",
-            redeemTokens
+            "TEST"
         );
+        receiveToken.setRedeemablesContracts(redeemTokens);
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);

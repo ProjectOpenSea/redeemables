@@ -7,7 +7,7 @@ import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 

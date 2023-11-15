@@ -21,8 +21,8 @@ import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
@@ -32,7 +32,7 @@ contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
 
     RedeemableContractOfferer offerer;
     TestERC721 redeemableToken;
-    ERC721RedemptionMintable redemptionToken;
+    ERC721ShipyardRedeemableMintable redemptionToken;
     CriteriaResolver[] criteriaResolvers;
     Merkle merkle = new Merkle();
 
@@ -46,7 +46,7 @@ contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
             address(seaport)
         );
         redeemableToken = new TestERC721();
-        redemptionToken = new ERC721RedemptionMintable(
+        redemptionToken = new ERC721ShipyardRedeemableMintable(
             address(offerer),
             address(redeemableToken)
         );
@@ -275,7 +275,7 @@ contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
         _mintToken(address(redeemableToken), tokenId);
         redeemableToken.setApprovalForAll(address(conduit), true);
 
-        ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable redemptionTokenWithCounter = new ERC721ShipyardRedeemableMintable(
                 address(offerer),
                 address(redeemableToken)
             );
@@ -538,7 +538,7 @@ contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
         // Set the tokenId to be burned to the first tokenId to be redeemed
         uint256 redeemableTokenId0 = redemptionTokenId0;
 
-        ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable redemptionTokenWithCounter = new ERC721ShipyardRedeemableMintable(
                 address(offerer),
                 address(redeemableToken)
             );
@@ -818,8 +818,8 @@ contract TestRedeemableContractOfferer_721 is BaseOrderTest, RedeemablesErrors {
         // Set the tokenId to be burned to the first tokenId to be redeemed
         uint256 redeemableTokenId = redemptionTokenId;
 
-        // Create a new ERC721RedemptionMintable redemptionTokenTwo
-        ERC721RedemptionMintable redemptionTokenTwo = new ERC721RedemptionMintable(
+        // Create a new ERC721ShipyardRedeemableMintable redemptionTokenTwo
+        ERC721ShipyardRedeemableMintable redemptionTokenTwo = new ERC721ShipyardRedeemableMintable(
                 address(offerer),
                 address(redeemableToken)
             );

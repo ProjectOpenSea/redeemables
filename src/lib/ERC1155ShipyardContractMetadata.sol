@@ -46,14 +46,25 @@ contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ER
         _initializeOwner(msg.sender);
     }
 
+    /**
+     * @notice Returns the name of this token contract.
+     */
     function name() public view returns (string memory) {
         return _name;
     }
 
+    /**
+     * @notice Returns the symbol of this token contract.
+     */
     function symbol() public view returns (string memory) {
         return _symbol;
     }
 
+    /**
+     * @notice Sets the base URI for the token metadata and emits an event.
+     *
+     * @param newURI The new base URI to set.
+     */
     function setBaseURI(string calldata newURI) external onlyOwner {
         baseURI = newURI;
 
@@ -61,6 +72,11 @@ contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ER
         emit BatchMetadataUpdate(0, type(uint256).max);
     }
 
+    /**
+     * @notice Sets the contract URI for contract metadata.
+     *
+     * @param newURI The new contract URI.
+     */
     function setContractURI(string calldata newURI) external onlyOwner {
         // Set the new contract URI.
         contractURI = newURI;

@@ -46,14 +46,25 @@ contract ERC721ShipyardContractMetadata is ERC721ConduitPreapproved_Solady, ERC2
         _initializeOwner(msg.sender);
     }
 
+    /**
+     * @notice Returns the name of this token contract.
+     */
     function name() public view override returns (string memory) {
         return _name;
     }
 
+    /**
+     * @notice Returns the symbol of this token contract.
+     */
     function symbol() public view override returns (string memory) {
         return _symbol;
     }
 
+    /**
+     * @notice Sets the base URI for the token metadata and emits an event.
+     *
+     * @param newURI The new base URI to set.
+     */
     function setBaseURI(string calldata newURI) external onlyOwner {
         baseURI = newURI;
 
@@ -61,6 +72,11 @@ contract ERC721ShipyardContractMetadata is ERC721ConduitPreapproved_Solady, ERC2
         emit BatchMetadataUpdate(0, type(uint256).max);
     }
 
+    /**
+     * @notice Sets the contract URI for contract metadata.
+     *
+     * @param newURI The new contract URI.
+     */
     function setContractURI(string calldata newURI) external onlyOwner {
         // Set the new contract URI.
         contractURI = newURI;
@@ -97,6 +113,11 @@ contract ERC721ShipyardContractMetadata is ERC721ConduitPreapproved_Solady, ERC2
         emit ProvenanceHashUpdated(oldProvenanceHash, newProvenanceHash);
     }
 
+    /**
+     * @notice Returns the token URI for token metadata.
+     *
+     * @param tokenId The token id to get the token URI for.
+     */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory uri) {
         // Revert if the tokenId doesn't exist.
         if (!_exists(tokenId)) revert TokenDoesNotExist();

@@ -18,8 +18,8 @@ import {TestERC1155} from "../utils/mocks/TestERC1155.sol";
 import {OfferItemLib, ConsiderationItemLib} from "seaport-sol/src/SeaportSol.sol";
 import {OfferItem, ConsiderationItem} from "seaport-sol/src/SeaportStructs.sol";
 import {ItemType} from "seaport-sol/src/SeaportEnums.sol";
-import {ERC721RedemptionMintable} from "../../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC1155RedemptionMintable} from "../../src/extensions/ERC1155RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC1155ShipyardRedeemableMintable} from "../../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 import {ERC721SeaDropRedeemableOwnerMintable} from "../../src/test/ERC721SeaDropRedeemableOwnerMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
@@ -54,8 +54,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     ERC721SeaDropRedeemableOwnerMintable erc721SeaDropRedeemable;
     ERC1155ShipyardRedeemableOwnerMintable erc1155ShipyardRedeemable;
     ERC1155SeaDropRedeemableOwnerMintable erc1155SeaDropRedeemable;
-    ERC721RedemptionMintable receiveToken721;
-    ERC1155RedemptionMintable receiveToken1155;
+    ERC721ShipyardRedeemableMintable receiveToken721;
+    ERC1155ShipyardRedeemableMintable receiveToken1155;
 
     OfferItem[] defaultCampaignOffer;
     ConsiderationItem[] defaultCampaignConsideration;
@@ -95,6 +95,7 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         erc721SeaDropRedeemable.setMaxSupply(10);
         erc1155SeaDropRedeemable.setMaxSupply(1, 10);
         erc1155SeaDropRedeemable.setMaxSupply(2, 10);
+        erc1155SeaDropRedeemable.setMaxSupply(3, 10);
 
         erc7498Tokens = new address[](4);
         erc7498Tokens[0] = address(erc721ShipyardRedeemable);
@@ -107,8 +108,10 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         vm.label(erc7498Tokens[2], "erc1155ShipyardRedeemable");
         vm.label(erc7498Tokens[3], "erc1155SeaDropRedeemable");
 
-        receiveToken721 = new ERC721RedemptionMintable("", "", erc7498Tokens);
-        receiveToken1155 = new ERC1155RedemptionMintable("", "", erc7498Tokens);
+        receiveToken721 = new ERC721ShipyardRedeemableMintable("", "");
+        receiveToken1155 = new ERC1155ShipyardRedeemableMintable("", "");
+        receiveToken721.setRedeemablesContracts(erc7498Tokens);
+        receiveToken1155.setRedeemablesContracts(erc7498Tokens);
 
         _setApprovals(address(this));
 

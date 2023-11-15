@@ -26,9 +26,7 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables {
     }
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
-        if (!_exists(tokenId)) {
-            revert TokenDoesNotExist();
-        }
+        if (!_exists(tokenId)) revert TokenDoesNotExist();
 
         DynamicTraits.setTrait(tokenId, traitKey, value);
     }
@@ -40,9 +38,7 @@ contract ERC721SeaDropRedeemable is ERC721SeaDrop, ERC7498NFTRedeemables {
         override
         returns (bytes32 traitValue)
     {
-        if (!_exists(tokenId)) {
-            revert TokenDoesNotExist();
-        }
+        if (!_exists(tokenId)) revert TokenDoesNotExist();
 
         traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
     }

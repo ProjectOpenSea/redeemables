@@ -43,14 +43,14 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             traitRedemptions: defaultTraitRedemptions
         });
         CampaignParams memory params = CampaignParams({
-            startTime: uint32(block.timestamp),
-            endTime: uint32(block.timestamp + 1000),
-            maxCampaignRedemptions: 5,
+            startTime: 0,
+            endTime: 0, // will revert with NotActive until updated
+            maxCampaignRedemptions: 1,
             manager: address(this),
             signer: address(0)
         });
         Campaign memory campaign = Campaign({params: params, requirements: requirements});
-        context.erc7498Token.createCampaign(campaign, "");
+        uint256 campaignId = context.erc7498Token.createCampaign(campaign, "");
 
         (,, uint256 totalRedemptionsPreRedeem) = context.erc7498Token.getCampaign(1);
         assertEq(totalRedemptionsPreRedeem, 0);
@@ -64,6 +64,18 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             bytes("") // signature
         );
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                NotActive_.selector, block.timestamp, campaign.params.startTime, campaign.params.endTime
+            )
+        );
+        context.erc7498Token.redeem(considerationTokenIds, address(0), extraData);
+
+        // Update the campaign to an active endTime.
+        campaign.params.endTime = uint32(block.timestamp + 1000);
+        context.erc7498Token.updateCampaign(campaignId, campaign, "");
+
         vm.expectEmit(true, true, true, true);
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
         // Using address(0) for recipient should assign to msg.sender.
@@ -73,6 +85,15 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         assertEq(receiveToken721.ownerOf(1), address(this));
         (,, uint256 totalRedemptionsPostRedeem) = context.erc7498Token.getCampaign(1);
         assertEq(totalRedemptionsPostRedeem, 1);
+
+        // Redeeming one more should exceed maxCampaignRedemptions of 1.
+        tokenId = 3;
+        _mintToken(address(context.erc7498Token), tokenId);
+        considerationTokenIds[0] = tokenId;
+        vm.expectRevert(abi.encodeWithSelector(MaxCampaignRedemptionsReached.selector, 2, 1));
+        context.erc7498Token.redeem(considerationTokenIds, address(0), extraData);
+        // Reset tokenId back to its original value.
+        tokenId = 2;
     }
 
     function testBurnErc721RedeemErc721WithSecondRequirementsIndex() public {

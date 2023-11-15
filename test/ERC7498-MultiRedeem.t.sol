@@ -10,7 +10,7 @@ import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
 import {IERC7498} from "../src/interfaces/IERC7498.sol";
 import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
@@ -54,11 +54,11 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         }
         _mintToken(secondRedeemTokenAddress, tokenId);
 
-        ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
             "",
-            "",
-            erc7498Tokens
+            ""
         );
+        receiveToken.setRedeemablesContracts(erc7498Tokens);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
         consideration[1] = _getCampaignConsiderationItem(secondRedeemTokenAddress);

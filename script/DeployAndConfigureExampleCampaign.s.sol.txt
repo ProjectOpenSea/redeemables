@@ -8,7 +8,7 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {TestERC721} from "../test/utils/mocks/TestERC721.sol";
 
 contract DeployAndConfigureExampleCampaign is Script {
@@ -26,7 +26,7 @@ contract DeployAndConfigureExampleCampaign is Script {
             seaport
         );
         TestERC721 redeemableToken = new TestERC721();
-        ERC721RedemptionMintable redemptionToken = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable redemptionToken = new ERC721ShipyardRedeemableMintable(
             address(offerer),
             address(redeemableToken)
         );
