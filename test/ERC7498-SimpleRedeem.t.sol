@@ -76,6 +76,13 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         campaign.params.endTime = uint32(block.timestamp + 1000);
         context.erc7498Token.updateCampaign(campaignId, campaign, "");
 
+        // Clear the receiveToken mintRedemption allowed callers to check for error coverage.
+        receiveToken721.setRedeemablesContracts(new address[](0));
+        vm.expectRevert(abi.encodeWithSelector(InvalidCaller.selector, address(context.erc7498Token)));
+        context.erc7498Token.redeem(considerationTokenIds, address(0), extraData);
+        // Re-add allowed callers
+        receiveToken721.setRedeemablesContracts(erc7498Tokens);
+
         vm.expectEmit(true, true, true, true);
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));
         // Using address(0) for recipient should assign to msg.sender.
@@ -351,6 +358,13 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
             bytes("") // signature
         );
         uint256[] memory considerationTokenIds = Solarray.uint256s(tokenId);
+
+        // Clear the receiveToken mintRedemption allowed callers to check for error coverage.
+        receiveToken1155.setRedeemablesContracts(new address[](0));
+        vm.expectRevert(abi.encodeWithSelector(InvalidCaller.selector, erc7498Tokens[0]));
+        IERC7498(erc7498Tokens[0]).redeem(considerationTokenIds, address(0), extraData);
+        // Re-add allowed callers
+        receiveToken1155.setRedeemablesContracts(erc7498Tokens);
 
         vm.expectEmit(true, true, true, true);
         emit Redemption(1, 0, bytes32(0), considerationTokenIds, defaultTraitRedemptionTokenIds, address(this));

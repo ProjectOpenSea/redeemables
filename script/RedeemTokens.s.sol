@@ -7,7 +7,7 @@ import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 
 contract RedeemTokens is Script, Test {

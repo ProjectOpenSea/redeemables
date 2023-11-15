@@ -55,6 +55,8 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     ERC721SeaDropRedeemableOwnerMintable erc721SeaDropRedeemable;
     ERC1155ShipyardRedeemableOwnerMintable erc1155ShipyardRedeemable;
     ERC1155SeaDropRedeemableOwnerMintable erc1155SeaDropRedeemable;
+
+    address[] receiveTokens;
     ERC721ShipyardRedeemableMintable receiveToken721;
     ERC1155ShipyardRedeemableMintable receiveToken1155;
 
@@ -103,7 +105,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         erc7498Tokens[1] = address(erc721SeaDropRedeemable);
         erc7498Tokens[2] = address(erc1155ShipyardRedeemable);
         erc7498Tokens[3] = address(erc1155SeaDropRedeemable);
-
         vm.label(erc7498Tokens[0], "erc721ShipyardRedeemable");
         vm.label(erc7498Tokens[1], "erc721SeaDropRedeemable");
         vm.label(erc7498Tokens[2], "erc1155ShipyardRedeemable");
@@ -111,8 +112,15 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
 
         receiveToken721 = new ERC721ShipyardRedeemableMintable("", "");
         receiveToken1155 = new ERC1155ShipyardRedeemableMintable("", "");
-        receiveToken721.setRedeemablesContracts(erc7498Tokens);
-        receiveToken1155.setRedeemablesContracts(erc7498Tokens);
+        receiveTokens = new address[](2);
+        receiveTokens[0] = address(receiveToken721);
+        receiveTokens[1] = address(receiveToken1155);
+        vm.label(receiveTokens[0], "erc721ShipyardRedeemableMintable");
+        vm.label(receiveTokens[1], "erc1155ShipyardRedeemableMintable");
+        for (uint256 i = 0; i < receiveTokens.length; ++i) {
+            ERC721ShipyardRedeemableMintable(receiveTokens[i]).setRedeemablesContracts(erc7498Tokens);
+            assertEq(ERC721ShipyardRedeemableMintable(receiveTokens[i]).getRedeemablesContracts(), erc7498Tokens);
+        }
 
         _setApprovals(address(this));
 

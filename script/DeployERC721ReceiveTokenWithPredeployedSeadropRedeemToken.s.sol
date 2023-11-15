@@ -8,8 +8,7 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
-import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Test {
     function run() external {

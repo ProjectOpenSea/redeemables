@@ -8,6 +8,8 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {ItemType, OrderType, Side} from "seaport-sol/src/SeaportEnums.sol";
 import {OfferItemLib} from "seaport-sol/src/lib/OfferItemLib.sol";
 import {ConsiderationItemLib} from "seaport-sol/src/lib/ConsiderationItemLib.sol";
+import {ERC721} from "solady/src/tokens/ERC721.sol";
+import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {IERC7498} from "../src/interfaces/IERC7498.sol";
 import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
@@ -24,6 +26,34 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
 
     uint256 tokenId = 2;
     bytes32 traitKey = bytes32("hasRedeemed");
+
+    function testGetAndSetTrait() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(this.getAndSetTrait, RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])}));
+        }
+    }
+
+    function getAndSetTrait(RedeemablesContext memory context) public {
+        if (_isERC721(address(context.erc7498Token))) {
+            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            IERC7496(address(context.erc7498Token)).getTraitValue(tokenId, traitKey);
+            vm.expectRevert(ERC721.TokenDoesNotExist.selector);
+            IERC7496(address(context.erc7498Token)).getTraitValues(tokenId, Solarray.bytes32s(traitKey));
+        }
+
+        _mintToken(address(context.erc7498Token), tokenId);
+        bytes32 traitValue = IERC7496(address(context.erc7498Token)).getTraitValue(tokenId, traitKey);
+        assertEq(traitValue, bytes32(0));
+
+        IERC7496(address(context.erc7498Token)).setTrait(tokenId, traitKey, bytes32(uint256(1)));
+        traitValue = IERC7496(address(context.erc7498Token)).getTraitValue(tokenId, traitKey);
+        assertEq(traitValue, bytes32(uint256(1)));
+
+        bytes32[] memory traitValues =
+            IERC7496(address(context.erc7498Token)).getTraitValues(tokenId, Solarray.bytes32s(traitKey));
+        assertEq(traitValues.length, 1);
+        assertEq(traitValues[0], bytes32(uint256(1)));
+    }
 
     function testErc721TraitRedemptionForErc721() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {

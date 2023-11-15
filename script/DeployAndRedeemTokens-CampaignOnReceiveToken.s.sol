@@ -8,16 +8,16 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
-import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
+        ERC721ShipyardRedeemableOwnerMintable redeemToken =
+            new ERC721ShipyardRedeemableOwnerMintable("TestRedeemablesRedeemToken", "TEST-RDM");
         ERC721ShipyardRedeemableMintable receiveToken =
-            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST");
+            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST-RCV");
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);

@@ -26,18 +26,6 @@ contract ERC721ShipyardRedeemableTraitSetters is ERC721ShipyardRedeemableOwnerMi
         DynamicTraits.setTrait(tokenId, traitKey, value);
     }
 
-    function getTraitValue(uint256 tokenId, bytes32 traitKey)
-        public
-        view
-        virtual
-        override
-        returns (bytes32 traitValue)
-    {
-        if (!_exists(tokenId)) revert TokenDoesNotExist();
-
-        traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
-    }
-
     function _requireAllowedTraitSetter() internal view {
         // Allow the contract to call itself.
         if (msg.sender == address(this)) return;

@@ -8,7 +8,6 @@ import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationS
 import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
 import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC721ShipyardRedeemableTraitSetters} from "../src/test/ERC721ShipyardRedeemableTraitSetters.sol";
 
 contract DeployAndRedeemTrait is Script, Test {

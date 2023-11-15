@@ -26,16 +26,6 @@ contract ERC1155SeaDropRedeemable is ERC1155SeaDrop, ERC7498NFTRedeemables {
         DynamicTraits.setTrait(tokenId, traitKey, value);
     }
 
-    function getTraitValue(uint256 tokenId, bytes32 traitKey)
-        public
-        view
-        virtual
-        override
-        returns (bytes32 traitValue)
-    {
-        traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
-    }
-
     function _useInternalBurn() internal pure virtual override returns (bool) {
         return true;
     }
