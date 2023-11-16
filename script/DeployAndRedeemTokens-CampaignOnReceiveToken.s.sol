@@ -54,7 +54,7 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         });
         Campaign memory campaign = Campaign({params: params, requirements: requirements});
         uint256 campaignId =
-            receiveToken.createCampaign(campaign, "ipfs://QmbFxYgQMoBSUNFyW7WRWGaAWwJiRPM6HbK86aFkSJSq5N");
+            receiveToken.createCampaign(campaign, "ipfs://Qmd1svWLxdjRUCxDCv6i6MFZtcU6SY56mD6JM8Ds1ZrXPB");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
@@ -77,8 +77,8 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         tokenIds[0] = 1;
 
         // Individual user approvals not needed when setting the burn address.
-        redeemToken.setApprovalForAll(address(receiveToken), true);
         // redeemToken.setBurnAddress(address(receiveToken));
+        redeemToken.setApprovalForAll(address(receiveToken), true);
 
         receiveToken.redeem(tokenIds, msg.sender, data);
 
