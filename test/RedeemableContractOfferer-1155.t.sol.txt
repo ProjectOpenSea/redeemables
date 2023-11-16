@@ -22,9 +22,9 @@ import {RedeemableContractOfferer} from "../src/RedeemableContractOfferer.sol";
 import {CampaignParams, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
 import {RedeemablesErrors} from "../src/lib/RedeemablesErrors.sol";
-import {ERC1155RedemptionMintable} from "../src/lib/ERC1155RedemptionMintable.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC1155ShipyardRedeemableMintable} from "../src/lib/ERC1155ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {Merkle} from "../lib/murky/src/Merkle.sol";
 
 contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors {
@@ -34,7 +34,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
 
     RedeemableContractOfferer offerer;
     TestERC1155 redeemableToken;
-    ERC1155RedemptionMintable redemptionToken;
+    ERC1155ShipyardRedeemableMintable redemptionToken;
     CriteriaResolver[] criteriaResolvers;
     Merkle merkle = new Merkle();
 
@@ -48,7 +48,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             address(seaport)
         );
         redeemableToken = new TestERC1155();
-        redemptionToken = new ERC1155RedemptionMintable(
+        redemptionToken = new ERC1155ShipyardRedeemableMintable(
             address(offerer),
             address(redeemableToken)
         );
@@ -85,11 +85,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: offer,
                 consideration: consideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -207,11 +207,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: campaignOffer,
                 consideration: campaignConsideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -317,11 +317,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
             CampaignParams memory params = CampaignParams({
                 offer: offer,
                 consideration: consideration,
-                signer: address(0),
                 startTime: uint32(block.timestamp),
                 endTime: uint32(block.timestamp + 1000),
                 maxCampaignRedemptions: 5,
-                manager: address(this)
+                manager: address(this),
+                signer: address(0)
             });
 
             offerer.createCampaign(params, "");
@@ -445,11 +445,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -551,7 +551,7 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //     // Set the tokenId to be burned to the first tokenId to be redeemed
     //     uint256 redeemableTokenId0 = redemptionTokenId0;
 
-    //     ERC721RedemptionMintable redemptionTokenWithCounter = new ERC721RedemptionMintable(
+    //     ERC721ShipyardRedeemableMintable redemptionTokenWithCounter = new ERC721ShipyardRedeemableMintable(
     //             address(offerer),
     //             address(redeemableToken)
     //         );
@@ -596,11 +596,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -751,11 +751,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -858,8 +858,8 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //     // Set the tokenId to be burned to the first tokenId to be redeemed
     //     uint256 redeemableTokenId = redemptionTokenId;
 
-    //     // Create a new ERC721RedemptionMintable redemptionTokenTwo
-    //     ERC721RedemptionMintable redemptionTokenTwo = new ERC721RedemptionMintable(
+    //     // Create a new ERC721ShipyardRedeemableMintable redemptionTokenTwo
+    //     ERC721ShipyardRedeemableMintable redemptionTokenTwo = new ERC721ShipyardRedeemableMintable(
     //             address(offerer),
     //             address(redeemableToken)
     //         );
@@ -904,11 +904,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -1040,11 +1040,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //         CampaignParams memory params = CampaignParams({
     //             offer: offer,
     //             consideration: consideration,
-    //             signer: address(0),
     //             startTime: uint32(block.timestamp),
     //             endTime: uint32(block.timestamp + 1000),
     //             maxCampaignRedemptions: 5,
-    //             manager: address(this)
+    //             manager: address(this),
+    //             signer: address(0)
     //         });
 
     //         // Call createCampaign on the offerer and pass in the CampaignParams
@@ -1181,11 +1181,11 @@ contract TestRedeemableContractOfferer_1155 is BaseOrderTest, RedeemablesErrors 
     //     CampaignParams memory params = CampaignParams({
     //         offer: offer,
     //         consideration: consideration,
-    //         signer: address(0),
     //         startTime: uint32(block.timestamp),
     //         endTime: uint32(block.timestamp + 1000),
     //         maxCampaignRedemptions: 5,
-    //         manager: address(this)
+    //         manager: address(this),
+    //         signer: address(0)
     //     });
 
     //     offerer.createCampaign(params, "");

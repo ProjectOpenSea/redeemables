@@ -3,13 +3,17 @@ pragma solidity ^0.8.19;
 
 import {OfferItem, ConsiderationItem, SpentItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 
+struct Campaign {
+    CampaignParams params;
+    CampaignRequirements[] requirements;
+}
+
 struct CampaignParams {
     uint32 startTime;
     uint32 endTime;
     uint32 maxCampaignRedemptions;
     address manager;
     address signer;
-    CampaignRequirements[] requirements;
 }
 
 struct CampaignRequirements {

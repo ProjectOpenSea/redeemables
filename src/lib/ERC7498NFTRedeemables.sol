@@ -15,18 +15,18 @@ import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol
 import {IERC7498} from "../interfaces/IERC7498.sol";
 import {IRedemptionMintable} from "../interfaces/IRedemptionMintable.sol";
 import {RedeemablesErrors} from "./RedeemablesErrors.sol";
-import {CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "./RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "./RedeemablesConstants.sol";
 
 contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesErrors {
     /// @dev Counter for next campaign id.
     uint256 private _nextCampaignId = 1;
 
-    /// @dev The campaign parameters by campaign id.
-    mapping(uint256 campaignId => CampaignParams params) private _campaignParams;
+    /// @dev The campaign by campaign id.
+    mapping(uint256 campaignId => Campaign campaign) private _campaigns;
 
-    /// @dev The campaign URIs by campaign id.
-    mapping(uint256 campaignId => string campaignURI) private _campaignURIs;
+    /// @dev The campaign metadata URI.
+    string private _campaignMetadataURI;
 
     /// @dev The total current redemptions by campaign id.
     mapping(uint256 campaignId => uint256 count) private _totalRedemptions;
@@ -52,27 +52,21 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
             /*bytes memory signature */
         ) = abi.decode(extraData, (uint256, uint256, bytes32, uint256[], uint256, bytes));
 
-        // Get the campaign params.
-        CampaignParams storage params = _campaignParams[campaignId];
+        // Get the campaign.
+        Campaign storage campaign = _campaigns[campaignId];
 
-        // Validate the campaign time and total redemptions.
-        _validateRedemption(campaignId, params);
-
-        // Increment totalRedemptions.
-        ++_totalRedemptions[campaignId];
-
-        // Get the campaign requirements.
-        if (requirementsIndex >= params.requirements.length) {
+        // Validate the requirements index is valid.
+        if (requirementsIndex >= campaign.requirements.length) {
             revert RequirementsIndexOutOfBounds();
         }
-        // CampaignRequirements storage requirements = params.requirements[
-        //     requirementsIndex
-        // ];
+
+        // Validate the campaign time and total redemptions.
+        _validateRedemption(campaignId, campaign);
 
         // Process the redemption.
         _processRedemption(
             campaignId,
-            params.requirements[requirementsIndex],
+            campaign.requirements[requirementsIndex],
             considerationTokenIds,
             traitRedemptionTokenIds,
             recipient
@@ -85,19 +79,21 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     }
 
     function getCampaign(uint256 campaignId)
-        external
+        public
         view
         override
-        returns (CampaignParams memory params, string memory uri, uint256 totalRedemptions)
+        returns (Campaign memory campaign, string memory metadataURI, uint256 totalRedemptions)
     {
         // Revert if campaign id is invalid.
-        if (campaignId >= _nextCampaignId) revert InvalidCampaignId();
+        if (campaignId == 0 || campaignId >= _nextCampaignId) {
+            revert InvalidCampaignId();
+        }
 
-        // Get the campaign params.
-        params = _campaignParams[campaignId];
+        // Get the campaign.
+        campaign = _campaigns[campaignId];
 
-        // Get the campaign URI.
-        uri = _campaignURIs[campaignId];
+        // Get the campaign metadata uri.
+        metadataURI = _campaignMetadataURI;
 
         // Get the total redemptions.
         totalRedemptions = _totalRedemptions[campaignId];
@@ -106,69 +102,71 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     /**
      * @notice Create a new redeemable campaign.
      * @dev    IMPORTANT: Override this method with access role restriction.
-     * @param params The campaign parameters.
-     * @param uri    The campaign metadata URI.
+     * @param campaign The campaign.
+     * @param metadataURI The campaign metadata uri.
      */
-    function createCampaign(CampaignParams calldata params, string calldata uri)
+    function createCampaign(Campaign calldata campaign, string calldata metadataURI)
         public
         virtual
         returns (uint256 campaignId)
     {
         // Validate the campaign params, reverts if invalid.
-        _validateCampaignParams(params);
+        _validateCampaign(campaign);
 
         // Set the campaignId and increment the next one.
         campaignId = _nextCampaignId;
         ++_nextCampaignId;
 
         // Set the campaign params.
-        _campaignParams[campaignId] = params;
+        _campaigns[campaignId] = campaign;
 
-        // Set the campaign URI.
-        _campaignURIs[campaignId] = uri;
+        // Set the campaign metadata uri if provided.
+        if (bytes(metadataURI).length != 0) {
+            _campaignMetadataURI = metadataURI;
+        }
 
-        emit CampaignUpdated(campaignId, params, uri);
+        emit CampaignUpdated(campaignId, campaign, _campaignMetadataURI);
     }
 
-    function updateCampaign(uint256 campaignId, CampaignParams calldata params, string calldata uri) external {
+    function updateCampaign(uint256 campaignId, Campaign calldata campaign, string calldata metadataURI) external {
         // Revert if the campaign id is invalid.
         if (campaignId == 0 || campaignId >= _nextCampaignId) {
             revert InvalidCampaignId();
         }
 
         // Revert if msg.sender is not the manager.
-        address existingManager = _campaignParams[campaignId].manager;
-        if (params.manager != msg.sender && (existingManager != address(0) && existingManager != params.manager)) {
+        address existingManager = _campaigns[campaignId].params.manager;
+        if (existingManager != msg.sender) {
             revert NotManager();
         }
 
         // Validate the campaign params and revert if invalid.
-        _validateCampaignParams(params);
+        _validateCampaign(campaign);
 
-        // Set the campaign params.
-        _campaignParams[campaignId] = params;
+        // Set the campaign.
+        _campaigns[campaignId] = campaign;
 
-        // Update the campaign uri if it was provided.
-        if (bytes(uri).length != 0) {
-            _campaignURIs[campaignId] = uri;
+        // Update the campaign metadataURI if it was provided.
+        if (bytes(metadataURI).length != 0) {
+            _campaignMetadataURI = metadataURI;
         }
 
-        emit CampaignUpdated(campaignId, params, _campaignURIs[campaignId]);
+        emit CampaignUpdated(campaignId, campaign, _campaignMetadataURI);
     }
 
-    function _validateCampaignParams(CampaignParams memory params) internal pure {
+    function _validateCampaign(Campaign memory campaign) internal pure {
         // Revert if startTime is past endTime.
-        if (params.startTime > params.endTime) {
+        if (campaign.params.startTime > campaign.params.endTime) {
             revert InvalidTime();
         }
 
         // Iterate over the requirements.
-        for (uint256 i = 0; i < params.requirements.length;) {
-            CampaignRequirements memory requirements = params.requirements[i];
+        for (uint256 i; i < campaign.requirements.length;) {
+            CampaignRequirements memory requirement = campaign.requirements[i];
 
             // Validate each consideration item.
-            for (uint256 j = 0; j < requirements.consideration.length;) {
-                ConsiderationItem memory c = requirements.consideration[j];
+            for (uint256 j = 0; j < requirement.consideration.length;) {
+                ConsiderationItem memory c = requirement.consideration[j];
 
                 // Revert if any of the consideration item recipients is the zero address.
                 // 0xdead address should be used instead.
@@ -185,26 +183,26 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                 if (c.startAmount != c.endAmount) {
                     revert NonMatchingConsiderationItemAmounts(i, c.startAmount, c.endAmount);
                 }
-
                 unchecked {
                     ++j;
                 }
             }
-
             unchecked {
                 ++i;
             }
         }
     }
 
-    function _validateRedemption(uint256 campaignId, CampaignParams memory params) internal view {
-        if (_isInactive(params.startTime, params.endTime)) {
-            revert NotActive_(block.timestamp, params.startTime, params.endTime);
+    function _validateRedemption(uint256 campaignId, Campaign storage campaign) internal view {
+        if (_isInactive(campaign.params.startTime, campaign.params.endTime)) {
+            revert NotActive_(block.timestamp, campaign.params.startTime, campaign.params.endTime);
         }
 
         // Revert if max total redemptions would be exceeded.
-        if (_totalRedemptions[campaignId] + 1 > params.maxCampaignRedemptions) {
-            revert MaxCampaignRedemptionsReached(_totalRedemptions[campaignId] + 1, params.maxCampaignRedemptions);
+        if (_totalRedemptions[campaignId] + 1 > campaign.params.maxCampaignRedemptions) {
+            revert MaxCampaignRedemptionsReached(
+                _totalRedemptions[campaignId] + 1, campaign.params.maxCampaignRedemptions
+            );
         }
     }
 
@@ -297,6 +295,9 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
         uint256[] memory traitRedemptionTokenIds,
         address recipient
     ) internal {
+        // Increment the campaign's total redemptions.
+        ++_totalRedemptions[campaignId];
+
         if (requirements.traitRedemptions.length > 0) {
             // Process the trait redemptions.
             _processTraitRedemptions(requirements.traitRedemptions, traitRedemptionTokenIds);
@@ -460,12 +461,13 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     // Decrement the trait by the trait value.
                     IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 4) {
-                    // Revert if the current trait value is not equal to the substandard value.
-                    if (currentTraitValue != substandardValue) {
+                    // Revert if the current trait value is not equal to the trait value.
+                    if (currentTraitValue != traitValue) {
                         revert InvalidRequiredTraitValue(
                             token, identifier, traitKey, currentTraitValue, substandardValue
                         );
                     }
+                    // No-op: substandard 4 has no set trait action.
                 }
             }
 

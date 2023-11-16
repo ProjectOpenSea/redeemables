@@ -5,8 +5,14 @@ import {ERC1155ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc1155
 import {ERC1155} from "solady/src/tokens/ERC1155.sol";
 import {ERC2981} from "solady/src/tokens/ERC2981.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
+import {IShipyardContractMetadata} from "../interfaces/IShipyardContractMetadata.sol";
 
-contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ERC2981, Ownable {
+contract ERC1155ShipyardContractMetadata is
+    ERC1155ConduitPreapproved_Solady,
+    IShipyardContractMetadata,
+    ERC2981,
+    Ownable
+{
     /// @dev The token name
     string internal _name;
 
@@ -22,21 +28,6 @@ contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ER
     /// @dev The provenance hash for guaranteeing metadata order for random reveals.
     bytes32 public provenanceHash;
 
-    /// @dev Emit an event for token metadata reveals/updates, according to EIP-4906.
-    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-
-    /// @dev Emit an event when the URI for the collection-level metadata is updated.
-    event ContractURIUpdated(string uri);
-
-    /// @dev Emit an event when the provenance hash is updated.
-    event ProvenanceHashUpdated(bytes32 oldProvenanceHash, bytes32 newProvenanceHash);
-
-    /// @dev Emit an event when the royalties info is updated.
-    event RoyaltyInfoUpdated(address receiver, uint256 bps);
-
-    /// @dev Revert with an error when attempting to set the provenance hash after it has already been set.
-    error ProvenanceHashCannotBeSetAfterAlreadyBeingSet();
-
     constructor(string memory name_, string memory symbol_) ERC1155ConduitPreapproved_Solady() {
         // Set the token name and symbol.
         _name = name_;
@@ -46,14 +37,25 @@ contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ER
         _initializeOwner(msg.sender);
     }
 
+    /**
+     * @notice Returns the name of this token contract.
+     */
     function name() public view returns (string memory) {
         return _name;
     }
 
+    /**
+     * @notice Returns the symbol of this token contract.
+     */
     function symbol() public view returns (string memory) {
         return _symbol;
     }
 
+    /**
+     * @notice Sets the base URI for the token metadata and emits an event.
+     *
+     * @param newURI The new base URI to set.
+     */
     function setBaseURI(string calldata newURI) external onlyOwner {
         baseURI = newURI;
 
@@ -61,6 +63,11 @@ contract ERC1155ShipyardContractMetadata is ERC1155ConduitPreapproved_Solady, ER
         emit BatchMetadataUpdate(0, type(uint256).max);
     }
 
+    /**
+     * @notice Sets the contract URI for contract metadata.
+     *
+     * @param newURI The new contract URI.
+     */
     function setContractURI(string calldata newURI) external onlyOwner {
         // Set the new contract URI.
         contractURI = newURI;

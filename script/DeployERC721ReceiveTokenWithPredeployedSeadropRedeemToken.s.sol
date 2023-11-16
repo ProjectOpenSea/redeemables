@@ -5,11 +5,10 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Test {
     function run() external {
@@ -47,15 +46,15 @@ contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Te
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
         uint256 campaignId =
-            receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
+            receiveToken.createCampaign(campaign, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
 
         // redeemToken.setBaseURI(
         //     "ipfs://QmYTSupCtriDLBHgPBBhZ98wYdp6N9S8jTL5sKSZwbASeT"

@@ -5,10 +5,9 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 
 contract DeployAndConfigure1155Receive is Script, Test {
@@ -60,18 +59,18 @@ contract DeployAndConfigure1155Receive is Script, Test {
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: 0,
             endTime: 0,
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
-        receiveToken.createCampaign(params, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        receiveToken.createCampaign(campaign, "ipfs://QmQjubc6guHReNW5Es5ZrgDtJRwXk2Aia7BkVoLJGaCRqP");
 
         // To test updateCampaign, update to proper start/end times.
-        params.startTime = uint32(block.timestamp);
-        params.endTime = uint32(block.timestamp + 1_000_000);
-        receiveToken.updateCampaign(1, params, "");
+        campaign.params.startTime = uint32(block.timestamp);
+        campaign.params.endTime = uint32(block.timestamp + 1_000_000);
+        receiveToken.updateCampaign(1, campaign, "");
     }
 }

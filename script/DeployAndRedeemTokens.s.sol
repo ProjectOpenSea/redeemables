@@ -5,9 +5,9 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
 import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens is Script, Test {
@@ -20,11 +20,11 @@ contract DeployAndRedeemTokens is Script, Test {
             );
         address[] memory redeemTokens = new address[](1);
         redeemTokens[0] = address(redeemToken);
-        ERC721RedemptionMintable receiveToken = new ERC721RedemptionMintable(
+        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
             "TestRedeemablesRecieveToken",
-            "TEST",
-            redeemTokens
+            "TEST"
         );
+        receiveToken.setRedeemablesContracts(redeemTokens);
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -53,25 +53,28 @@ contract DeployAndRedeemTokens is Script, Test {
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
-        redeemToken.createCampaign(params, "");
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        redeemToken.createCampaign(campaign, "");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
 
         // Let's redeem them!
-        uint256 campaignId = 1;
-        uint256 requirementsIndex = 0;
-        bytes32 redemptionHash;
-        uint256 salt;
-        bytes memory signature;
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
+        uint256[] memory traitRedemptionTokenIds;
+        bytes memory data = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;

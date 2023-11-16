@@ -6,8 +6,8 @@ import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
+import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableMintable} from "../src/extensions/ERC1155ShipyardRedeemableMintable.sol";
 
 contract RedeemTokens is Script, Test {
@@ -19,12 +19,15 @@ contract RedeemTokens is Script, Test {
             ERC1155ShipyardRedeemableMintable(0x3D0fa2a8D07dfe357905a4cB4ed51b0Aea8385B9);
 
         // Let's redeem them!
-        uint256 campaignId = 1;
-        uint256 requirementsIndex = 0;
-        bytes32 redemptionHash;
-        uint256 salt;
-        bytes memory signature;
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
+        uint256[] memory traitRedemptionTokenIds;
+        bytes memory data = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
 
         uint256[] memory redeemTokenIds = new uint256[](1);
         redeemTokenIds[0] = 1;

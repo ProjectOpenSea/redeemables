@@ -5,32 +5,22 @@ import {ERC1155ShipyardContractMetadata} from "./lib/ERC1155ShipyardContractMeta
 import {Ownable} from "solady/src/auth/Ownable.sol";
 import {ERC7498NFTRedeemables} from "./lib/ERC7498NFTRedeemables.sol";
 import {DynamicTraits} from "shipyard-core/src/dynamic-traits/DynamicTraits.sol";
-import {CampaignParams} from "./lib/RedeemablesStructs.sol";
+import {Campaign} from "./lib/RedeemablesStructs.sol";
 
 contract ERC1155ShipyardRedeemable is ERC1155ShipyardContractMetadata, ERC7498NFTRedeemables {
     constructor(string memory name_, string memory symbol_) ERC1155ShipyardContractMetadata(name_, symbol_) {}
 
-    function createCampaign(CampaignParams calldata params, string calldata uri_)
+    function createCampaign(Campaign calldata campaign, string calldata metadataURI)
         public
         override
         onlyOwner
         returns (uint256 campaignId)
     {
-        campaignId = ERC7498NFTRedeemables.createCampaign(params, uri_);
+        campaignId = ERC7498NFTRedeemables.createCampaign(campaign, metadataURI);
     }
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override onlyOwner {
         DynamicTraits.setTrait(tokenId, traitKey, value);
-    }
-
-    function getTraitValue(uint256 tokenId, bytes32 traitKey)
-        public
-        view
-        virtual
-        override
-        returns (bytes32 traitValue)
-    {
-        traitValue = DynamicTraits.getTraitValue(tokenId, traitKey);
     }
 
     function _useInternalBurn() internal pure virtual override returns (bool) {

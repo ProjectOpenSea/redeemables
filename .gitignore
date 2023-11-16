@@ -1,6 +1,8 @@
 # Compiler files
 cache/
 out/
+coverage/
+lcov.info
 
 # Ignores broadcast logs
 /broadcast

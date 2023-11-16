@@ -5,19 +5,19 @@ import {Script} from "forge-std/Script.sol";
 import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
-import {CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
+import {Campaign, CampaignParams, CampaignRequirements} from "../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../src/lib/RedeemablesConstants.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
-import {ERC721OwnerMintable} from "../src/test/ERC721OwnerMintable.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintable} from "../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 
 contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        ERC721OwnerMintable redeemToken = new ERC721OwnerMintable();
+        ERC721ShipyardRedeemableOwnerMintable redeemToken =
+            new ERC721ShipyardRedeemableOwnerMintable("TestRedeemablesRedeemToken", "TEST-RDM");
         ERC721ShipyardRedeemableMintable receiveToken =
-            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST");
+            new ERC721ShipyardRedeemableMintable("TestRedeemablesReceiveToken", "TEST-RCV");
 
         // Configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -46,25 +46,32 @@ contract DeployAndRedeemTokens_CampaignOnReceiveToken is Script, Test {
         requirements[0].consideration = consideration;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
         uint256 campaignId =
-            receiveToken.createCampaign(params, "ipfs://QmQKc93y2Ev5k9Kz54mCw48ZM487bwGDktZYPLtrjJ3r1d");
+            receiveToken.createCampaign(campaign, "ipfs://QmbFxYgQMoBSUNFyW7WRWGaAWwJiRPM6HbK86aFkSJSq5N");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
+        redeemToken.mint(msg.sender, 2);
+        redeemToken.mint(msg.sender, 3);
+        redeemToken.mint(msg.sender, 4);
 
         // Let's redeem them!
-        uint256 requirementsIndex = 0;
-        bytes32 redemptionHash;
-        uint256 salt;
-        bytes memory signature;
-        bytes memory data = abi.encode(campaignId, requirementsIndex, redemptionHash, salt, signature);
+        uint256[] memory traitRedemptionTokenIds;
+        bytes memory data = abi.encode(
+            campaignId,
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
 
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = 1;

@@ -6,11 +6,9 @@ import {Test} from "forge-std/Test.sol";
 import {ItemType} from "seaport-types/src/lib/ConsiderationEnums.sol";
 import {OfferItem, ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {IERC7496} from "shipyard-core/src/dynamic-traits/interfaces/IERC7496.sol";
-import {CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
-import {ERC721RedemptionMintable} from "../src/extensions/ERC721RedemptionMintable.sol";
+import {Campaign, CampaignParams, CampaignRequirements, TraitRedemption} from "../src/lib/RedeemablesStructs.sol";
 import {ERC721ShipyardRedeemableMintable} from "../src/extensions/ERC721ShipyardRedeemableMintable.sol";
-import {ERC721ShipyardRedeemablePreapprovedTraitSetters} from
-    "../src/test/ERC721ShipyardRedeemablePreapprovedTraitSetters.sol";
+import {ERC721ShipyardRedeemableTraitSetters} from "../src/test/ERC721ShipyardRedeemableTraitSetters.sol";
 
 contract DeployAndRedeemTrait is Script, Test {
     function run() external {
@@ -26,13 +24,13 @@ contract DeployAndRedeemTrait is Script, Test {
         address[] memory allowedTraitSetters = new address[](1);
         allowedTraitSetters[0] = address(receiveToken);
 
-        // deploy the redeem token with the receive token as an allowed trait setter
-        ERC721ShipyardRedeemablePreapprovedTraitSetters redeemToken =
-        new ERC721ShipyardRedeemablePreapprovedTraitSetters(
+        // deploy the redeem token
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
                 "DynamicTraitsRedeemToken",
-                "TEST",
-                allowedTraitSetters
+                "TEST"
             );
+        // set the receive token as an allowed trait setter
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
 
         // configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
@@ -76,14 +74,14 @@ contract DeployAndRedeemTrait is Script, Test {
         requirements[0].traitRedemptions = traitRedemptions;
 
         CampaignParams memory params = CampaignParams({
-            requirements: requirements,
-            signer: address(0),
             startTime: uint32(block.timestamp),
             endTime: uint32(block.timestamp + 1_000_000),
             maxCampaignRedemptions: 1_000,
-            manager: msg.sender
+            manager: msg.sender,
+            signer: address(0)
         });
-        receiveToken.createCampaign(params, "");
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        receiveToken.createCampaign(campaign, "");
 
         // Mint token 1 to redeem for token 1.
         redeemToken.mint(msg.sender, 1);
