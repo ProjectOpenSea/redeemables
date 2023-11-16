@@ -12,11 +12,7 @@ contract ERC721ShipyardRedeemableTraitSetters is ERC721ShipyardRedeemableOwnerMi
     // ERC721ShipyardRedeemable and ERC721SeaDropRedeemable contracts with onlyOwner on setAllowedTraitSetters().
     address[] _allowedTraitSetters;
 
-    constructor(string memory name_, string memory symbol_, address[] memory allowedTraitSetters)
-        ERC721ShipyardRedeemableOwnerMintable(name_, symbol_)
-    {
-        _allowedTraitSetters = allowedTraitSetters;
-    }
+    constructor(string memory name_, string memory symbol_) ERC721ShipyardRedeemableOwnerMintable(name_, symbol_) {}
 
     function setTrait(uint256 tokenId, bytes32 traitKey, bytes32 value) public virtual override {
         if (!_exists(tokenId)) revert TokenDoesNotExist();
@@ -24,6 +20,14 @@ contract ERC721ShipyardRedeemableTraitSetters is ERC721ShipyardRedeemableOwnerMi
         _requireAllowedTraitSetter();
 
         DynamicTraits.setTrait(tokenId, traitKey, value);
+    }
+
+    function getAllowedTraitSetters() public view returns (address[] memory) {
+        return _allowedTraitSetters;
+    }
+
+    function setAllowedTraitSetters(address[] memory allowedTraitSetters) public onlyOwner {
+        _allowedTraitSetters = allowedTraitSetters;
     }
 
     function _requireAllowedTraitSetter() internal view {

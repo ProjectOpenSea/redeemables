@@ -25,6 +25,8 @@ import {ERC721SeaDropRedeemableOwnerMintable} from "../../src/test/ERC721SeaDrop
 import {ERC721ShipyardRedeemableOwnerMintable} from "../../src/test/ERC721ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155ShipyardRedeemableOwnerMintable} from "../../src/test/ERC1155ShipyardRedeemableOwnerMintable.sol";
 import {ERC1155SeaDropRedeemableOwnerMintable} from "../../src/test/ERC1155SeaDropRedeemableOwnerMintable.sol";
+import {ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn} from
+    "../../src/test/ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn.sol";
 import {RedeemablesErrors} from "../../src/lib/RedeemablesErrors.sol";
 import {CampaignParams, CampaignRequirements, TraitRedemption} from "../../src/lib/RedeemablesStructs.sol";
 import {BURN_ADDRESS} from "../../src/lib/RedeemablesConstants.sol";
@@ -48,13 +50,12 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         address redeemedBy
     );
 
-    bytes32 private constant CAMPAIGN_PARAMS_MAP_POSITION = keccak256("CampaignParamsDefault");
-
     address[] erc7498Tokens;
     ERC721ShipyardRedeemableOwnerMintable erc721ShipyardRedeemable;
     ERC721SeaDropRedeemableOwnerMintable erc721SeaDropRedeemable;
     ERC1155ShipyardRedeemableOwnerMintable erc1155ShipyardRedeemable;
     ERC1155SeaDropRedeemableOwnerMintable erc1155SeaDropRedeemable;
+    ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn erc721ShipyardRedeemableWithoutInternalBurn;
 
     address[] receiveTokens;
     ERC721ShipyardRedeemableMintable receiveToken721;
@@ -64,9 +65,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     ConsiderationItem[] defaultCampaignConsideration;
     TraitRedemption[] defaultTraitRedemptions;
     uint256[] defaultTraitRedemptionTokenIds;
-
-    CampaignRequirements[] defaultCampaignRequirements;
-    // CampaignParams defaultCampaignParams;
 
     string constant DEFAULT_ERC721_CAMPAIGN_OFFER = "default erc721 campaign offer";
     string constant DEFAULT_ERC721_CAMPAIGN_CONSIDERATION = "default erc721 campaign consideration";
@@ -94,21 +92,31 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
             "",
             ""
         );
+        erc721ShipyardRedeemableWithoutInternalBurn = new ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn(
+            "",
+            ""
+        );
+        // Not using internal burn needs approval for the contract itself to transfer tokens on users' behalf.
+        erc721ShipyardRedeemableWithoutInternalBurn.setApprovalForAll(
+            address(erc721ShipyardRedeemableWithoutInternalBurn), true
+        );
 
         erc721SeaDropRedeemable.setMaxSupply(10);
         erc1155SeaDropRedeemable.setMaxSupply(1, 10);
         erc1155SeaDropRedeemable.setMaxSupply(2, 10);
         erc1155SeaDropRedeemable.setMaxSupply(3, 10);
 
-        erc7498Tokens = new address[](4);
+        erc7498Tokens = new address[](5);
         erc7498Tokens[0] = address(erc721ShipyardRedeemable);
         erc7498Tokens[1] = address(erc721SeaDropRedeemable);
         erc7498Tokens[2] = address(erc1155ShipyardRedeemable);
         erc7498Tokens[3] = address(erc1155SeaDropRedeemable);
+        erc7498Tokens[4] = address(erc721ShipyardRedeemableWithoutInternalBurn);
         vm.label(erc7498Tokens[0], "erc721ShipyardRedeemable");
         vm.label(erc7498Tokens[1], "erc721SeaDropRedeemable");
         vm.label(erc7498Tokens[2], "erc1155ShipyardRedeemable");
         vm.label(erc7498Tokens[3], "erc1155SeaDropRedeemable");
+        vm.label(erc7498Tokens[4], "erc721ShipyardRedeemableWithoutInternalBurn");
 
         receiveToken721 = new ERC721ShipyardRedeemableMintable("", "");
         receiveToken1155 = new ERC1155ShipyardRedeemableMintable("", "");
@@ -138,13 +146,6 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
         internal
     {
         fn(context);
-    }
-
-    function _campaignParamsMap() private pure returns (mapping(string => CampaignParams) storage campaignParamsMap) {
-        bytes32 position = CAMPAIGN_PARAMS_MAP_POSITION;
-        assembly {
-            campaignParamsMap.slot := position
-        }
     }
 
     function _setApprovals(address _owner) internal virtual override {

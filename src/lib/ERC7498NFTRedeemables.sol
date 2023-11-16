@@ -461,12 +461,13 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
                     // Decrement the trait by the trait value.
                     IERC7496(token).setTrait(identifier, traitRedemptions[i].traitKey, bytes32(newTraitValue));
                 } else if (substandard == 4) {
-                    // Revert if the current trait value is not equal to the substandard value.
-                    if (currentTraitValue != substandardValue) {
+                    // Revert if the current trait value is not equal to the trait value.
+                    if (currentTraitValue != traitValue) {
                         revert InvalidRequiredTraitValue(
                             token, identifier, traitKey, currentTraitValue, substandardValue
                         );
                     }
+                    // No-op: substandard 4 has no set trait action.
                 }
             }
 

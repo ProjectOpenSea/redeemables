@@ -55,7 +55,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
         assertEq(traitValues[0], bytes32(uint256(1)));
     }
 
-    function testErc721TraitRedemptionForErc721() public {
+    function testErc721TraitRedemptionSubstandardOneForErc721() public {
         for (uint256 i; i < erc7498Tokens.length; i++) {
             testRedeemable(
                 this.erc721TraitRedemptionSubstandardOneForErc721,
@@ -65,13 +65,14 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
     }
 
     function erc721TraitRedemptionSubstandardOneForErc721(RedeemablesContext memory context) public {
-        address[] memory allowedTraitSetters = new address[](1);
-        allowedTraitSetters[0] = address(context.erc7498Token);
+        address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token));
         ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
                 "",
-                "",
-                allowedTraitSetters
+                ""
             );
+        assertEq(redeemToken.getAllowedTraitSetters(), new address[](0));
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
+        assertEq(redeemToken.getAllowedTraitSetters(), allowedTraitSetters);
         _mintToken(address(redeemToken), tokenId);
         TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
         // previous trait value (`substandardValue`) should be 0
@@ -143,5 +144,257 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
             )
         );
         context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+    }
+
+    function testErc721TraitRedemptionSubstandardTwoForErc721() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(
+                this.erc721TraitRedemptionSubstandardTwoForErc721,
+                RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+            );
+        }
+    }
+
+    function erc721TraitRedemptionSubstandardTwoForErc721(RedeemablesContext memory context) public {
+        address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
+                "",
+                ""
+            );
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
+        _mintToken(address(redeemToken), tokenId);
+        redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(1)));
+        TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
+        // previous trait value should not be greater than 1 (`substandardValue`)
+        // new trait value should be 2 (adding traitValue of 1)
+        traitRedemptions[0] = TraitRedemption({
+            substandard: 2,
+            token: address(redeemToken),
+            traitKey: traitKey,
+            traitValue: bytes32(uint256(1)),
+            substandardValue: bytes32(uint256(1))
+        });
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        // consideration is empty
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: traitRedemptions
+        });
+        CampaignParams memory params = CampaignParams({
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this),
+            signer: address(0)
+        });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        context.erc7498Token.createCampaign(campaign, "");
+
+        uint256[] memory considerationTokenIds;
+        uint256[] memory traitRedemptionTokenIds = Solarray.uint256s(tokenId);
+        bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        bytes32 actualTraitValue = redeemToken.getTraitValue(tokenId, traitKey);
+        assertEq(bytes32(uint256(2)), actualTraitValue);
+        assertEq(receiveToken721.ownerOf(1), address(this));
+
+        // Redeeming one more time should fail with InvalidRequiredTraitValue since it is already 2.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidRequiredTraitValue.selector,
+                redeemToken,
+                tokenId,
+                traitKey,
+                bytes32(uint256(2)),
+                bytes32(uint256(1))
+            )
+        );
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+    }
+
+    function testErc721TraitRedemptionSubstandardThreeForErc721() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(
+                this.erc721TraitRedemptionSubstandardThreeForErc721,
+                RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+            );
+        }
+    }
+
+    function erc721TraitRedemptionSubstandardThreeForErc721(RedeemablesContext memory context) public {
+        address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
+                "",
+                ""
+            );
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
+        _mintToken(address(redeemToken), tokenId);
+        redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(5)));
+        TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
+        // previous trait value should not be less than 4 (`substandardValue`)
+        // new trait value should be 4 (adding traitValue of 1)
+        traitRedemptions[0] = TraitRedemption({
+            substandard: 3,
+            token: address(redeemToken),
+            traitKey: traitKey,
+            traitValue: bytes32(uint256(1)),
+            substandardValue: bytes32(uint256(5))
+        });
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        // consideration is empty
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: traitRedemptions
+        });
+        CampaignParams memory params = CampaignParams({
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this),
+            signer: address(0)
+        });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        context.erc7498Token.createCampaign(campaign, "");
+
+        uint256[] memory considerationTokenIds;
+        uint256[] memory traitRedemptionTokenIds = Solarray.uint256s(tokenId);
+        bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        bytes32 actualTraitValue = redeemToken.getTraitValue(tokenId, traitKey);
+        assertEq(bytes32(uint256(4)), actualTraitValue);
+        assertEq(receiveToken721.ownerOf(1), address(this));
+
+        // Redeeming one more time should fail with InvalidRequiredTraitValue since it is now 4.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidRequiredTraitValue.selector,
+                redeemToken,
+                tokenId,
+                traitKey,
+                bytes32(uint256(4)),
+                bytes32(uint256(5))
+            )
+        );
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+    }
+
+    function testErc721TraitRedemptionSubstandardFourForErc721() public {
+        for (uint256 i; i < erc7498Tokens.length; i++) {
+            testRedeemable(
+                this.erc721TraitRedemptionSubstandardFourForErc721,
+                RedeemablesContext({erc7498Token: IERC7498(erc7498Tokens[i])})
+            );
+        }
+    }
+
+    function erc721TraitRedemptionSubstandardFourForErc721(RedeemablesContext memory context) public {
+        address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
+                "",
+                ""
+            );
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
+        _mintToken(address(redeemToken), tokenId);
+        redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(4)));
+        TraitRedemption[] memory traitRedemptions = new TraitRedemption[](1);
+        // previous trait value should be the trait value
+        // trait value does not change in substandard 4
+        traitRedemptions[0] = TraitRedemption({
+            substandard: 4,
+            token: address(redeemToken),
+            traitKey: traitKey,
+            traitValue: bytes32(uint256(5)),
+            substandardValue: bytes32(0) // unused in substandard 4
+        });
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](
+            1
+        );
+        // consideration is empty
+        ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
+        requirements[0] = CampaignRequirements({
+            offer: defaultCampaignOffer,
+            consideration: consideration,
+            traitRedemptions: traitRedemptions
+        });
+        CampaignParams memory params = CampaignParams({
+            startTime: uint32(block.timestamp),
+            endTime: uint32(block.timestamp + 1000),
+            maxCampaignRedemptions: 5,
+            manager: address(this),
+            signer: address(0)
+        });
+        Campaign memory campaign = Campaign({params: params, requirements: requirements});
+        context.erc7498Token.createCampaign(campaign, "");
+
+        uint256[] memory considerationTokenIds;
+        uint256[] memory traitRedemptionTokenIds = Solarray.uint256s(tokenId);
+        bytes memory extraData = abi.encode(
+            1, // campaignId
+            0, // requirementsIndex
+            bytes32(0), // redemptionHash
+            traitRedemptionTokenIds,
+            uint256(0), // salt
+            bytes("") // signature
+        );
+
+        // Redeeming should fail since the trait value does not match.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                InvalidRequiredTraitValue.selector,
+                redeemToken,
+                tokenId,
+                traitKey,
+                bytes32(uint256(4)),
+                bytes32(uint256(0))
+            )
+        );
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        // Update the trait value, now it should match.
+        redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(5)));
+
+        vm.expectEmit(true, true, true, true);
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        bytes32 actualTraitValue = redeemToken.getTraitValue(tokenId, traitKey);
+        assertEq(bytes32(uint256(5)), actualTraitValue);
+        assertEq(receiveToken721.ownerOf(1), address(this));
+
+        // Redeeming one more time should succeed since it has not changed.
+        emit Redemption(1, 0, bytes32(0), considerationTokenIds, traitRedemptionTokenIds, address(this));
+        context.erc7498Token.redeem(considerationTokenIds, address(this), extraData);
+
+        actualTraitValue = redeemToken.getTraitValue(tokenId, traitKey);
+        assertEq(bytes32(uint256(5)), actualTraitValue);
+        assertEq(receiveToken721.ownerOf(2), address(this));
     }
 }

@@ -24,12 +24,13 @@ contract DeployAndRedeemTrait is Script, Test {
         address[] memory allowedTraitSetters = new address[](1);
         allowedTraitSetters[0] = address(receiveToken);
 
-        // deploy the redeem token with the receive token as an allowed trait setter
+        // deploy the redeem token
         ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
                 "DynamicTraitsRedeemToken",
-                "TEST",
-                allowedTraitSetters
+                "TEST"
             );
+        // set the receive token as an allowed trait setter
+        redeemToken.setAllowedTraitSetters(allowedTraitSetters);
 
         // configure the campaign.
         OfferItem[] memory offer = new OfferItem[](1);
