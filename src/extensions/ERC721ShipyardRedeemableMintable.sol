@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IERC165} from "openzeppelin-contracts/contracts/interfaces/IERC165.sol";
 import {ERC721ConduitPreapproved_Solady} from "shipyard-core/src/tokens/erc721/ERC721ConduitPreapproved_Solady.sol";
-import {ConsiderationItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
+import {ConsiderationItem, OfferItem} from "seaport-types/src/lib/ConsiderationStructs.sol";
 import {Ownable} from "solady/src/auth/Ownable.sol";
 import {ERC7498NFTRedeemables} from "../lib/ERC7498NFTRedeemables.sol";
 import {CampaignParams} from "../lib/RedeemablesStructs.sol";
@@ -24,6 +24,7 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
     function mintRedemption(
         uint256, /* campaignId */
         address recipient,
+        OfferItem calldata, /* offer */
         ConsiderationItem[] calldata, /* consideration */
         TraitRedemption[] calldata /* traitRedemptions */
     ) external {
