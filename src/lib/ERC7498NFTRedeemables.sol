@@ -391,7 +391,10 @@ contract ERC7498NFTRedeemables is IERC165, IERC7498, DynamicTraits, RedeemablesE
     ) internal {
         // Mint the new tokens.
         for (uint256 i; i < offer.length;) {
-            IRedemptionMintable(offer[i].token).mintRedemption(campaignId, recipient, consideration, traitRedemptions);
+            OfferItem memory offerItem = offer[i];
+            IRedemptionMintable(offerItem.token).mintRedemption(
+                campaignId, recipient, offerItem, consideration, traitRedemptions
+            );
             unchecked {
                 ++i;
             }
