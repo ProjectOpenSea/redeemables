@@ -23,6 +23,14 @@ contract ERC1155ShipyardRedeemable is ERC1155ShipyardContractMetadata, ERC7498NF
         DynamicTraits.setTrait(tokenId, traitKey, value);
     }
 
+    function burn(address from, uint256 id, uint256 amount) public {
+        _burn(msg.sender, from, id, amount);
+    }
+
+    function batchBurn(address from, uint256[] calldata ids, uint256[] calldata amounts) public {
+        _batchBurn(msg.sender, from, ids, amounts);
+    }
+
     function _useInternalBurn() internal pure virtual override returns (bool) {
         return true;
     }
