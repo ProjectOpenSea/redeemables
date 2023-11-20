@@ -48,6 +48,10 @@ contract ERC721ShipyardRedeemable is ERC721ShipyardContractMetadata, ERC7498NFTR
         traitValues = DynamicTraits.getTraitValues(tokenId, traitKeys);
     }
 
+    function burn(uint256 tokenId) public {
+        _burn(msg.sender, tokenId);
+    }
+
     function _useInternalBurn() internal pure virtual override returns (bool) {
         return true;
     }

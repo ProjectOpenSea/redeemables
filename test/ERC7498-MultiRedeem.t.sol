@@ -91,7 +91,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         context.erc7498Token.redeem(tokenIds, address(this), extraData);
 
         _checkTokenDoesNotExist(address(context.erc7498Token), tokenId);
-        _checkTokenSentToBurnAddress(secondRedeemTokenAddress, tokenId);
+        _checkTokenDoesNotExist(secondRedeemTokenAddress, tokenId);
         assertEq(receiveToken.ownerOf(1), address(this));
         assertEq(receiveToken.balanceOf(address(this)), 1);
     }
