@@ -27,7 +27,7 @@ contract ERC721ShipyardRedeemableMintable is ERC721ShipyardRedeemable, IRedempti
         OfferItem calldata, /* offer */
         ConsiderationItem[] calldata, /* consideration */
         TraitRedemption[] calldata /* traitRedemptions */
-    ) external {
+    ) external virtual {
         // Require that msg.sender is valid.
         _requireValidRedeemablesCaller();
 
