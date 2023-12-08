@@ -73,7 +73,7 @@ contract ERC1155ShipyardContractMetadata is
         contractURI = newURI;
 
         // Emit an event with the update.
-        emit ContractURIUpdated(newURI);
+        emit ContractURIUpdated();
     }
 
     /**
