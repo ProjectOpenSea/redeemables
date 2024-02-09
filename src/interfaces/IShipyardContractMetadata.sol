@@ -6,7 +6,7 @@ interface IShipyardContractMetadata {
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
     /// @dev Emit an event when the URI for the collection-level metadata is updated.
-    event ContractURIUpdated(string uri);
+    event ContractURIUpdated();
 
     /// @dev Emit an event when the provenance hash is updated.
     event ProvenanceHashUpdated(bytes32 oldProvenanceHash, bytes32 newProvenanceHash);

@@ -66,10 +66,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
 
     function erc721TraitRedemptionSubstandardOneForErc721(RedeemablesContext memory context) public {
         address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token));
-        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters("", "");
         assertEq(redeemToken.getAllowedTraitSetters(), new address[](0));
         redeemToken.setAllowedTraitSetters(allowedTraitSetters);
         assertEq(redeemToken.getAllowedTraitSetters(), allowedTraitSetters);
@@ -84,9 +81,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
             traitValue: bytes32(uint256(1)),
             substandardValue: bytes32(uint256(0))
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         // consideration is empty
         ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
         requirements[0] = CampaignRequirements({
@@ -157,10 +152,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
 
     function erc721TraitRedemptionSubstandardTwoForErc721(RedeemablesContext memory context) public {
         address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
-        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters("", "");
         redeemToken.setAllowedTraitSetters(allowedTraitSetters);
         _mintToken(address(redeemToken), tokenId);
         redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(1)));
@@ -174,9 +166,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
             traitValue: bytes32(uint256(1)),
             substandardValue: bytes32(uint256(1))
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         // consideration is empty
         ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
         requirements[0] = CampaignRequirements({
@@ -237,10 +227,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
 
     function erc721TraitRedemptionSubstandardThreeForErc721(RedeemablesContext memory context) public {
         address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
-        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters("", "");
         redeemToken.setAllowedTraitSetters(allowedTraitSetters);
         _mintToken(address(redeemToken), tokenId);
         redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(5)));
@@ -254,9 +241,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
             traitValue: bytes32(uint256(1)),
             substandardValue: bytes32(uint256(5))
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         // consideration is empty
         ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
         requirements[0] = CampaignRequirements({
@@ -317,10 +302,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
 
     function erc721TraitRedemptionSubstandardFourForErc721(RedeemablesContext memory context) public {
         address[] memory allowedTraitSetters = Solarray.addresses(address(context.erc7498Token), address(this));
-        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters("", "");
         redeemToken.setAllowedTraitSetters(allowedTraitSetters);
         _mintToken(address(redeemToken), tokenId);
         redeemToken.setTrait(tokenId, traitKey, bytes32(uint256(4)));
@@ -334,9 +316,7 @@ contract ERC7498_TraitRedemption is BaseRedeemablesTest {
             traitValue: bytes32(uint256(5)),
             substandardValue: bytes32(0) // unused in substandard 4
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         // consideration is empty
         ConsiderationItem[] memory consideration = new ConsiderationItem[](0);
         requirements[0] = CampaignRequirements({

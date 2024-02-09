@@ -36,35 +36,26 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         address secondRedeemTokenAddress;
         _mintToken(address(context.erc7498Token), tokenId);
         if (_isERC721(address(context.erc7498Token))) {
-            ERC721ShipyardRedeemableOwnerMintable secondRedeemToken721 = new ERC721ShipyardRedeemableOwnerMintable(
-                    "",
-                    ""
-                );
+            ERC721ShipyardRedeemableOwnerMintable secondRedeemToken721 =
+                new ERC721ShipyardRedeemableOwnerMintable("", "");
             secondRedeemTokenAddress = address(secondRedeemToken721);
             vm.label(secondRedeemTokenAddress, "secondRedeemToken721");
             secondRedeemToken721.setApprovalForAll(address(context.erc7498Token), true);
         } else {
-            ERC1155ShipyardRedeemableOwnerMintable secondRedeemToken1155 = new ERC1155ShipyardRedeemableOwnerMintable(
-                    "",
-                    ""
-                );
+            ERC1155ShipyardRedeemableOwnerMintable secondRedeemToken1155 =
+                new ERC1155ShipyardRedeemableOwnerMintable("", "");
             secondRedeemTokenAddress = address(secondRedeemToken1155);
             vm.label(secondRedeemTokenAddress, "secondRedeemToken1155");
             secondRedeemToken1155.setApprovalForAll(address(context.erc7498Token), true);
         }
         _mintToken(secondRedeemTokenAddress, tokenId);
 
-        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
-            "",
-            ""
-        );
+        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable("", "");
         receiveToken.setRedeemablesContracts(erc7498Tokens);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
         consideration[1] = _getCampaignConsiderationItem(secondRedeemTokenAddress);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = defaultCampaignOffer[0].withToken(address(receiveToken));
         requirements[0].offer = offer;
@@ -107,10 +98,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
 
     function burnOneErc721OrErc1155RedeemMultiErc1155(RedeemablesContext memory context) public {
         _mintToken(address(context.erc7498Token), tokenId);
-        ERC1155ShipyardRedeemableMintable receiveToken = new ERC1155ShipyardRedeemableMintable(
-                "",
-                ""
-            );
+        ERC1155ShipyardRedeemableMintable receiveToken = new ERC1155ShipyardRedeemableMintable("", "");
         ERC721(address(context.erc7498Token)).setApprovalForAll(address(receiveToken), true);
         OfferItem[] memory offer = new OfferItem[](3);
         offer[0] = OfferItem({
@@ -136,9 +124,7 @@ contract ERC7498_MultiRedeem is BaseRedeemablesTest {
         });
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
         CampaignParams memory params = CampaignParams({

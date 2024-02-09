@@ -39,9 +39,7 @@ contract DeployERC721ReceiveTokenWithPredeployedSeaDropRedeemToken is Script, Te
             recipient: payable(BURN_ADDRESS)
         });
 
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
 

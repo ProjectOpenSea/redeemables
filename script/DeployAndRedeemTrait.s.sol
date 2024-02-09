@@ -15,20 +15,16 @@ contract DeployAndRedeemTrait is Script, Test {
         vm.startBroadcast();
 
         // deploy the receive token first
-        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
-                "TestRedeemablesRecieveToken",
-                "TEST"
-            );
+        ERC721ShipyardRedeemableMintable receiveToken =
+            new ERC721ShipyardRedeemableMintable("TestRedeemablesRecieveToken", "TEST");
 
         // add the receive token address to allowed trait setters array
         address[] memory allowedTraitSetters = new address[](1);
         allowedTraitSetters[0] = address(receiveToken);
 
         // deploy the redeem token
-        ERC721ShipyardRedeemableTraitSetters redeemToken = new ERC721ShipyardRedeemableTraitSetters(
-                "DynamicTraitsRedeemToken",
-                "TEST"
-            );
+        ERC721ShipyardRedeemableTraitSetters redeemToken =
+            new ERC721ShipyardRedeemableTraitSetters("DynamicTraitsRedeemToken", "TEST");
         // set the receive token as an allowed trait setter
         redeemToken.setAllowedTraitSetters(allowedTraitSetters);
 
@@ -66,9 +62,7 @@ contract DeployAndRedeemTrait is Script, Test {
             substandardValue: substandardValue
         });
 
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
         requirements[0].traitRedemptions = traitRedemptions;

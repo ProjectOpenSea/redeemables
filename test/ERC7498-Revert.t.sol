@@ -27,9 +27,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
         uint256 invalidTokenId = tokenId + 1;
         _mintToken(erc7498Tokens[0], invalidTokenId, dillon.addr);
 
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: defaultCampaignConsideration,
@@ -71,10 +69,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
 
     function testRevertConsiderationLengthNotMet() public {
         _mintToken(erc7498Tokens[0], tokenId);
-        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableOwnerMintable secondRedeemToken = new ERC721ShipyardRedeemableOwnerMintable("", "");
         ConsiderationItem[] memory consideration = new ConsiderationItem[](2);
         consideration[0] = ConsiderationItem({
             itemType: ItemType.ERC721_WITH_CRITERIA,
@@ -92,9 +87,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             endAmount: 1,
             recipient: payable(BURN_ADDRESS)
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = defaultCampaignOffer;
         requirements[0].consideration = consideration;
         CampaignParams memory params = CampaignParams({
@@ -153,9 +146,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             endAmount: 0.1 ether,
             recipient: payable(dillon.addr)
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
         CampaignParams memory params = CampaignParams({
@@ -215,9 +206,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
             endAmount: 0.1 ether,
             recipient: payable(dillon.addr)
         });
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
         CampaignParams memory params = CampaignParams({
@@ -255,9 +244,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
         uint256 considerationTokenId = 1;
         _mintToken(erc7498Tokens[0], tokenId);
         _mintToken(erc7498Tokens[0], considerationTokenId);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = defaultCampaignConsideration[0].withIdentifierOrCriteria(considerationTokenId);
         requirements[0] = CampaignRequirements({
@@ -300,9 +287,7 @@ contract ERC7498_Revert is BaseRedeemablesTest {
         uint256 considerationTokenId = 1;
         _mintToken(address(erc1155s[0]), tokenId);
         _mintToken(address(erc1155s[0]), considerationTokenId);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = defaultCampaignConsideration[0].withToken(address(erc1155s[0])).withItemType(
             ItemType.ERC1155
