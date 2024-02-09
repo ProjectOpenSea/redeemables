@@ -34,9 +34,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         _mintToken(address(context.erc7498Token), tokenId);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: consideration,
@@ -118,9 +116,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         // Set consideration recipient to greg.
         address greg = makeAddr("greg");
         consideration[0].recipient = payable(greg);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: consideration,
@@ -166,10 +162,8 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
     }
 
     function burnErc721OrErc1155RedeemErc721WithSecondRequirementsIndex(RedeemablesContext memory context) public {
-        ERC721ShipyardRedeemableOwnerMintable firstRequirementRedeemToken = new ERC721ShipyardRedeemableOwnerMintable(
-                "",
-                ""
-            );
+        ERC721ShipyardRedeemableOwnerMintable firstRequirementRedeemToken =
+            new ERC721ShipyardRedeemableOwnerMintable("", "");
         vm.label(address(firstRequirementRedeemToken), "firstRequirementRedeemToken");
         firstRequirementRedeemToken.setApprovalForAll(address(context.erc7498Token), true);
 
@@ -187,9 +181,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
         });
         ConsiderationItem[] memory secondRequirementConsideration = new ConsiderationItem[](1);
         secondRequirementConsideration[0] = _getCampaignConsiderationItem(address(context.erc7498Token));
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            2
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](2);
         requirements[0] = CampaignRequirements({
             offer: defaultCampaignOffer,
             consideration: firstRequirementConsideration,
@@ -241,9 +233,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
     function testBurnErc20RedeemErc721() public {
         erc20s[0].mint(address(this), 0.5 ether);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = defaultCampaignConsideration[0].withToken(address(erc20s[0])).withItemType(ItemType.ERC20)
             .withStartAmount(0.5 ether).withEndAmount(0.5 ether);
@@ -284,9 +274,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
     function testSendErc20RedeemErc721() public {
         erc20s[0].mint(address(this), 0.5 ether);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         ConsiderationItem[] memory consideration = new ConsiderationItem[](1);
         consideration[0] = defaultCampaignConsideration[0].withToken(address(erc20s[0])).withItemType(ItemType.ERC20)
             .withStartAmount(0.5 ether).withEndAmount(0.5 ether);
@@ -329,9 +317,7 @@ contract ERC7498_SimpleRedeem is BaseRedeemablesTest {
 
     function testBurnErc721RedeemErc1155() public {
         _mintToken(address(erc7498Tokens[0]), tokenId);
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         OfferItem[] memory offer = new OfferItem[](1);
         offer[0] = defaultCampaignOffer[0].withItemType(ItemType.ERC1155).withToken(address(receiveToken1155));
         requirements[0] = CampaignRequirements({

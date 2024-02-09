@@ -72,30 +72,12 @@ contract BaseRedeemablesTest is RedeemablesErrors, BaseOrderTest {
     function setUp() public virtual override {
         super.setUp();
 
-        erc721ShipyardRedeemable = new ERC721ShipyardRedeemableOwnerMintable(
-            "",
-            ""
-        );
-        erc721SeaDropRedeemable = new ERC721SeaDropRedeemableOwnerMintable(
-            address(1),
-            address(1),
-            "",
-            ""
-        );
-        erc1155ShipyardRedeemable = new ERC1155ShipyardRedeemableOwnerMintable(
-            "",
-            ""
-        );
-        erc1155SeaDropRedeemable = new ERC1155SeaDropRedeemableOwnerMintable(
-            address(1),
-            address(1),
-            "",
-            ""
-        );
-        erc721ShipyardRedeemableWithoutInternalBurn = new ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn(
-            "",
-            ""
-        );
+        erc721ShipyardRedeemable = new ERC721ShipyardRedeemableOwnerMintable("", "");
+        erc721SeaDropRedeemable = new ERC721SeaDropRedeemableOwnerMintable(address(1), address(1), "", "");
+        erc1155ShipyardRedeemable = new ERC1155ShipyardRedeemableOwnerMintable("", "");
+        erc1155SeaDropRedeemable = new ERC1155SeaDropRedeemableOwnerMintable(address(1), address(1), "", "");
+        erc721ShipyardRedeemableWithoutInternalBurn =
+            new ERC721ShipyardRedeemableOwnerMintableWithoutInternalBurn("", "");
         // Not using internal burn needs approval for the contract itself to transfer tokens on users' behalf.
         erc721ShipyardRedeemableWithoutInternalBurn.setApprovalForAll(
             address(erc721ShipyardRedeemableWithoutInternalBurn), true

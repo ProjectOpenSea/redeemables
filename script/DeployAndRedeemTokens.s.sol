@@ -14,16 +14,12 @@ contract DeployAndRedeemTokens is Script, Test {
     function run() external {
         vm.startBroadcast();
 
-        ERC721ShipyardRedeemableOwnerMintable redeemToken = new ERC721ShipyardRedeemableOwnerMintable(
-                "TestRedeemablesRedeemToken",
-                "TEST"
-            );
+        ERC721ShipyardRedeemableOwnerMintable redeemToken =
+            new ERC721ShipyardRedeemableOwnerMintable("TestRedeemablesRedeemToken", "TEST");
         address[] memory redeemTokens = new address[](1);
         redeemTokens[0] = address(redeemToken);
-        ERC721ShipyardRedeemableMintable receiveToken = new ERC721ShipyardRedeemableMintable(
-            "TestRedeemablesRecieveToken",
-            "TEST"
-        );
+        ERC721ShipyardRedeemableMintable receiveToken =
+            new ERC721ShipyardRedeemableMintable("TestRedeemablesRecieveToken", "TEST");
         receiveToken.setRedeemablesContracts(redeemTokens);
 
         // Configure the campaign.
@@ -46,9 +42,7 @@ contract DeployAndRedeemTokens is Script, Test {
             recipient: payable(BURN_ADDRESS)
         });
 
-        CampaignRequirements[] memory requirements = new CampaignRequirements[](
-            1
-        );
+        CampaignRequirements[] memory requirements = new CampaignRequirements[](1);
         requirements[0].offer = offer;
         requirements[0].consideration = consideration;
 
