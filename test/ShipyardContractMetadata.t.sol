@@ -33,7 +33,7 @@ contract TestShipyardContractMetadata is BaseRedeemablesTest {
     address[] tokens;
 
     event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
-    event ContractURIUpdated(string uri);
+    event ContractURIUpdated();
     event ProvenanceHashUpdated(bytes32 oldProvenanceHash, bytes32 newProvenanceHash);
     event RoyaltyInfoUpdated(address receiver, uint256 basisPoints);
 
@@ -113,7 +113,7 @@ contract TestShipyardContractMetadata is BaseRedeemablesTest {
     function contractURI(IShipyardContractMetadata token) external {
         assertEq(token.contractURI(), "");
         vm.expectEmit(true, true, true, true);
-        emit ContractURIUpdated("https://example.com/");
+        emit ContractURIUpdated();
         token.setContractURI("https://example.com/");
         assertEq(token.contractURI(), "https://example.com/");
     }
